@@ -26,13 +26,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/servers/join', [ServerController::class, 'join'])->name('servers.join');
     Route::get('/invite/{code}', [ServerController::class, 'acceptInvite'])->name('invite.accept');
     Route::get('/servers/{server}', [ServerController::class, 'show'])->name('servers.show');
+    Route::delete('/servers/{server}/leave', [ServerController::class, 'leave'])->name('servers.leave');
     Route::delete('/servers/{server}', [ServerController::class, 'destroy'])->name('servers.destroy');
 
     Route::post('/servers/{server}/channels', [ChannelController::class, 'store'])->name('channels.store');
 
     Route::get('/channels/{channel}', [MessageController::class, 'index'])->name('channels.show');
     Route::get('/channels/{channel}/messages', [MessageController::class, 'more'])->name('messages.more');
-    Route::post('/channels/{channel}/messages', [MessageController::class, 'store'])->name('messages.store');
+    Route::post('/channels/{channel}/messages', [MessageController::class, 'store'])->middleware('throttle:120,1')->name('messages.store');
 });
 
 require __DIR__.'/auth.php';

@@ -11,6 +11,26 @@ const STATUS_CONFIG = {
 const ROLE_LABEL = { owner: 'Propietario', admin: 'Admin' };
 const ROLE_COLOR = { owner: 'text-yellow-400', admin: 'text-indigo-400' };
 
+function formatTyping(names) {
+    if (names.length === 1) return `${names[0]} está escribiendo...`;
+    if (names.length === 2) return `${names[0]} y ${names[1]} están escribiendo...`;
+    return 'Varios usuarios están escribiendo...';
+}
+
+function TypingDots() {
+    return (
+        <span className="inline-flex gap-0.5 mr-1.5 align-middle">
+            {[0, 1, 2].map((i) => (
+                <span
+                    key={i}
+                    className="w-1 h-1 rounded-full bg-gray-400 inline-block animate-bounce"
+                    style={{ animationDelay: `${i * 0.15}s` }}
+                />
+            ))}
+        </span>
+    );
+}
+
 function StatusDot({ status, size = 'md' }) {
     const cfg = STATUS_CONFIG[status];
     const ring = size === 'sm' ? 'w-2.5 h-2.5 ring-1' : 'w-3 h-3 ring-2';
@@ -114,6 +134,11 @@ export default function Show({ channel, messages: initialMessages, userServers =
     const [serverSwitcherOpen, setServerSwitcherOpen] = useState(false);
     const serverSwitcherRef = useRef(null);
 
+    // { userId: name } de usuarios que están escribiendo ahora mismo
+    const [typingUsers, setTypingUsers] = useState({});
+    const typingTimeouts = useRef({});
+    const lastWhisperAt = useRef(0);
+
     const bottomRef = useRef(null);
     const inputRef = useRef(null);
     const containerRef = useRef(null);
@@ -164,14 +189,35 @@ export default function Show({ channel, messages: initialMessages, userServers =
         return () => window.Echo.leave(`presence-server.${channel.server_id}`);
     }, [channel.server_id]);
 
-    // Canal de mensajes en tiempo real
+    // Canal de mensajes en tiempo real + indicador de escritura
     useEffect(() => {
         const echoChannel = window.Echo.private(`channel.${channel.id}`);
+
         echoChannel.listen('MessageSent', (e) => {
             setMessages((prev) => [...prev, e]);
             bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
         });
-        return () => echoChannel.stopListening('MessageSent');
+
+        echoChannel.listenForWhisper('typing', (e) => {
+            if (e.id === auth.user.id) return;
+
+            setTypingUsers((prev) => ({ ...prev, [e.id]: e.name }));
+
+            clearTimeout(typingTimeouts.current[e.id]);
+            typingTimeouts.current[e.id] = setTimeout(() => {
+                setTypingUsers((prev) => {
+                    const next = { ...prev };
+                    delete next[e.id];
+                    return next;
+                });
+            }, 2500);
+        });
+
+        return () => {
+            echoChannel.stopListening('MessageSent');
+            echoChannel.stopListeningForWhisper('typing');
+            Object.values(typingTimeouts.current).forEach(clearTimeout);
+        };
     }, [channel.id]);
 
     async function changeStatus(status) {
@@ -199,6 +245,16 @@ export default function Show({ channel, messages: initialMessages, userServers =
             });
         } finally {
             setLoadingMore(false);
+        }
+    }
+
+    function onType(e) {
+        setContent(e.target.value);
+        const now = Date.now();
+        if (now - lastWhisperAt.current > 1000) {
+            lastWhisperAt.current = now;
+            window.Echo.private(`channel.${channel.id}`)
+                .whisper('typing', { id: auth.user.id, name: auth.user.name });
         }
     }
 
@@ -385,13 +441,24 @@ export default function Show({ channel, messages: initialMessages, userServers =
                         <div ref={bottomRef} />
                     </div>
 
-                    <form onSubmit={submit} className="p-4 border-t border-gray-700 shrink-0">
+                    <div className="shrink-0">
+                        {/* Indicador de escritura */}
+                        <div className="h-5 px-5 flex items-center">
+                            {Object.keys(typingUsers).length > 0 && (
+                                <p className="text-xs text-gray-400 italic">
+                                    <TypingDots />
+                                    {formatTyping(Object.values(typingUsers))}
+                                </p>
+                            )}
+                        </div>
+
+                        <form onSubmit={submit} className="px-4 pb-4">
                         <div className="flex gap-2 bg-gray-700 rounded-lg px-4 py-2">
                             <input
                                 ref={inputRef}
                                 type="text"
                                 value={content}
-                                onChange={(e) => setContent(e.target.value)}
+                                onChange={onType}
                                 placeholder={`Mensaje en #${channel.name}`}
                                 className="flex-1 bg-transparent text-sm text-white placeholder-gray-400 outline-none"
                             />
@@ -404,6 +471,7 @@ export default function Show({ channel, messages: initialMessages, userServers =
                             </button>
                         </div>
                     </form>
+                    </div>
                 </div>
 
                 {/* Popover de perfil */}

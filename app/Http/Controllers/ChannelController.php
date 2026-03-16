@@ -10,12 +10,7 @@ class ChannelController extends Controller
 {
     public function store(Request $request, Server $server)
     {
-        $this->authorize('view', $server);
-
-        $member = $server->members()->where('user_id', Auth::id())->first();
-        if (!$member || !in_array($member->pivot->role, ['owner', 'admin'])) {
-            abort(403);
-        }
+        $this->authorize('manageChannels', $server);
 
         $data = $request->validate(['name' => 'required|string|max:100']);
 

@@ -2,9 +2,15 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { useState } from 'react';
 
-export default function Show({ server, channel, canManageChannels, inviteUrl }) {
+export default function Show({ server, channel, canManageChannels, isOwner, inviteUrl }) {
     const { data, setData, post, processing, errors, reset } = useForm({ name: '' });
+    const leaveForm = useForm({});
     const [copied, setCopied] = useState(false);
+    const [confirmLeave, setConfirmLeave] = useState(false);
+
+    function handleLeave() {
+        leaveForm.delete(route('servers.leave', server.id));
+    }
 
     function submit(e) {
         e.preventDefault();
@@ -68,6 +74,42 @@ export default function Show({ server, channel, canManageChannels, inviteUrl }) 
                         </Link>
                     )}
                 </div>
+
+                {/* Abandonar servidor */}
+                {!isOwner && (
+                    <div className="bg-gray-900 rounded-xl border border-red-900/40 p-5">
+                        <h3 className="font-semibold text-red-400 text-sm uppercase tracking-wide mb-1">Zona de peligro</h3>
+                        <p className="text-gray-500 text-xs mb-3">Al abandonar el servidor perderás el acceso a todos sus canales.</p>
+                        {leaveForm.errors.leave && (
+                            <p className="text-red-400 text-sm mb-2">{leaveForm.errors.leave}</p>
+                        )}
+                        {confirmLeave ? (
+                            <div className="flex items-center gap-3">
+                                <span className="text-sm text-gray-300">¿Seguro?</span>
+                                <button
+                                    onClick={handleLeave}
+                                    disabled={leaveForm.processing}
+                                    className="bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-1.5 rounded-lg disabled:opacity-50"
+                                >
+                                    Sí, abandonar
+                                </button>
+                                <button
+                                    onClick={() => setConfirmLeave(false)}
+                                    className="text-gray-400 hover:text-gray-200 text-sm px-3 py-1.5 rounded-lg hover:bg-gray-800"
+                                >
+                                    Cancelar
+                                </button>
+                            </div>
+                        ) : (
+                            <button
+                                onClick={() => setConfirmLeave(true)}
+                                className="text-red-400 hover:text-red-300 border border-red-900/60 hover:border-red-700 text-sm px-4 py-1.5 rounded-lg transition-colors"
+                            >
+                                Abandonar servidor
+                            </button>
+                        )}
+                    </div>
+                )}
 
                 {/* Invitación */}
                 <div className="bg-gray-900 rounded-xl border border-gray-700 p-5 space-y-3">

@@ -14,6 +14,7 @@ class MessageController extends Controller
 {
     public function index(Channel $channel): Response
     {
+        abort_if(!$channel->server, 404);
         $this->authorize('view', $channel->server);
 
         $messages = $channel->messages()
@@ -37,6 +38,7 @@ class MessageController extends Controller
 
     public function more(Request $request, Channel $channel)
     {
+        abort_if(!$channel->server, 404);
         $this->authorize('view', $channel->server);
 
         $query = $channel->messages()->with('user')->latest();
@@ -52,6 +54,7 @@ class MessageController extends Controller
 
     public function store(Request $request, Channel $channel)
     {
+        abort_if(!$channel->server, 404);
         $this->authorize('view', $channel->server);
 
         $data = $request->validate(['content' => 'required|string|max:2000']);

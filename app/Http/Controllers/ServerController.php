@@ -48,8 +48,22 @@ class ServerController extends Controller
             'server'             => $server,
             'channel'            => $channel,
             'canManageChannels'  => $canManageChannels,
+            'isOwner'            => $server->owner_id === Auth::id(),
             'inviteUrl'          => route('invite.accept', $server->invite_code),
         ]);
+    }
+
+    public function leave(Server $server)
+    {
+        $this->authorize('view', $server);
+
+        if ($server->owner_id === Auth::id()) {
+            return back()->withErrors(['leave' => 'El propietario no puede abandonar el servidor. Elimínalo si ya no lo necesitas.']);
+        }
+
+        $server->members()->detach(Auth::id());
+
+        return redirect()->route('servers.index');
     }
 
     public function destroy(Server $server)
