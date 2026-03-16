@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\MentionReceived;
 use App\Events\MessageSent;
 use App\Models\Channel;
 use App\Models\Message;
@@ -66,6 +67,15 @@ class MessageController extends Controller
         ]);
 
         broadcast(new MessageSent($message))->toOthers();
+
+        // Dispatch mention notifications
+        $message->load('user', 'channel.server');
+        $members = $channel->server->members()->where('user_id', '!=', Auth::id())->get();
+        foreach ($members as $member) {
+            if (str_contains($data['content'], '@' . $member->name)) {
+                broadcast(new MentionReceived($message, $member));
+            }
+        }
 
         return response()->json($message->load('user'));
     }

@@ -31,6 +31,31 @@ function TypingDots() {
     );
 }
 
+// Resalta @Nombre en el contenido del mensaje
+function renderContent(text, members = [], selfName = '') {
+    if (!members.length) return text;
+
+    const escaped = [...members]
+        .sort((a, b) => b.name.length - a.name.length)
+        .map(m => m.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+
+    const parts = text.split(new RegExp(`(@(?:${escaped.join('|')}))`, 'g'));
+
+    return parts.map((part, i) => {
+        if (part.startsWith('@')) {
+            const isSelf = part.slice(1) === selfName;
+            return (
+                <span key={i} className={`rounded px-0.5 font-medium ${
+                    isSelf ? 'bg-yellow-500/20 text-yellow-300' : 'bg-indigo-500/20 text-indigo-300'
+                }`}>
+                    {part}
+                </span>
+            );
+        }
+        return part;
+    });
+}
+
 function StatusDot({ status, size = 'md' }) {
     const cfg = STATUS_CONFIG[status];
     const ring = size === 'sm' ? 'w-2.5 h-2.5 ring-1' : 'w-3 h-3 ring-2';
@@ -131,13 +156,19 @@ export default function Show({ channel, messages: initialMessages, userServers =
     const [myStatus, setMyStatus] = useState(auth.user.status ?? 'online');
     const [statusOpen, setStatusOpen] = useState(false);
     const [profilePopover, setProfilePopover] = useState(null); // { member, anchorY }
-    const [serverSwitcherOpen, setServerSwitcherOpen] = useState(false);
-    const serverSwitcherRef = useRef(null);
 
     // { userId: name } de usuarios que están escribiendo ahora mismo
     const [typingUsers, setTypingUsers] = useState({});
     const typingTimeouts = useRef({});
     const lastWhisperAt = useRef(0);
+
+    // Autocompletado de menciones
+    const [mentionSuggestions, setMentionSuggestions] = useState([]);
+    const [mentionStart, setMentionStart] = useState(0);
+    const [mentionIndex, setMentionIndex] = useState(0);
+
+    // Notificaciones in-app de menciones
+    const [toasts, setToasts] = useState([]);
 
     const bottomRef = useRef(null);
     const inputRef = useRef(null);
@@ -155,39 +186,44 @@ export default function Show({ channel, messages: initialMessages, userServers =
             if (statusMenuRef.current && !statusMenuRef.current.contains(e.target)) {
                 setStatusOpen(false);
             }
-            if (serverSwitcherRef.current && !serverSwitcherRef.current.contains(e.target)) {
-                setServerSwitcherOpen(false);
-            }
         }
         document.addEventListener('mousedown', handleClick);
         return () => document.removeEventListener('mousedown', handleClick);
     }, []);
 
-    // Canal de presencia del servidor
+    // Canales de presencia — se une a TODOS los servidores del usuario
     useEffect(() => {
-        const presence = window.Echo.join(`presence-server.${channel.server_id}`)
-            .here((users) => {
-                const map = {};
-                users.forEach((u) => { map[u.id] = u.status; });
-                setOnlineUsers(map);
-            })
-            .joining((user) => {
-                setOnlineUsers((prev) => ({ ...prev, [user.id]: user.status }));
-            })
-            .leaving((user) => {
-                setOnlineUsers((prev) => {
-                    const next = { ...prev };
-                    delete next[user.id];
-                    return next;
-                });
-            })
-            .listen('UserStatusChanged', (e) => {
-                setOnlineUsers((prev) => ({ ...prev, [e.user_id]: e.status }));
-                if (e.user_id === auth.user.id) setMyStatus(e.status);
-            });
+        if (!userServers.length) return;
 
-        return () => window.Echo.leave(`presence-server.${channel.server_id}`);
-    }, [channel.server_id]);
+        userServers.forEach((srv) => {
+            window.Echo.join(`presence-server.${srv.id}`)
+                .here((users) => {
+                    setOnlineUsers((prev) => {
+                        const map = { ...prev };
+                        users.forEach((u) => { map[u.id] = u.status; });
+                        return map;
+                    });
+                })
+                .joining((user) => {
+                    setOnlineUsers((prev) => ({ ...prev, [user.id]: user.status }));
+                })
+                .leaving((user) => {
+                    // Solo eliminar si ningún otro servidor lo reporta como presente.
+                    // En la práctica, si abandona un canal abandona todos a la vez.
+                    setOnlineUsers((prev) => {
+                        const next = { ...prev };
+                        delete next[user.id];
+                        return next;
+                    });
+                })
+                .listen('UserStatusChanged', (e) => {
+                    setOnlineUsers((prev) => ({ ...prev, [e.user_id]: e.status }));
+                    if (e.user_id === auth.user.id) setMyStatus(e.status);
+                });
+        });
+
+        return () => userServers.forEach((srv) => window.Echo.leave(`presence-server.${srv.id}`));
+    }, [userServers.map((s) => s.id).join(',')]);
 
     // Canal de mensajes en tiempo real + indicador de escritura
     useEffect(() => {
@@ -220,6 +256,32 @@ export default function Show({ channel, messages: initialMessages, userServers =
         };
     }, [channel.id]);
 
+    // Notificaciones de menciones
+    useEffect(() => {
+        if (Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+
+        const userChannel = window.Echo.private(`App.Models.User.${auth.user.id}`);
+
+        userChannel.listen('.MentionReceived', (e) => {
+            if (document.hidden) {
+                new Notification(`${e.sender} te mencionó en #${e.channel}`, {
+                    body: e.content,
+                    icon: '/images/logo.svg',
+                });
+            } else {
+                const id = Date.now();
+                setToasts((prev) => [...prev, { id, ...e }]);
+                setTimeout(() => {
+                    setToasts((prev) => prev.filter((t) => t.id !== id));
+                }, 5000);
+            }
+        });
+
+        return () => userChannel.stopListening('.MentionReceived');
+    }, [auth.user.id]);
+
     async function changeStatus(status) {
         setStatusOpen(false);
         setMyStatus(status);
@@ -249,12 +311,56 @@ export default function Show({ channel, messages: initialMessages, userServers =
     }
 
     function onType(e) {
-        setContent(e.target.value);
+        const val = e.target.value;
+        const cursor = e.target.selectionStart;
+        setContent(val);
+        setMentionIndex(0);
+
+        const match = val.slice(0, cursor).match(/@([^@\s]*)$/);
+        if (match) {
+            const query = match[1].toLowerCase();
+            setMentionSuggestions(
+                (channel.server?.members ?? []).filter(m => m.name.toLowerCase().includes(query))
+            );
+            setMentionStart(match.index);
+        } else {
+            setMentionSuggestions([]);
+        }
+
         const now = Date.now();
         if (now - lastWhisperAt.current > 1000) {
             lastWhisperAt.current = now;
             window.Echo.private(`channel.${channel.id}`)
                 .whisper('typing', { id: auth.user.id, name: auth.user.name });
+        }
+    }
+
+    function selectMention(member) {
+        const before = content.slice(0, mentionStart);
+        const after = content.slice(inputRef.current?.selectionStart ?? content.length);
+        const inserted = `${before}@${member.name} ${after}`;
+        setContent(inserted);
+        setMentionSuggestions([]);
+        setTimeout(() => {
+            const pos = (before + '@' + member.name + ' ').length;
+            inputRef.current?.setSelectionRange(pos, pos);
+            inputRef.current?.focus();
+        }, 0);
+    }
+
+    function onKeyDown(e) {
+        if (!mentionSuggestions.length) return;
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setMentionIndex(i => Math.min(i + 1, mentionSuggestions.length - 1));
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setMentionIndex(i => Math.max(i - 1, 0));
+        } else if (e.key === 'Enter' || e.key === 'Tab') {
+            e.preventDefault();
+            selectMention(mentionSuggestions[mentionIndex]);
+        } else if (e.key === 'Escape') {
+            setMentionSuggestions([]);
         }
     }
 
@@ -289,68 +395,51 @@ export default function Show({ channel, messages: initialMessages, userServers =
             <Head title={`#${channel.name}`} />
 
             <div className="flex h-[calc(100vh-3.5rem)] bg-gray-800 text-gray-100">
-                {/* Sidebar izquierdo: canales */}
-                <aside className="w-56 bg-gray-900 flex flex-col shrink-0">
-                    {/* Cabecera: selector de servidor */}
-                    <div className="relative" ref={serverSwitcherRef}>
-                        <button
-                            onClick={() => setServerSwitcherOpen((o) => !o)}
-                            className="w-full flex items-center justify-between px-4 py-3 border-b border-gray-700 hover:bg-gray-800 transition-colors group"
-                        >
-                            <span className="font-bold text-white truncate">{channel.server?.name}</span>
-                            <svg
-                                className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${serverSwitcherOpen ? 'rotate-180' : ''}`}
-                                fill="currentColor" viewBox="0 0 20 20"
-                            >
-                                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                            </svg>
-                        </button>
 
-                        {/* Panel de servidores */}
-                        {serverSwitcherOpen && (
-                            <div className="absolute top-full left-0 right-0 z-50 bg-gray-800 border border-gray-700 rounded-b-xl shadow-2xl overflow-hidden">
-                                <p className="px-3 pt-3 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                                    Tus servidores
-                                </p>
-                                <div className="max-h-72 overflow-y-auto pb-2">
-                                    {userServers.map((srv) => {
-                                        const isCurrent = srv.id === channel.server_id;
-                                        return (
-                                            <Link
-                                                key={srv.id}
-                                                href={srv.first_channel_id ? route('channels.show', srv.first_channel_id) : route('servers.show', srv.id)}
-                                                onClick={() => setServerSwitcherOpen(false)}
-                                                className={`flex items-center gap-3 px-3 py-2 mx-1 rounded-lg transition-colors ${
-                                                    isCurrent
-                                                        ? 'bg-indigo-600 text-white'
-                                                        : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                                                }`}
-                                            >
-                                                <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-sm font-bold shrink-0">
-                                                    {srv.name[0].toUpperCase()}
-                                                </div>
-                                                <span className="text-sm truncate">{srv.name}</span>
-                                                {isCurrent && (
-                                                    <svg className="w-4 h-4 ml-auto shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                                    </svg>
-                                                )}
-                                            </Link>
-                                        );
-                                    })}
-                                </div>
-                                <div className="border-t border-gray-700 p-2">
-                                    <Link
-                                        href={route('servers.index')}
-                                        onClick={() => setServerSwitcherOpen(false)}
-                                        className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 transition-colors text-sm"
-                                    >
-                                        <span className="w-5 h-5 flex items-center justify-center">+</span>
-                                        Gestionar servidores
-                                    </Link>
-                                </div>
+                {/* Rail de servidores */}
+                <nav className="w-[72px] bg-gray-950 flex flex-col items-center py-3 gap-1 shrink-0 overflow-y-auto">
+                    {userServers.map((srv) => {
+                        const isCurrent = srv.id === channel.server_id;
+                        return (
+                            <div key={srv.id} className="relative flex items-center w-full px-1.5 group">
+                                {/* Indicador activo */}
+                                <span className={`absolute left-0 w-1 rounded-r-full bg-white transition-all ${
+                                    isCurrent ? 'h-8' : 'h-0 group-hover:h-5'
+                                }`} />
+                                <Link
+                                    href={srv.first_channel_id ? route('channels.show', srv.first_channel_id) : route('servers.show', srv.id)}
+                                    title={srv.name}
+                                    className={`w-12 h-12 flex items-center justify-center font-bold text-lg transition-all duration-150 shrink-0 ${
+                                        isCurrent
+                                            ? 'rounded-2xl bg-indigo-500 text-white'
+                                            : 'rounded-full bg-gray-700 text-gray-300 hover:rounded-2xl hover:bg-indigo-500 hover:text-white'
+                                    }`}
+                                >
+                                    {srv.name[0].toUpperCase()}
+                                </Link>
                             </div>
-                        )}
+                        );
+                    })}
+
+                    <div className="mt-1 w-8 border-t border-gray-700" />
+
+                    {/* Botón añadir servidor */}
+                    <div className="relative flex items-center w-full px-1.5 group">
+                        <Link
+                            href={route('servers.index')}
+                            title="Servidores"
+                            className="w-12 h-12 flex items-center justify-center font-bold text-2xl text-green-400 bg-gray-700 rounded-full hover:rounded-2xl hover:bg-green-500 hover:text-white transition-all duration-150"
+                        >
+                            +
+                        </Link>
+                    </div>
+                </nav>
+
+                {/* Sidebar izquierdo: canales del servidor actual */}
+                <aside className="w-52 bg-gray-900 flex flex-col shrink-0">
+                    {/* Cabecera */}
+                    <div className="px-4 py-3 border-b border-gray-700">
+                        <span className="font-bold text-white truncate block">{channel.server?.name}</span>
                     </div>
 
                     <nav className="flex-1 overflow-y-auto p-2 space-y-1">
@@ -433,7 +522,7 @@ export default function Show({ channel, messages: initialMessages, userServers =
                                         </span>
                                     </div>
                                     <p className={`text-sm ${String(msg.id).startsWith('tmp-') ? 'text-gray-500' : 'text-gray-300'}`}>
-                                        {msg.content}
+                                        {renderContent(msg.content, channel.server?.members, auth.user.name)}
                                     </p>
                                 </div>
                             </div>
@@ -452,13 +541,36 @@ export default function Show({ channel, messages: initialMessages, userServers =
                             )}
                         </div>
 
-                        <form onSubmit={submit} className="px-4 pb-4">
+                        <form onSubmit={submit} className="px-4 pb-4 relative">
+                            {/* Dropdown de menciones */}
+                            {mentionSuggestions.length > 0 && (
+                                <div className="absolute bottom-full left-4 right-4 mb-1 bg-gray-800 border border-gray-700 rounded-lg overflow-hidden shadow-xl z-10">
+                                    <p className="px-3 pt-2 pb-1 text-xs text-gray-500">Miembros</p>
+                                    {mentionSuggestions.slice(0, 8).map((member, i) => (
+                                        <button
+                                            key={member.id}
+                                            type="button"
+                                            onMouseDown={(e) => { e.preventDefault(); selectMention(member); }}
+                                            className={`flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors ${
+                                                i === mentionIndex
+                                                    ? 'bg-indigo-600 text-white'
+                                                    : 'text-gray-300 hover:bg-gray-700'
+                                            }`}
+                                        >
+                                            <Avatar user={member} size="sm" />
+                                            <span>{member.name}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+
                         <div className="flex gap-2 bg-gray-700 rounded-lg px-4 py-2">
                             <input
                                 ref={inputRef}
                                 type="text"
                                 value={content}
                                 onChange={onType}
+                                onKeyDown={onKeyDown}
                                 placeholder={`Mensaje en #${channel.name}`}
                                 className="flex-1 bg-transparent text-sm text-white placeholder-gray-400 outline-none"
                             />
@@ -524,6 +636,33 @@ export default function Show({ channel, messages: initialMessages, userServers =
                     </div>
                 </aside>
             </div>
+
+            {/* Toasts de menciones */}
+            {toasts.length > 0 && (
+                <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm">
+                    {toasts.map((toast) => (
+                        <div
+                            key={toast.id}
+                            className="bg-gray-800 border border-indigo-500/50 rounded-xl shadow-2xl p-4 flex gap-3 items-start animate-fade-in"
+                        >
+                            <div className="text-yellow-400 text-lg shrink-0">@</div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-white">
+                                    {toast.sender} te mencionó en #{toast.channel}
+                                </p>
+                                <p className="text-xs text-gray-400 mt-0.5 truncate">{toast.server}</p>
+                                <p className="text-sm text-gray-300 mt-1 line-clamp-2">{toast.content}</p>
+                            </div>
+                            <button
+                                onClick={() => setToasts((prev) => prev.filter((t) => t.id !== toast.id))}
+                                className="text-gray-500 hover:text-gray-300 shrink-0 text-xs"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
         </AuthenticatedLayout>
     );
 }
