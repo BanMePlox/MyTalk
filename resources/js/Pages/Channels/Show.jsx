@@ -258,12 +258,11 @@ export default function Show({ channel, messages: initialMessages, userServers =
                                 </p>
                                 <div className="max-h-72 overflow-y-auto pb-2">
                                     {userServers.map((srv) => {
-                                        const firstChannel = srv.channels?.[0];
                                         const isCurrent = srv.id === channel.server_id;
                                         return (
                                             <Link
                                                 key={srv.id}
-                                                href={firstChannel ? route('channels.show', firstChannel.id) : route('servers.show', srv.id)}
+                                                href={srv.first_channel_id ? route('channels.show', srv.first_channel_id) : route('servers.show', srv.id)}
                                                 onClick={() => setServerSwitcherOpen(false)}
                                                 className={`flex items-center gap-3 px-3 py-2 mx-1 rounded-lg transition-colors ${
                                                     isCurrent

@@ -24,6 +24,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/servers', [ServerController::class, 'index'])->name('servers.index');
     Route::post('/servers', [ServerController::class, 'store'])->name('servers.store');
     Route::post('/servers/join', [ServerController::class, 'join'])->name('servers.join');
+    Route::get('/invite/{code}', [ServerController::class, 'acceptInvite'])->name('invite.accept');
     Route::get('/servers/{server}', [ServerController::class, 'show'])->name('servers.show');
     Route::delete('/servers/{server}', [ServerController::class, 'destroy'])->name('servers.destroy');
 

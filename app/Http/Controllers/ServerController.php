@@ -48,6 +48,7 @@ class ServerController extends Controller
             'server'             => $server,
             'channel'            => $channel,
             'canManageChannels'  => $canManageChannels,
+            'inviteUrl'          => route('invite.accept', $server->invite_code),
         ]);
     }
 
@@ -70,5 +71,20 @@ class ServerController extends Controller
         }
 
         return redirect()->route('servers.show', $server);
+    }
+
+    public function acceptInvite(string $code)
+    {
+        $server = Server::where('invite_code', $code)->firstOrFail();
+
+        if (!$server->members()->where('user_id', Auth::id())->exists()) {
+            $server->members()->attach(Auth::id(), ['role' => 'member']);
+        }
+
+        $channel = $server->channels()->first();
+
+        return $channel
+            ? redirect()->route('channels.show', $channel)
+            : redirect()->route('servers.show', $server);
     }
 }

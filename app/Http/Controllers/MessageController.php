@@ -24,7 +24,9 @@ class MessageController extends Controller
             ->reverse()
             ->values();
 
-        $userServers = Auth::user()->servers()->with('channels')->get();
+        $userServers = Auth::user()->servers()->get()->each(function ($server) {
+            $server->first_channel_id = $server->channels()->value('id');
+        });
 
         return Inertia::render('Channels/Show', [
             'channel'     => $channel->load('server.channels', 'server.members'),
