@@ -30,6 +30,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/servers/{server}', [ServerController::class, 'destroy'])->name('servers.destroy');
 
     Route::post('/servers/{server}/channels', [ChannelController::class, 'store'])->name('channels.store');
+    Route::delete('/channels/{channel}', [ChannelController::class, 'destroy'])->name('channels.destroy');
 
     Route::get('/channels/{channel}', [MessageController::class, 'index'])->name('channels.show');
     Route::get('/channels/{channel}/messages', [MessageController::class, 'more'])->name('messages.more');

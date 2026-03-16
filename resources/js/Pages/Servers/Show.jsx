@@ -1,4 +1,4 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { useState } from 'react';
 
@@ -7,9 +7,14 @@ export default function Show({ server, channel, canManageChannels, isOwner, invi
     const leaveForm = useForm({});
     const [copied, setCopied] = useState(false);
     const [confirmLeave, setConfirmLeave] = useState(false);
+    const [confirmDeleteChannel, setConfirmDeleteChannel] = useState(null); // channel id
 
     function handleLeave() {
         leaveForm.delete(route('servers.leave', server.id));
+    }
+
+    function handleDeleteChannel(channelId) {
+        router.delete(route('channels.destroy', channelId));
     }
 
     function submit(e) {
@@ -33,15 +38,45 @@ export default function Show({ server, channel, canManageChannels, isOwner, invi
                 <div className="bg-gray-900 rounded-xl border border-gray-700 p-5 space-y-3">
                     <h3 className="font-semibold text-gray-300 text-sm uppercase tracking-wide">Canales</h3>
 
+                    {errors.channel && <p className="text-red-400 text-xs">{errors.channel}</p>}
+
                     <div className="space-y-1">
                         {server.channels?.map((ch) => (
-                            <Link
-                                key={ch.id}
-                                href={route('channels.show', ch.id)}
-                                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 hover:text-white transition-colors"
-                            >
-                                <span className="text-gray-500">#</span> {ch.name}
-                            </Link>
+                            <div key={ch.id} className="flex items-center gap-1 group">
+                                <Link
+                                    href={route('channels.show', ch.id)}
+                                    className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 hover:text-white transition-colors"
+                                >
+                                    <span className="text-gray-500">#</span> {ch.name}
+                                </Link>
+
+                                {canManageChannels && (
+                                    confirmDeleteChannel === ch.id ? (
+                                        <div className="flex items-center gap-1 shrink-0">
+                                            <button
+                                                onClick={() => handleDeleteChannel(ch.id)}
+                                                className="text-xs bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded"
+                                            >
+                                                Borrar
+                                            </button>
+                                            <button
+                                                onClick={() => setConfirmDeleteChannel(null)}
+                                                className="text-xs text-gray-400 hover:text-gray-200 px-2 py-1 rounded hover:bg-gray-800"
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <button
+                                            onClick={() => setConfirmDeleteChannel(ch.id)}
+                                            className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 px-2 py-1 rounded transition-all text-sm"
+                                            title="Eliminar canal"
+                                        >
+                                            🗑
+                                        </button>
+                                    )
+                                )}
+                            </div>
                         ))}
                     </div>
 
