@@ -25,9 +25,24 @@ class MessageController extends Controller
             ->values();
 
         return Inertia::render('Channels/Show', [
-            'channel'  => $channel->load('server.channels'),
+            'channel'  => $channel->load('server.channels', 'server.members'),
             'messages' => $messages,
         ]);
+    }
+
+    public function more(Request $request, Channel $channel)
+    {
+        $this->authorize('view', $channel->server);
+
+        $query = $channel->messages()->with('user')->latest();
+
+        if ($request->filled('before')) {
+            $query->where('id', '<', $request->integer('before'));
+        }
+
+        $messages = $query->take(50)->get()->reverse()->values();
+
+        return response()->json($messages);
     }
 
     public function store(Request $request, Channel $channel)

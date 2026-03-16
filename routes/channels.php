@@ -11,3 +11,15 @@ Broadcast::channel('channel.{channelId}', function ($user, $channelId) {
     if (!$channel) return false;
     return $channel->server->members()->where('user_id', $user->id)->exists();
 });
+
+Broadcast::channel('presence-server.{serverId}', function ($user, $serverId) {
+    $server = \App\Models\Server::find($serverId);
+    if (!$server) return false;
+    if (!$server->members()->where('user_id', $user->id)->exists()) return false;
+
+    return [
+        'id'     => $user->id,
+        'name'   => $user->name,
+        'status' => $user->status,
+    ];
+});
