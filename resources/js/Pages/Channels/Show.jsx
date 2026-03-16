@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 
 const STATUS_CONFIG = {
@@ -76,7 +76,7 @@ function Avatar({ user, size = 'md' }) {
     );
 }
 
-function ProfilePopover({ member, status, anchorX, anchorY, onClose }) {
+function ProfilePopover({ member, status, anchorX, anchorY, onClose, authId }) {
     const ref = useRef();
 
     useEffect(() => {
@@ -148,18 +148,34 @@ function ProfilePopover({ member, status, anchorX, anchorY, onClose }) {
                         <p className="text-sm text-gray-300 whitespace-pre-wrap">{member.bio}</p>
                     </div>
                 )}
+
+                {/* Botón DM — no se muestra si es el propio usuario */}
+                {member.id !== authId && (
+                    <div className="mt-3 pt-3 border-t border-gray-700">
+                        <button
+                            onClick={() => router.post(route('conversations.open', member.id))}
+                            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium py-1.5 rounded-lg transition-colors"
+                        >
+                            Mensaje directo
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );
 }
 
 export default function Show({ channel, messages: initialMessages, userServers = [] }) {
-    const { auth } = usePage().props;
+    const { auth, badges: initialBadges } = usePage().props;
     const [messages, setMessages] = useState(initialMessages);
     const [content, setContent] = useState('');
     const [sending, setSending] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(initialMessages.length === 50);
+
+    // Badges: menciones por servidor y DMs no leídos
+    const [mentionBadges, setMentionBadges] = useState(initialBadges?.mentions ?? {});
+    const [dmBadge, setDmBadge] = useState(initialBadges?.dms ?? 0);
 
     // { userId: status } — solo usuarios actualmente conectados
     const [onlineUsers, setOnlineUsers] = useState({});
@@ -275,6 +291,10 @@ export default function Show({ channel, messages: initialMessages, userServers =
         const userChannel = window.Echo.private(`App.Models.User.${auth.user.id}`);
 
         userChannel.listen('.MentionReceived', (e) => {
+            // Solo incrementar badge si no estamos en ese servidor ahora mismo
+            if (e.server_id && e.server_id !== channel.server_id) {
+                setMentionBadges((prev) => ({ ...prev, [e.server_id]: (prev[e.server_id] ?? 0) + 1 }));
+            }
             if (document.hidden) {
                 new Notification(`${e.sender} te mencionó en #${e.channel}`, {
                     body: e.content,
@@ -282,14 +302,29 @@ export default function Show({ channel, messages: initialMessages, userServers =
                 });
             } else {
                 const id = Date.now();
-                setToasts((prev) => [...prev, { id, ...e }]);
-                setTimeout(() => {
-                    setToasts((prev) => prev.filter((t) => t.id !== id));
-                }, 5000);
+                setToasts((prev) => [...prev, { id, type: 'mention', ...e }]);
+                setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 5000);
             }
         });
 
-        return () => userChannel.stopListening('.MentionReceived');
+        userChannel.listen('.NewDirectMessage', (e) => {
+            setDmBadge((prev) => prev + 1);
+            if (document.hidden) {
+                new Notification(`Mensaje de ${e.sender}`, {
+                    body: e.content,
+                    icon: '/images/logo.svg',
+                });
+            } else {
+                const id = Date.now();
+                setToasts((prev) => [...prev, { id, type: 'dm', ...e }]);
+                setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 6000);
+            }
+        });
+
+        return () => {
+            userChannel.stopListening('.MentionReceived');
+            userChannel.stopListening('.NewDirectMessage');
+        };
     }, [auth.user.id]);
 
     async function changeStatus(status) {
@@ -410,28 +445,49 @@ export default function Show({ channel, messages: initialMessages, userServers =
                 <nav className="w-[72px] bg-gray-950 flex flex-col items-center py-3 gap-1 shrink-0 overflow-y-auto">
                     {userServers.map((srv) => {
                         const isCurrent = srv.id === channel.server_id;
+                        const badge = !isCurrent && mentionBadges[srv.id] ? mentionBadges[srv.id] : 0;
                         return (
                             <div key={srv.id} className="relative flex items-center w-full px-1.5 group">
-                                {/* Indicador activo */}
                                 <span className={`absolute left-0 w-1 rounded-r-full bg-white transition-all ${
                                     isCurrent ? 'h-8' : 'h-0 group-hover:h-5'
                                 }`} />
                                 <Link
                                     href={srv.first_channel_id ? route('channels.show', srv.first_channel_id) : route('servers.show', srv.id)}
                                     title={srv.name}
-                                    className={`w-12 h-12 flex items-center justify-center font-bold text-lg transition-all duration-150 shrink-0 ${
+                                    className={`relative w-12 h-12 flex items-center justify-center font-bold text-lg transition-all duration-150 shrink-0 ${
                                         isCurrent
                                             ? 'rounded-2xl bg-indigo-500 text-white'
                                             : 'rounded-full bg-gray-700 text-gray-300 hover:rounded-2xl hover:bg-indigo-500 hover:text-white'
                                     }`}
                                 >
                                     {srv.name[0].toUpperCase()}
+                                    {badge > 0 && (
+                                        <span className="absolute -bottom-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 ring-2 ring-gray-950">
+                                            {badge > 99 ? '99+' : badge}
+                                        </span>
+                                    )}
                                 </Link>
                             </div>
                         );
                     })}
 
                     <div className="mt-1 w-8 border-t border-gray-700" />
+
+                    {/* Mensajes directos */}
+                    <div className="relative flex items-center w-full px-1.5 group">
+                        <Link
+                            href={route('conversations.index')}
+                            title="Mensajes directos"
+                            className="relative w-12 h-12 flex items-center justify-center text-xl text-indigo-300 bg-gray-700 rounded-full hover:rounded-2xl hover:bg-indigo-500 hover:text-white transition-all duration-150"
+                        >
+                            ✉
+                            {dmBadge > 0 && (
+                                <span className="absolute -bottom-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 ring-2 ring-gray-950">
+                                    {dmBadge > 99 ? '99+' : dmBadge}
+                                </span>
+                            )}
+                        </Link>
+                    </div>
 
                     {/* Botón añadir servidor */}
                     <div className="relative flex items-center w-full px-1.5 group">
@@ -615,6 +671,7 @@ export default function Show({ channel, messages: initialMessages, userServers =
                         anchorX={profilePopover.anchorX}
                         anchorY={profilePopover.anchorY}
                         onClose={() => setProfilePopover(null)}
+                        authId={auth.user.id}
                     />
                 )}
 
@@ -659,21 +716,40 @@ export default function Show({ channel, messages: initialMessages, userServers =
                 </aside>
             </div>
 
-            {/* Toasts de menciones */}
+            {/* Toasts */}
             {toasts.length > 0 && (
                 <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm">
                     {toasts.map((toast) => (
                         <div
                             key={toast.id}
-                            className="bg-gray-800 border border-indigo-500/50 rounded-xl shadow-2xl p-4 flex gap-3 items-start animate-fade-in"
+                            className={`bg-gray-800 rounded-xl shadow-2xl p-4 flex gap-3 items-start animate-fade-in border ${
+                                toast.type === 'dm' ? 'border-green-500/50' : 'border-indigo-500/50'
+                            }`}
                         >
-                            <div className="text-yellow-400 text-lg shrink-0">@</div>
+                            <div className={`text-lg shrink-0 ${toast.type === 'dm' ? 'text-green-400' : 'text-yellow-400'}`}>
+                                {toast.type === 'dm' ? '✉' : '@'}
+                            </div>
                             <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-white">
-                                    {toast.sender} te mencionó en #{toast.channel}
-                                </p>
-                                <p className="text-xs text-gray-400 mt-0.5 truncate">{toast.server}</p>
-                                <p className="text-sm text-gray-300 mt-1 line-clamp-2">{toast.content}</p>
+                                {toast.type === 'dm' ? (
+                                    <>
+                                        <p className="text-sm font-semibold text-white">Mensaje de {toast.sender}</p>
+                                        <p className="text-sm text-gray-300 mt-1 line-clamp-2">{toast.content}</p>
+                                        <Link
+                                            href={route('conversations.show', toast.conversation_id)}
+                                            className="text-xs text-green-400 hover:underline mt-1 inline-block"
+                                        >
+                                            Abrir conversación →
+                                        </Link>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p className="text-sm font-semibold text-white">
+                                            {toast.sender} te mencionó en #{toast.channel}
+                                        </p>
+                                        <p className="text-xs text-gray-400 mt-0.5 truncate">{toast.server}</p>
+                                        <p className="text-sm text-gray-300 mt-1 line-clamp-2">{toast.content}</p>
+                                    </>
+                                )}
                             </div>
                             <button
                                 onClick={() => setToasts((prev) => prev.filter((t) => t.id !== toast.id))}

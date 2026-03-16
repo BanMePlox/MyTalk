@@ -39,6 +39,7 @@ class MentionReceived implements ShouldBroadcastNow
             'channel_id' => $this->message->channel_id,
             'channel'    => $this->message->channel->name,
             'server'     => $this->message->channel->server->name,
+            'server_id'  => $this->message->channel->server->id,
         ];
     }
 }

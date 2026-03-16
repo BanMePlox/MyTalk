@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ChannelController;
+use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ServerController;
@@ -31,6 +32,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post('/servers/{server}/channels', [ChannelController::class, 'store'])->name('channels.store');
     Route::delete('/channels/{channel}', [ChannelController::class, 'destroy'])->name('channels.destroy');
+
+    Route::get('/conversations', [ConversationController::class, 'index'])->name('conversations.index');
+    Route::post('/conversations/open/{user}', [ConversationController::class, 'open'])->name('conversations.open');
+    Route::get('/conversations/{conversation}', [ConversationController::class, 'show'])->name('conversations.show');
+    Route::post('/conversations/{conversation}/messages', [ConversationController::class, 'store'])->middleware('throttle:120,1')->name('conversations.store');
 
     Route::get('/channels/{channel}', [MessageController::class, 'index'])->name('channels.show');
     Route::get('/channels/{channel}/messages', [MessageController::class, 'more'])->name('messages.more');

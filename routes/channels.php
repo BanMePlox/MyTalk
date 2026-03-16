@@ -6,6 +6,12 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
     return (int) $user->id === (int) $id;
 });
 
+Broadcast::channel('conversation.{conversationId}', function ($user, $conversationId) {
+    $conversation = \App\Models\Conversation::find($conversationId);
+    if (!$conversation) return false;
+    return $conversation->users()->where('user_id', $user->id)->exists();
+});
+
 Broadcast::channel('channel.{channelId}', function ($user, $channelId) {
     $channel = \App\Models\Channel::find($channelId);
     if (!$channel) return false;

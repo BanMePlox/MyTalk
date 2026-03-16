@@ -8,6 +8,7 @@ use App\Models\Channel;
 use App\Models\Message;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -29,6 +30,12 @@ class MessageController extends Controller
         $userServers = Auth::user()->servers()->get()->each(function ($server) {
             $server->first_channel_id = $server->channels()->value('id');
         });
+
+        // Resetear menciones no leídas de este servidor
+        DB::table('unread_mentions')
+            ->where('user_id', Auth::id())
+            ->where('server_id', $channel->server_id)
+            ->update(['count' => 0]);
 
         return Inertia::render('Channels/Show', [
             'channel'     => $channel->load('server.channels', 'server.members'),
@@ -74,6 +81,13 @@ class MessageController extends Controller
         foreach ($members as $member) {
             if (str_contains($data['content'], '@' . $member->name)) {
                 broadcast(new MentionReceived($message, $member));
+
+                // Incrementar contador en BD
+                DB::table('unread_mentions')->upsert(
+                    ['user_id' => $member->id, 'server_id' => $channel->server_id, 'count' => 1],
+                    ['user_id', 'server_id'],
+                    ['count' => DB::raw('count + 1')]
+                );
             }
         }
 
