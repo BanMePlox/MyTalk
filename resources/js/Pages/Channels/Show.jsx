@@ -76,7 +76,7 @@ function Avatar({ user, size = 'md' }) {
     );
 }
 
-function ProfilePopover({ member, status, anchorY, onClose }) {
+function ProfilePopover({ member, status, anchorX, anchorY, onClose }) {
     const ref = useRef();
 
     useEffect(() => {
@@ -90,14 +90,24 @@ function ProfilePopover({ member, status, anchorY, onClose }) {
         };
     }, []);
 
-    // Posicionar verticalmente cerca del clic, sin salirse de pantalla
+    const cardW = 288; // w-72
     const cardH = 320;
-    const top = Math.min(Math.max(anchorY - cardH / 2, 8), window.innerHeight - cardH - 8);
+    const margin = 8;
+
+    // Horizontal: preferimos mostrar a la derecha del clic, si no cabe a la izquierda
+    let left = anchorX + 12;
+    if (left + cardW > window.innerWidth - margin) {
+        left = anchorX - cardW - 12;
+    }
+    left = Math.max(margin, left);
+
+    // Vertical: centrado en el clic, sin salirse
+    const top = Math.min(Math.max(anchorY - cardH / 2, margin), window.innerHeight - cardH - margin);
 
     return (
         <div
             ref={ref}
-            style={{ top, right: '13rem' }}
+            style={{ top, left }}
             className="fixed z-50 w-72 bg-gray-800 rounded-xl overflow-hidden shadow-2xl border border-gray-700 animate-fade-in"
         >
             {/* Banner */}
@@ -511,22 +521,33 @@ export default function Show({ channel, messages: initialMessages, userServers =
                             </button>
                         )}
 
-                        {messages.map((msg) => (
-                            <div key={msg.id} className="flex gap-3">
-                                <Avatar user={msg.user} />
-                                <div>
-                                    <div className="flex items-baseline gap-2">
-                                        <span className="font-semibold text-white">{msg.user?.name}</span>
-                                        <span className="text-xs text-gray-500">
-                                            {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                        </span>
+                        {messages.map((msg) => {
+                            const member = (channel.server?.members ?? []).find(m => m.id === msg.user?.id) ?? msg.user;
+                            const openPopover = (e) => {
+                                if (!member) return;
+                                setProfilePopover({ member, anchorX: e.clientX, anchorY: e.clientY });
+                            };
+                            return (
+                                <div key={msg.id} className="flex gap-3">
+                                    <button type="button" onClick={openPopover} className="shrink-0 self-start mt-0.5 hover:opacity-80 transition-opacity">
+                                        <Avatar user={msg.user} />
+                                    </button>
+                                    <div>
+                                        <div className="flex items-baseline gap-2">
+                                            <button type="button" onClick={openPopover} className="font-semibold text-white hover:underline leading-none">
+                                                {msg.user?.name}
+                                            </button>
+                                            <span className="text-xs text-gray-500">
+                                                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                        </div>
+                                        <p className={`text-sm ${String(msg.id).startsWith('tmp-') ? 'text-gray-500' : 'text-gray-300'}`}>
+                                            {renderContent(msg.content, channel.server?.members, auth.user.name)}
+                                        </p>
                                     </div>
-                                    <p className={`text-sm ${String(msg.id).startsWith('tmp-') ? 'text-gray-500' : 'text-gray-300'}`}>
-                                        {renderContent(msg.content, channel.server?.members, auth.user.name)}
-                                    </p>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                         <div ref={bottomRef} />
                     </div>
 
@@ -591,6 +612,7 @@ export default function Show({ channel, messages: initialMessages, userServers =
                     <ProfilePopover
                         member={profilePopover.member}
                         status={onlineUsers[profilePopover.member.id]}
+                        anchorX={profilePopover.anchorX}
                         anchorY={profilePopover.anchorY}
                         onClose={() => setProfilePopover(null)}
                     />
@@ -609,7 +631,7 @@ export default function Show({ channel, messages: initialMessages, userServers =
                                 <div
                                     key={member.id}
                                     className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-gray-800 cursor-pointer"
-                                    onClick={(e) => setProfilePopover({ member, anchorY: e.clientY })}
+                                    onClick={(e) => setProfilePopover({ member, anchorX: e.clientX, anchorY: e.clientY })}
                                 >
                                     <div className="relative shrink-0">
                                         <Avatar user={member} size="sm" />
