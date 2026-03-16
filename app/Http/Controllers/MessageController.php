@@ -24,9 +24,12 @@ class MessageController extends Controller
             ->reverse()
             ->values();
 
+        $userServers = Auth::user()->servers()->with('channels')->get();
+
         return Inertia::render('Channels/Show', [
-            'channel'  => $channel->load('server.channels', 'server.members'),
-            'messages' => $messages,
+            'channel'     => $channel->load('server.channels', 'server.members'),
+            'messages'    => $messages,
+            'userServers' => $userServers,
         ]);
     }
 

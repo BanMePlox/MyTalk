@@ -18,8 +18,10 @@ Broadcast::channel('presence-server.{serverId}', function ($user, $serverId) {
     if (!$server->members()->where('user_id', $user->id)->exists()) return false;
 
     return [
-        'id'     => $user->id,
-        'name'   => $user->name,
-        'status' => $user->status,
+        'id'            => $user->id,
+        'name'          => $user->name,
+        'status'        => $user->status,
+        'avatar_url'    => $user->avatar_url,
+        'custom_status' => $user->custom_status,
     ];
 });

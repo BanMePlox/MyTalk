@@ -18,7 +18,87 @@ function StatusDot({ status, size = 'md' }) {
     return <span className={`${ring} rounded-full ${cfg.dot} ring-gray-900 inline-block`} />;
 }
 
-export default function Show({ channel, messages: initialMessages }) {
+function Avatar({ user, size = 'md' }) {
+    const dims = size === 'sm' ? 'w-7 h-7 text-xs' : size === 'lg' ? 'w-16 h-16 text-2xl' : 'w-9 h-9 text-base';
+    if (user?.avatar_url) {
+        return <img src={user.avatar_url} alt={user.name} className={`${dims} rounded-full object-cover shrink-0`} />;
+    }
+    return (
+        <div className={`${dims} rounded-full bg-indigo-500 flex items-center justify-center font-bold shrink-0`}
+            style={{ backgroundColor: user?.banner_color ?? undefined }}>
+            {user?.name?.[0]?.toUpperCase()}
+        </div>
+    );
+}
+
+function ProfilePopover({ member, status, anchorY, onClose }) {
+    const ref = useRef();
+
+    useEffect(() => {
+        function onKey(e) { if (e.key === 'Escape') onClose(); }
+        function onMouseDown(e) { if (ref.current && !ref.current.contains(e.target)) onClose(); }
+        document.addEventListener('keydown', onKey);
+        document.addEventListener('mousedown', onMouseDown);
+        return () => {
+            document.removeEventListener('keydown', onKey);
+            document.removeEventListener('mousedown', onMouseDown);
+        };
+    }, []);
+
+    // Posicionar verticalmente cerca del clic, sin salirse de pantalla
+    const cardH = 320;
+    const top = Math.min(Math.max(anchorY - cardH / 2, 8), window.innerHeight - cardH - 8);
+
+    return (
+        <div
+            ref={ref}
+            style={{ top, right: '13rem' }}
+            className="fixed z-50 w-72 bg-gray-800 rounded-xl overflow-hidden shadow-2xl border border-gray-700 animate-fade-in"
+        >
+            {/* Banner */}
+            <div className="h-16" style={{ backgroundColor: member.banner_color ?? '#6366f1' }} />
+
+            {/* Avatar + cierre */}
+            <div className="px-4 pb-4">
+                <div className="flex items-end justify-between -mt-8 mb-3">
+                    <div className="relative">
+                        <Avatar user={member} size="lg" />
+                        <span className="absolute bottom-0.5 right-0.5">
+                            <StatusDot status={status} />
+                        </span>
+                    </div>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-200 mb-1 text-lg leading-none">&times;</button>
+                </div>
+
+                {/* Nombre y rol */}
+                <p className="font-bold text-white text-lg leading-tight">{member.name}</p>
+                {ROLE_LABEL[member.pivot?.role] && (
+                    <p className={`text-xs font-medium ${ROLE_COLOR[member.pivot?.role]}`}>{ROLE_LABEL[member.pivot?.role]}</p>
+                )}
+
+                {/* Estado de conexión */}
+                <p className="text-xs text-gray-400 mt-0.5">
+                    {status ? STATUS_CONFIG[status]?.label : 'Desconectado'}
+                </p>
+
+                {/* Estado personalizado */}
+                {member.custom_status && (
+                    <p className="text-sm text-gray-300 mt-1 italic">"{member.custom_status}"</p>
+                )}
+
+                {/* Bio */}
+                {member.bio && (
+                    <div className="mt-3 pt-3 border-t border-gray-700">
+                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Sobre mí</p>
+                        <p className="text-sm text-gray-300 whitespace-pre-wrap">{member.bio}</p>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+export default function Show({ channel, messages: initialMessages, userServers = [] }) {
     const { auth } = usePage().props;
     const [messages, setMessages] = useState(initialMessages);
     const [content, setContent] = useState('');
@@ -30,6 +110,9 @@ export default function Show({ channel, messages: initialMessages }) {
     const [onlineUsers, setOnlineUsers] = useState({});
     const [myStatus, setMyStatus] = useState(auth.user.status ?? 'online');
     const [statusOpen, setStatusOpen] = useState(false);
+    const [profilePopover, setProfilePopover] = useState(null); // { member, anchorY }
+    const [serverSwitcherOpen, setServerSwitcherOpen] = useState(false);
+    const serverSwitcherRef = useRef(null);
 
     const bottomRef = useRef(null);
     const inputRef = useRef(null);
@@ -41,11 +124,14 @@ export default function Show({ channel, messages: initialMessages }) {
         bottomRef.current?.scrollIntoView();
     }, []);
 
-    // Cerrar menú de estado al hacer clic fuera
+    // Cerrar menús al hacer clic fuera
     useEffect(() => {
         function handleClick(e) {
             if (statusMenuRef.current && !statusMenuRef.current.contains(e.target)) {
                 setStatusOpen(false);
+            }
+            if (serverSwitcherRef.current && !serverSwitcherRef.current.contains(e.target)) {
+                setServerSwitcherOpen(false);
             }
         }
         document.addEventListener('mousedown', handleClick);
@@ -146,14 +232,72 @@ export default function Show({ channel, messages: initialMessages }) {
         <AuthenticatedLayout>
             <Head title={`#${channel.name}`} />
 
-            <div className="flex h-screen bg-gray-800 text-gray-100">
+            <div className="flex h-[calc(100vh-3.5rem)] bg-gray-800 text-gray-100">
                 {/* Sidebar izquierdo: canales */}
                 <aside className="w-56 bg-gray-900 flex flex-col shrink-0">
-                    <div className="p-4 border-b border-gray-700">
-                        <Link href={route('servers.show', channel.server_id)} className="font-bold text-white hover:text-indigo-300">
-                            {channel.server?.name}
-                        </Link>
+                    {/* Cabecera: selector de servidor */}
+                    <div className="relative" ref={serverSwitcherRef}>
+                        <button
+                            onClick={() => setServerSwitcherOpen((o) => !o)}
+                            className="w-full flex items-center justify-between px-4 py-3 border-b border-gray-700 hover:bg-gray-800 transition-colors group"
+                        >
+                            <span className="font-bold text-white truncate">{channel.server?.name}</span>
+                            <svg
+                                className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${serverSwitcherOpen ? 'rotate-180' : ''}`}
+                                fill="currentColor" viewBox="0 0 20 20"
+                            >
+                                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                            </svg>
+                        </button>
+
+                        {/* Panel de servidores */}
+                        {serverSwitcherOpen && (
+                            <div className="absolute top-full left-0 right-0 z-50 bg-gray-800 border border-gray-700 rounded-b-xl shadow-2xl overflow-hidden">
+                                <p className="px-3 pt-3 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                                    Tus servidores
+                                </p>
+                                <div className="max-h-72 overflow-y-auto pb-2">
+                                    {userServers.map((srv) => {
+                                        const firstChannel = srv.channels?.[0];
+                                        const isCurrent = srv.id === channel.server_id;
+                                        return (
+                                            <Link
+                                                key={srv.id}
+                                                href={firstChannel ? route('channels.show', firstChannel.id) : route('servers.show', srv.id)}
+                                                onClick={() => setServerSwitcherOpen(false)}
+                                                className={`flex items-center gap-3 px-3 py-2 mx-1 rounded-lg transition-colors ${
+                                                    isCurrent
+                                                        ? 'bg-indigo-600 text-white'
+                                                        : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                                                }`}
+                                            >
+                                                <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-sm font-bold shrink-0">
+                                                    {srv.name[0].toUpperCase()}
+                                                </div>
+                                                <span className="text-sm truncate">{srv.name}</span>
+                                                {isCurrent && (
+                                                    <svg className="w-4 h-4 ml-auto shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                    </svg>
+                                                )}
+                                            </Link>
+                                        );
+                                    })}
+                                </div>
+                                <div className="border-t border-gray-700 p-2">
+                                    <Link
+                                        href={route('servers.index')}
+                                        onClick={() => setServerSwitcherOpen(false)}
+                                        className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 transition-colors text-sm"
+                                    >
+                                        <span className="w-5 h-5 flex items-center justify-center">+</span>
+                                        Gestionar servidores
+                                    </Link>
+                                </div>
+                            </div>
+                        )}
                     </div>
+
                     <nav className="flex-1 overflow-y-auto p-2 space-y-1">
                         {channel.server?.channels?.map((ch) => (
                             <Link
@@ -177,9 +321,7 @@ export default function Show({ channel, messages: initialMessages }) {
                             className="flex items-center gap-2 w-full hover:bg-gray-800 rounded px-1 py-1 transition-colors"
                         >
                             <div className="relative shrink-0">
-                                <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-sm font-bold">
-                                    {auth.user.name[0].toUpperCase()}
-                                </div>
+                                <Avatar user={auth.user} size="sm" />
                                 <span className="absolute -bottom-0.5 -right-0.5">
                                     <StatusDot status={myStatus} size="sm" />
                                 </span>
@@ -227,9 +369,7 @@ export default function Show({ channel, messages: initialMessages }) {
 
                         {messages.map((msg) => (
                             <div key={msg.id} className="flex gap-3">
-                                <div className="w-9 h-9 rounded-full bg-indigo-500 flex items-center justify-center font-bold shrink-0">
-                                    {msg.user?.name?.[0]?.toUpperCase()}
-                                </div>
+                                <Avatar user={msg.user} />
                                 <div>
                                     <div className="flex items-baseline gap-2">
                                         <span className="font-semibold text-white">{msg.user?.name}</span>
@@ -267,6 +407,16 @@ export default function Show({ channel, messages: initialMessages }) {
                     </form>
                 </div>
 
+                {/* Popover de perfil */}
+                {profilePopover && (
+                    <ProfilePopover
+                        member={profilePopover.member}
+                        status={onlineUsers[profilePopover.member.id]}
+                        anchorY={profilePopover.anchorY}
+                        onClose={() => setProfilePopover(null)}
+                    />
+                )}
+
                 {/* Sidebar derecho: miembros */}
                 <aside className="w-48 bg-gray-900 flex flex-col shrink-0 border-l border-gray-700">
                     <div className="px-3 py-3 border-b border-gray-700 text-xs font-semibold text-gray-400 uppercase tracking-wide">
@@ -275,25 +425,31 @@ export default function Show({ channel, messages: initialMessages }) {
                     <div className="flex-1 overflow-y-auto p-2 space-y-1">
                         {channel.server?.members?.map((member) => {
                             const status = onlineUsers[member.id];
+                            const customStatus = onlineUsers[member.id] ? (member.custom_status ?? null) : null;
                             return (
-                                <div key={member.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-gray-800">
+                                <div
+                                    key={member.id}
+                                    className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-gray-800 cursor-pointer"
+                                    onClick={(e) => setProfilePopover({ member, anchorY: e.clientY })}
+                                >
                                     <div className="relative shrink-0">
-                                        <div className="w-7 h-7 rounded-full bg-indigo-500 flex items-center justify-center text-xs font-bold">
-                                            {member.name[0].toUpperCase()}
-                                        </div>
+                                        <Avatar user={member} size="sm" />
                                         <span className="absolute -bottom-0.5 -right-0.5">
                                             <StatusDot status={status} size="sm" />
                                         </span>
                                     </div>
                                     <div className="min-w-0">
-                                        <p className={`text-sm truncate ${status ? 'text-gray-200' : 'text-gray-500'}`}>
+                                        <p className={`text-sm truncate leading-tight ${status ? 'text-gray-200' : 'text-gray-500'}`}>
                                             {member.name}
                                         </p>
-                                        {ROLE_LABEL[member.pivot?.role] && (
-                                            <p className={`text-xs ${ROLE_COLOR[member.pivot?.role]}`}>
-                                                {ROLE_LABEL[member.pivot?.role]}
-                                            </p>
-                                        )}
+                                        {customStatus
+                                            ? <p className="text-xs text-gray-400 truncate leading-tight">{customStatus}</p>
+                                            : ROLE_LABEL[member.pivot?.role] && (
+                                                <p className={`text-xs ${ROLE_COLOR[member.pivot?.role]} leading-tight`}>
+                                                    {ROLE_LABEL[member.pivot?.role]}
+                                                </p>
+                                            )
+                                        }
                                     </div>
                                 </div>
                             );
