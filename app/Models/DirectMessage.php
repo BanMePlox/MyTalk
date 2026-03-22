@@ -3,10 +3,18 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class DirectMessage extends Model
 {
-    protected $fillable = ['conversation_id', 'user_id', 'content'];
+    protected $fillable = ['conversation_id', 'user_id', 'content', 'attachment'];
+
+    protected $appends = ['attachment_url'];
+
+    public function getAttachmentUrlAttribute(): ?string
+    {
+        return $this->attachment ? Storage::disk('public')->url($this->attachment) : null;
+    }
 
     public function user()
     {

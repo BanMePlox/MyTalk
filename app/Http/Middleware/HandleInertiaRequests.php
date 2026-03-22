@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\Conversation;
+use App\Models\Friendship;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -10,26 +11,13 @@ use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
 {
-    /**
-     * The root template that is loaded on the first page visit.
-     *
-     * @var string
-     */
     protected $rootView = 'app';
 
-    /**
-     * Determine the current asset version.
-     */
     public function version(Request $request): ?string
     {
         return parent::version($request);
     }
 
-    /**
-     * Define the props that are shared by default.
-     *
-     * @return array<string, mixed>
-     */
     public function share(Request $request): array
     {
         return [
@@ -42,28 +30,60 @@ class HandleInertiaRequests extends Middleware
 
                 $userId = Auth::id();
 
-                // Menciones no leídas por servidor: { server_id => count }
                 $mentions = DB::table('unread_mentions')
                     ->where('user_id', $userId)
                     ->where('count', '>', 0)
                     ->pluck('count', 'server_id');
 
-                // DMs no leídos: suma de mensajes más nuevos que last_read_message_id
-                $unreadDms = Conversation::whereHas('users', fn($q) => $q->where('user_id', $userId))
-                    ->with(['users' => fn($q) => $q->where('user_id', $userId)])
+                $conversations = Conversation::whereHas('users', fn($q) => $q->where('user_id', $userId))
+                    ->with(['users'])
                     ->get()
-                    ->sum(function ($conv) use ($userId) {
-                        $pivot = $conv->users->first()?->pivot;
-                        $lastRead = $pivot?->last_read_message_id;
-                        return $conv->messages()
+                    ->map(function ($conv) use ($userId) {
+                        $me       = $conv->users->firstWhere('id', $userId);
+                        $lastRead = $me?->pivot?->last_read_message_id;
+                        $unread   = $conv->messages()
                             ->where('user_id', '!=', $userId)
                             ->when($lastRead, fn($q) => $q->where('id', '>', $lastRead))
                             ->count();
-                    });
+
+                        if ($conv->isGroup()) {
+                            return [
+                                'id'         => $conv->id,
+                                'type'       => 'group',
+                                'unread'     => $unread,
+                                'name'       => $conv->displayName($userId),
+                                'icon_color' => $conv->icon_color,
+                                'user'       => null,
+                            ];
+                        }
+
+                        $other = $conv->users->firstWhere('id', '!=', $userId);
+                        return [
+                            'id'     => $conv->id,
+                            'type'   => 'direct',
+                            'unread' => $unread,
+                            'name'   => null,
+                            'icon_color' => null,
+                            'user'   => $other ? [
+                                'id'           => $other->id,
+                                'name'         => $other->name,
+                                'avatar_url'   => $other->avatar_url,
+                                'banner_color' => $other->banner_color,
+                            ] : null,
+                        ];
+                    })
+                    ->filter(fn($c) => $c['user'] !== null || $c['type'] === 'group')
+                    ->values();
+
+                $pendingFriendRequests = Friendship::where('recipient_id', $userId)
+                    ->pending()
+                    ->count();
 
                 return [
-                    'mentions' => $mentions,
-                    'dms'      => $unreadDms,
+                    'mentions'             => $mentions,
+                    'dms'                  => $conversations->sum('unread'),
+                    'dmConversations'      => $conversations,
+                    'pendingFriendRequests' => $pendingFriendRequests,
                 ];
             },
         ];

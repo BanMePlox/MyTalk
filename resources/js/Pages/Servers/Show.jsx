@@ -1,13 +1,15 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { useState } from 'react';
+import ServerSettingsModal from '@/Components/ServerSettingsModal';
 
-export default function Show({ server, channel, canManageChannels, isOwner, inviteUrl }) {
+export default function Show({ server, channel, canManageChannels, canManageRoles, canKickMembers, isOwner, inviteUrl }) {
     const { data, setData, post, processing, errors, reset } = useForm({ name: '' });
     const leaveForm = useForm({});
     const [copied, setCopied] = useState(false);
     const [confirmLeave, setConfirmLeave] = useState(false);
-    const [confirmDeleteChannel, setConfirmDeleteChannel] = useState(null); // channel id
+    const [confirmDeleteChannel, setConfirmDeleteChannel] = useState(null);
+    const [settingsOpen, setSettingsOpen] = useState(false);
 
     function handleLeave() {
         leaveForm.delete(route('servers.leave', server.id));
@@ -30,7 +32,18 @@ export default function Show({ server, channel, canManageChannels, isOwner, invi
     }
 
     return (
-        <AuthenticatedLayout header={<h2 className="text-xl font-semibold text-gray-100">{server.name}</h2>}>
+        <AuthenticatedLayout header={
+            <div className="flex items-center gap-3">
+                <h2 className="text-xl font-semibold text-gray-100">{server.name}</h2>
+                {(canManageRoles || canKickMembers || isOwner) && (
+                    <button onClick={() => setSettingsOpen(true)}
+                        className="text-sm text-gray-400 hover:text-white px-2 py-1 rounded hover:bg-gray-700 transition-colors"
+                        title="Ajustes del servidor">
+                        ⚙️ Ajustes
+                    </button>
+                )}
+            </div>
+        }>
             <Head title={server.name} />
 
             <div className="py-8 max-w-2xl mx-auto px-4 space-y-4">
@@ -172,6 +185,17 @@ export default function Show({ server, channel, canManageChannels, isOwner, invi
                     </p>
                 </div>
             </div>
+
+            <ServerSettingsModal
+                show={settingsOpen}
+                onClose={() => setSettingsOpen(false)}
+                server={server}
+                roles={server.roles ?? []}
+                canManageRoles={canManageRoles}
+                canManageChannels={canManageChannels}
+                canKickMembers={canKickMembers}
+                isOwner={isOwner}
+            />
         </AuthenticatedLayout>
     );
 }

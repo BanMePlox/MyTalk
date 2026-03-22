@@ -2,13 +2,14 @@
 
 namespace App\Events;
 
+use App\Models\Conversation;
+use App\Models\DirectMessage;
+use App\Models\User;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
-use App\Models\DirectMessage;
-use App\Models\User;
 
 class NewDirectMessage implements ShouldBroadcastNow
 {
@@ -17,12 +18,10 @@ class NewDirectMessage implements ShouldBroadcastNow
     public function __construct(
         public readonly DirectMessage $message,
         public readonly User $recipient,
+        public readonly ?Conversation $conversation = null,
     ) {}
 
-    public function broadcastAs(): string
-    {
-        return 'NewDirectMessage';
-    }
+    public function broadcastAs(): string { return 'NewDirectMessage'; }
 
     public function broadcastOn(): array
     {
@@ -32,11 +31,19 @@ class NewDirectMessage implements ShouldBroadcastNow
     public function broadcastWith(): array
     {
         $this->message->loadMissing('user');
+        $sender = $this->message->user;
+        $conv   = $this->conversation;
 
         return [
-            'conversation_id' => $this->message->conversation_id,
-            'sender'          => $this->message->user->name,
-            'content'         => $this->message->content,
+            'conversation_id'     => $this->message->conversation_id,
+            'is_group'            => $conv?->isGroup() ?? false,
+            'group_name'          => $conv?->isGroup() ? ($conv->name ?? null) : null,
+            'group_icon_color'    => $conv?->icon_color,
+            'sender'              => $sender->name,
+            'sender_id'           => $sender->id,
+            'sender_avatar'       => $sender->avatar_url,
+            'sender_banner_color' => $sender->banner_color,
+            'content'             => $this->message->content,
         ];
     }
 }

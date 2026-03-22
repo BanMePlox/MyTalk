@@ -12,11 +12,29 @@ class ChannelController extends Controller
     {
         $this->authorize('manageChannels', $server);
 
-        $data = $request->validate(['name' => 'required|string|max:100']);
+        $data = $request->validate([
+            'name'        => 'required|string|max:100',
+            'category_id' => 'nullable|exists:channel_categories,id',
+        ]);
 
-        $server->channels()->create(['name' => strtolower(str_replace(' ', '-', $data['name']))]);
+        $position = $server->channels()->max('position') + 1;
+        $server->channels()->create([
+            'name'        => strtolower(str_replace(' ', '-', $data['name'])),
+            'category_id' => $data['category_id'] ?? null,
+            'position'    => $position,
+        ]);
 
         return redirect()->route('servers.show', $server);
+    }
+
+    public function assign(Request $request, Channel $channel)
+    {
+        $this->authorize('manageChannels', $channel->server);
+
+        $data = $request->validate(['category_id' => 'nullable|exists:channel_categories,id']);
+        $channel->update(['category_id' => $data['category_id']]);
+
+        return response()->json(['category_id' => $channel->category_id]);
     }
 
     public function destroy(Channel $channel)

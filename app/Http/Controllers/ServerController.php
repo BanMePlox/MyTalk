@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Server;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -21,11 +22,19 @@ class ServerController extends Controller
 
     public function store(Request $request)
     {
-        $data = $request->validate(['name' => 'required|string|max:100']);
+        $data = $request->validate([
+            'name' => 'required|string|max:100',
+            'icon' => 'nullable|image|max:2048',
+        ]);
+
+        $iconPath = $request->hasFile('icon')
+            ? $request->file('icon')->store('server-icons', 'public')
+            : null;
 
         $server = Server::create([
             'owner_id' => Auth::id(),
             'name'     => $data['name'],
+            'icon'     => $iconPath,
         ]);
 
         $server->members()->attach(Auth::id(), ['role' => 'owner']);
@@ -34,22 +43,61 @@ class ServerController extends Controller
         return redirect()->route('servers.show', $server);
     }
 
+    public function updateIcon(Request $request, Server $server)
+    {
+        $this->authorize('delete', $server); // solo el owner
+
+        $request->validate(['icon' => 'required|image|max:2048']);
+
+        if ($server->icon) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($server->icon);
+        }
+
+        $server->update(['icon' => $request->file('icon')->store('server-icons', 'public')]);
+
+        return response()->json(['icon_url' => $server->icon_url]);
+    }
+
     public function show(Server $server): Response
     {
         $this->authorize('view', $server);
 
-        $server->load(['channels', 'members']);
+        $server->load(['channels', 'categories.channels', 'members', 'roles']);
         $channel = $server->channels()->first();
 
-        $member = $server->members()->where('user_id', Auth::id())->first();
-        $canManageChannels = $member && in_array($member->pivot->role, ['owner', 'admin']);
+        $authUser = Auth::user();
+        $member = $server->members()->where('user_id', $authUser->id)->first();
+        $canManageChannels = ($member && in_array($member->pivot->role, ['owner', 'admin']))
+            || $authUser->hasPermission($server, 'manage_channels');
+
+        // Load custom roles for each member
+        $memberRoleMap = DB::table('server_member_roles')
+            ->join('roles', 'roles.id', '=', 'server_member_roles.role_id')
+            ->where('server_member_roles.server_id', $server->id)
+            ->select('server_member_roles.user_id', 'roles.id', 'roles.name', 'roles.color')
+            ->get()
+            ->groupBy('user_id');
+
+        $membersWithRoles = $server->members->map(function ($m) use ($memberRoleMap) {
+            $m->server_roles = $memberRoleMap->get($m->id, collect())->map(fn($r) => [
+                'id'    => $r->id,
+                'name'  => $r->name,
+                'color' => $r->color,
+            ])->values();
+            return $m;
+        });
 
         return Inertia::render('Servers/Show', [
-            'server'             => $server,
-            'channel'            => $channel,
-            'canManageChannels'  => $canManageChannels,
-            'isOwner'            => $server->owner_id === Auth::id(),
-            'inviteUrl'          => route('invite.accept', $server->invite_code),
+            'server'            => array_merge($server->toArray(), [
+                'members' => $membersWithRoles,
+                'roles'   => $server->roles,
+            ]),
+            'channel'           => $channel,
+            'canManageChannels' => $canManageChannels,
+            'canManageRoles'    => $authUser->can('manageRoles', $server),
+            'canKickMembers'    => $authUser->can('kickMembers', $server),
+            'isOwner'           => $server->owner_id === $authUser->id,
+            'inviteUrl'         => route('invite.accept', $server->invite_code),
         ]);
     }
 

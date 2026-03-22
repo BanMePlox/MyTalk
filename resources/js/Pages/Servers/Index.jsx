@@ -1,13 +1,18 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
+import { useState } from 'react';
 
 export default function Index({ servers }) {
-    const createForm = useForm({ name: '' });
+    const createForm = useForm({ name: '', icon: null });
     const joinForm = useForm({ invite_code: '' });
+    const [iconPreview, setIconPreview] = useState(null);
 
     function submitCreate(e) {
         e.preventDefault();
-        createForm.post(route('servers.store'), { onSuccess: () => createForm.reset() });
+        createForm.post(route('servers.store'), {
+            forceFormData: true,
+            onSuccess: () => { createForm.reset(); setIconPreview(null); },
+        });
     }
 
     function submitJoin(e) {
@@ -28,8 +33,11 @@ export default function Index({ servers }) {
                             href={route('servers.show', server.id)}
                             className="flex flex-col items-center justify-center p-6 bg-white rounded-xl shadow hover:shadow-md transition"
                         >
-                            <div className="w-12 h-12 rounded-full bg-indigo-500 flex items-center justify-center text-white text-xl font-bold mb-2">
-                                {server.name[0].toUpperCase()}
+                            <div className="w-12 h-12 rounded-full bg-indigo-500 flex items-center justify-center text-white text-xl font-bold mb-2 overflow-hidden">
+                                {server.icon_url
+                                    ? <img src={server.icon_url} className="w-full h-full object-cover" />
+                                    : server.name[0].toUpperCase()
+                                }
                             </div>
                             <span className="text-sm font-medium text-gray-700">{server.name}</span>
                         </Link>
@@ -40,6 +48,27 @@ export default function Index({ servers }) {
                     {/* Crear servidor */}
                     <form onSubmit={submitCreate} className="bg-white p-5 rounded-xl shadow space-y-3">
                         <h3 className="font-semibold text-gray-800">Crear servidor</h3>
+                        <label className="flex flex-col items-center cursor-pointer">
+                            <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center overflow-hidden mb-1">
+                                {iconPreview
+                                    ? <img src={iconPreview} className="w-full h-full object-cover" />
+                                    : <span className="text-indigo-400 text-2xl">🖼️</span>
+                                }
+                            </div>
+                            <span className="text-xs text-gray-500">Icono (opcional)</span>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                    const file = e.target.files[0];
+                                    if (file) {
+                                        createForm.setData('icon', file);
+                                        setIconPreview(URL.createObjectURL(file));
+                                    }
+                                }}
+                            />
+                        </label>
                         <input
                             type="text"
                             placeholder="Nombre del servidor"
