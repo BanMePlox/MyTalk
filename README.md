@@ -4,6 +4,10 @@ Aplicación de chat en tiempo real inspirada en Discord. Construida con **Larave
 
 ---
 
+![Chat principal](storage/readme.img/Chat.png)
+
+---
+
 ## Características
 
 ### Servidores y canales
@@ -31,11 +35,17 @@ Aplicación de chat en tiempo real inspirada en Discord. Construida con **Larave
 - **Vista previa de enlaces** (Open Graph)
 - **Embeds de YouTube** con miniatura y reproductor inline
 
+| Bloques de código | YouTube embed |
+|:-:|:-:|
+| ![Bloques de código](storage/readme.img/Bloques%20de%20codigo.png) | ![YouTube embed](storage/readme.img/YT%20Embed.png) |
+
 ### Hilos
 - Crear un hilo desde cualquier mensaje del canal
 - Panel lateral con el mensaje original + respuestas en tiempo real
 - **Título editable** por cualquier miembro
 - Panel de **lista de hilos** del canal ordenado por actividad
+
+![Hilos](storage/readme.img/Hilos.png)
 
 ### Menciones y notificaciones
 - Autocompletado `@usuario` con sugerencias
@@ -47,11 +57,15 @@ Aplicación de chat en tiempo real inspirada en Discord. Construida con **Larave
 - Conversaciones **1:1** y **grupos** de DM
 - Sistema de **solicitudes de amistad**
 
+![Mensajes directos](storage/readme.img/Amigos%20+%20DM.png)
+
 ### Roles y moderación
 - Roles personalizados por servidor con color
 - Permisos granulares: gestionar canales, mensajes, roles, expulsar, banear
 - **Expulsión** y **baneo** de miembros (con razón opcional)
 - Lista de baneados con opción de desbanear
+
+![Ajustes del servidor](storage/readme.img/Server%20settings.png)
 
 ### Perfil y presencia
 - Avatar, banner de color y bio
