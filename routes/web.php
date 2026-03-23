@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BanController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\FriendshipController;
 use App\Http\Controllers\ChannelController;
@@ -45,6 +46,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::patch('/servers/{server}/members/{user}', [MemberController::class, 'update'])->name('members.update');
     Route::delete('/servers/{server}/members/{user}', [MemberController::class, 'destroy'])->name('members.destroy');
+
+    Route::get('/servers/{server}/bans', [BanController::class, 'index'])->name('bans.index');
+    Route::post('/servers/{server}/bans/{user}', [BanController::class, 'store'])->name('bans.store');
+    Route::delete('/servers/{server}/bans/{user}', [BanController::class, 'destroy'])->name('bans.destroy');
 
     Route::post('/servers/{server}/channels', [ChannelController::class, 'store'])->name('channels.store');
     Route::patch('/channels/{channel}/category', [ChannelController::class, 'assign'])->name('channels.assign');

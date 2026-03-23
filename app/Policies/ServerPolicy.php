@@ -32,6 +32,12 @@ class ServerPolicy
             || $user->hasPermission($server, 'kick_members');
     }
 
+    public function banMembers(User $user, Server $server): bool
+    {
+        return $server->owner_id === $user->id
+            || $user->hasPermission($server, 'ban_members');
+    }
+
     public function manageMessages(User $user, Server $server): bool
     {
         return $server->owner_id === $user->id

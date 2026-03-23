@@ -27,11 +27,18 @@ class MessageSent implements ShouldBroadcastNow
 
     public function broadcastWith(): array
     {
+        $replyTo = $this->message->replyTo;
+
         return [
             'id'             => $this->message->id,
             'content'        => $this->message->content,
             'attachment_url' => $this->message->attachment_url,
             'created_at'     => $this->message->created_at,
+            'reply_to'       => $replyTo ? [
+                'id'      => $replyTo->id,
+                'content' => $replyTo->content,
+                'user'    => $replyTo->user ? ['id' => $replyTo->user->id, 'name' => $replyTo->user->name] : null,
+            ] : null,
             'user' => [
                 'id'           => $this->message->user->id,
                 'name'         => $this->message->user->name,

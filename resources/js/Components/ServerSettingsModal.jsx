@@ -5,6 +5,7 @@ const PERMISSIONS = [
     { key: 'manage_roles',    label: 'Gestionar roles' },
     { key: 'manage_channels', label: 'Gestionar canales' },
     { key: 'kick_members',    label: 'Expulsar miembros' },
+    { key: 'ban_members',     label: 'Banear miembros' },
     { key: 'manage_messages', label: 'Gestionar mensajes' },
 ];
 
@@ -455,7 +456,78 @@ function CategoriesTab({ server, canManageChannels, onChannelAssign, onCategoryC
     );
 }
 
-export default function ServerSettingsModal({ show, onClose, server, roles: initialRoles, canManageRoles, canKickMembers, isOwner, canManageChannels = false, reloadKey = 'server', onChannelAssign, onCategoryChange }) {
+function BansTab({ server }) {
+    const [bans, setBans] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [confirmUnban, setConfirmUnban] = useState(null);
+
+    async function load() {
+        setLoading(true);
+        try {
+            const res = await window.axios.get(route('bans.index', server.id));
+            setBans(res.data);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    async function unban(userId) {
+        try {
+            await window.axios.delete(route('bans.destroy', { server: server.id, user: userId }));
+            setBans(prev => prev.filter(b => b.user.id !== userId));
+            setConfirmUnban(null);
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    if (bans === null && !loading) {
+        return (
+            <div className="flex items-center justify-center py-8">
+                <button onClick={load} className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-2 rounded">
+                    Cargar bans
+                </button>
+            </div>
+        );
+    }
+
+    if (loading) return <p className="text-gray-400 text-sm py-4">Cargando...</p>;
+
+    return (
+        <div className="space-y-2">
+            {bans.length === 0 && <p className="text-gray-500 text-sm">No hay usuarios baneados.</p>}
+            {bans.map(ban => (
+                <div key={ban.id} className="bg-gray-800 rounded-lg p-3 flex items-center gap-3">
+                    <Avatar user={ban.user} size={8} />
+                    <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-100">{ban.user.name}</p>
+                        {ban.reason && <p className="text-xs text-gray-400 truncate">Razón: {ban.reason}</p>}
+                        <p className="text-xs text-gray-500">Baneado por {ban.banned_by.name}</p>
+                    </div>
+                    {confirmUnban === ban.user.id ? (
+                        <div className="flex items-center gap-1 shrink-0">
+                            <button onClick={() => unban(ban.user.id)}
+                                className="text-xs bg-green-700 hover:bg-green-600 text-white px-2 py-1 rounded">
+                                Desbanear
+                            </button>
+                            <button onClick={() => setConfirmUnban(null)}
+                                className="text-xs text-gray-400 px-1">✕</button>
+                        </div>
+                    ) : (
+                        <button onClick={() => setConfirmUnban(ban.user.id)}
+                            className="text-xs text-gray-500 hover:text-green-400 px-2 py-1 rounded hover:bg-gray-700 shrink-0">
+                            Desbanear
+                        </button>
+                    )}
+                </div>
+            ))}
+        </div>
+    );
+}
+
+export default function ServerSettingsModal({ show, onClose, server, roles: initialRoles, canManageRoles, canKickMembers, canBanMembers = false, isOwner, canManageChannels = false, reloadKey = 'server', onChannelAssign, onCategoryChange }) {
     const [tab, setTab]   = useState('roles');
     const [roles, setRoles] = useState(initialRoles ?? []);
 
@@ -472,13 +544,18 @@ export default function ServerSettingsModal({ show, onClose, server, roles: init
                 </div>
 
                 {/* Tabs */}
-                <div className="flex gap-1 px-5 pt-3 shrink-0">
-                    {['roles', 'members', 'categories'].map(t => (
-                        <button key={t} onClick={() => setTab(t)}
+                <div className="flex gap-1 px-5 pt-3 shrink-0 flex-wrap">
+                    {[
+                        { key: 'roles', label: 'Roles', show: true },
+                        { key: 'members', label: 'Miembros', show: true },
+                        { key: 'categories', label: 'Categorías', show: true },
+                        { key: 'bans', label: 'Bans', show: canBanMembers || isOwner },
+                    ].filter(t => t.show).map(t => (
+                        <button key={t.key} onClick={() => setTab(t.key)}
                             className={`px-4 py-2 text-sm font-medium rounded-t transition-colors ${
-                                tab === t ? 'bg-gray-800 text-white' : 'text-gray-400 hover:text-gray-200'
+                                tab === t.key ? 'bg-gray-800 text-white' : 'text-gray-400 hover:text-gray-200'
                             }`}>
-                            {t === 'roles' ? 'Roles' : t === 'members' ? 'Miembros' : 'Categorías'}
+                            {t.label}
                         </button>
                     ))}
                 </div>
@@ -511,6 +588,7 @@ export default function ServerSettingsModal({ show, onClose, server, roles: init
                             onCategoryChange={onCategoryChange}
                         />
                     )}
+                    {tab === 'bans' && <BansTab server={server} />}
                 </div>
             </div>
         </div>

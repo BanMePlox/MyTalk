@@ -91,7 +91,7 @@ function ContextMenuItem({ onClick, danger, children }) {
     );
 }
 
-function ContextMenu({ menu, onClose, authId, canManageMessages, canManageRoles, serverRoles, memberRolesMap, onEdit, onDelete, onPin, onOpenProfile, onOpenDM, onToggleRole }) {
+function ContextMenu({ menu, onClose, authId, canManageMessages, canManageRoles, canBanMembers, serverRoles, memberRolesMap, onEdit, onDelete, onPin, onReply, onOpenProfile, onOpenDM, onToggleRole, onBan }) {
     const ref = useRef();
 
     useEffect(() => {
@@ -125,6 +125,9 @@ function ContextMenu({ menu, onClose, authId, canManageMessages, canManageRoles,
         >
             {menu.type === 'message' && (
                 <>
+                    <ContextMenuItem onClick={() => { onReply(menu.msg); onClose(); }}>
+                        <span>↩️</span> Responder
+                    </ContextMenuItem>
                     {menu.msg?.content && (
                         <ContextMenuItem onClick={() => { navigator.clipboard.writeText(menu.msg.content); onClose(); }}>
                             <span>📋</span> Copiar texto
@@ -173,6 +176,14 @@ function ContextMenu({ menu, onClose, authId, canManageMessages, canManageRoles,
                                     </ContextMenuItem>
                                 );
                             })}
+                        </>
+                    )}
+                    {canBanMembers && member.id !== authId && (
+                        <>
+                            <div className="border-t border-gray-700 mx-2 my-1" />
+                            <ContextMenuItem danger onClick={() => { onBan(member); onClose(); }}>
+                                <span>🔨</span> Banear
+                            </ContextMenuItem>
                         </>
                     )}
                 </>
@@ -286,7 +297,7 @@ function ProfilePopover({ member, status, anchorX, anchorY, onClose, authId }) {
     );
 }
 
-export default function Show({ channel, messages: initialMessages, pinnedMessages: initialPinnedMessages = [], userServers = [], canManageMessages = false, canManageRoles = false, canManageChannels = false, canKickMembers = false, isOwner = false }) {
+export default function Show({ channel, messages: initialMessages, pinnedMessages: initialPinnedMessages = [], userServers = [], canManageMessages = false, canManageRoles = false, canManageChannels = false, canKickMembers = false, canBanMembers = false, isOwner = false }) {
     const { auth, badges: initialBadges } = usePage().props;
     const [messages, setMessages] = useState(initialMessages);
     const [content, setContent] = useState('');
@@ -317,6 +328,8 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
 
     // Notificaciones in-app de menciones
     const [toasts, setToasts] = useState([]);
+
+    const [replyingTo, setReplyingTo] = useState(null); // { id, content, user }
 
     const [attachmentFile, setAttachmentFile] = useState(null);
     const [attachmentPreview, setAttachmentPreview] = useState(null);
@@ -675,14 +688,17 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
         const text = content.trim();
         const file = attachmentFile;
         const preview = attachmentPreview;
+        const replyTo = replyingTo;
         setContent('');
         clearAttachment();
+        setReplyingTo(null);
         setSending(true);
         const optimistic = {
             id: `tmp-${Date.now()}`,
             content: text,
             attachment_url: preview,
             created_at: new Date().toISOString(),
+            reply_to: replyTo ?? null,
             user: { id: auth.user.id, name: auth.user.name, avatar_url: auth.user.avatar_url, banner_color: auth.user.banner_color },
         };
         setMessages((prev) => [...prev, optimistic]);
@@ -693,16 +709,21 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                 const fd = new FormData();
                 if (text) fd.append('content', text);
                 fd.append('attachment', file);
+                if (replyTo) fd.append('reply_to_id', replyTo.id);
                 res = await window.axios.post(route('messages.store', channel.id), fd, {
                     headers: { 'Content-Type': 'multipart/form-data' },
                 });
             } else {
-                res = await window.axios.post(route('messages.store', channel.id), { content: text });
+                res = await window.axios.post(route('messages.store', channel.id), {
+                    content: text,
+                    ...(replyTo ? { reply_to_id: replyTo.id } : {}),
+                });
             }
             setMessages((prev) => prev.map((m) => (m.id === optimistic.id ? res.data : m)));
         } catch {
             setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
             setContent(text);
+            if (replyTo) setReplyingTo(replyTo);
         } finally {
             setSending(false);
             inputRef.current?.focus();
@@ -863,6 +884,14 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                 setPinnedMessages((pins) => pins.filter((p) => p.id !== msg.id));
             }
         }
+    }
+
+    async function banMember(member) {
+        const reason = window.prompt(`Razón del ban para ${member.name} (opcional):`);
+        if (reason === null) return; // cancelado
+        try {
+            await window.axios.post(route('bans.store', { server: channel.server.id, user: member.id }), { reason: reason || null });
+        } catch { /* ignore */ }
     }
 
     async function doGlobalSearch(q) {
@@ -1389,6 +1418,12 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                 {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </span>
                                         </div>
+                                        {msg.reply_to && (
+                                            <div className="flex items-center gap-1.5 mb-0.5 text-xs text-gray-400 border-l-2 border-gray-500 pl-2 mt-0.5">
+                                                <span className="font-semibold text-gray-300 shrink-0">{msg.reply_to.user?.name}</span>
+                                                <span className="truncate max-w-[300px]">{msg.reply_to.content || '📎 adjunto'}</span>
+                                            </div>
+                                        )}
                                         {isEditing ? (
                                             <div className="mt-1">
                                                 <input
@@ -1423,6 +1458,12 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                     </div>
                                     {!isTmp && !isEditing && (
                                         <div className="absolute right-2 top-0 -translate-y-1/2 hidden group-hover:flex items-center gap-1 bg-gray-800 border border-gray-700 rounded-lg px-1 py-0.5 shadow-lg z-10">
+                                            <button
+                                                type="button"
+                                                onClick={() => { setReplyingTo({ id: msg.id, content: msg.content, user: msg.user }); inputRef.current?.focus(); }}
+                                                className="text-gray-400 hover:text-indigo-300 px-1.5 py-0.5 rounded text-xs transition-colors"
+                                                title="Responder"
+                                            >↩</button>
                                             <div className="relative">
                                                 <button
                                                     type="button"
@@ -1517,6 +1558,15 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                         </div>
 
                         <form onSubmit={submit} className="px-4 pb-4 relative">
+                            {/* Barra de respuesta */}
+                            {replyingTo && (
+                                <div className="flex items-center gap-2 mb-1.5 px-3 py-1.5 bg-gray-700/60 rounded-t-lg border border-gray-600 border-b-0 text-xs">
+                                    <span className="text-gray-400">Respondiendo a</span>
+                                    <span className="font-semibold text-indigo-300">{replyingTo.user?.name}</span>
+                                    <span className="text-gray-400 truncate flex-1 max-w-[300px]">{replyingTo.content || '📎 adjunto'}</span>
+                                    <button type="button" onClick={() => setReplyingTo(null)} className="text-gray-500 hover:text-gray-200 ml-auto shrink-0">✕</button>
+                                </div>
+                            )}
                             {/* Dropdown de menciones */}
                             {mentionSuggestions.length > 0 && (
                                 <div className="absolute bottom-full left-4 right-4 mb-1 bg-gray-800 border border-gray-700 rounded-lg overflow-hidden shadow-xl z-10">
@@ -1605,6 +1655,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                     canManageRoles={canManageRoles}
                     canManageChannels={canManageChannels}
                     canKickMembers={canKickMembers}
+                    canBanMembers={canBanMembers}
                     isOwner={isOwner}
                     reloadKey="channel"
                     onChannelAssign={(channelId, categoryId) =>
@@ -1621,14 +1672,17 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                         authId={auth.user.id}
                         canManageMessages={canManageMessages}
                         canManageRoles={canManageRoles}
+                        canBanMembers={canBanMembers}
                         serverRoles={channel.server?.roles ?? []}
                         memberRolesMap={memberRolesMap}
                         onEdit={(msg) => startEdit(msg)}
                         onDelete={(msg) => setConfirmDeleteMsgId(msg.id)}
                         onPin={togglePin}
+                        onReply={(msg) => { setReplyingTo({ id: msg.id, content: msg.content, user: msg.user }); inputRef.current?.focus(); }}
                         onOpenProfile={(member, x, y) => setProfilePopover({ member, anchorX: x, anchorY: y })}
                         onOpenDM={(member) => router.post(route('conversations.open', member.id))}
                         onToggleRole={toggleRoleFromMenu}
+                        onBan={banMember}
                     />
                 )}
 

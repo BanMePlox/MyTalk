@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Server;
+use App\Models\ServerBan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -128,6 +129,8 @@ class ServerController extends Controller
 
         $server = Server::where('invite_code', $data['invite_code'])->firstOrFail();
 
+        abort_if(ServerBan::where('server_id', $server->id)->where('user_id', Auth::id())->exists(), 403, 'Estás baneado de este servidor.');
+
         if (!$server->members()->where('user_id', Auth::id())->exists()) {
             $server->members()->attach(Auth::id(), ['role' => 'member']);
         }
@@ -138,6 +141,8 @@ class ServerController extends Controller
     public function acceptInvite(string $code)
     {
         $server = Server::where('invite_code', $code)->firstOrFail();
+
+        abort_if(ServerBan::where('server_id', $server->id)->where('user_id', Auth::id())->exists(), 403, 'Estás baneado de este servidor.');
 
         if (!$server->members()->where('user_id', Auth::id())->exists()) {
             $server->members()->attach(Auth::id(), ['role' => 'member']);

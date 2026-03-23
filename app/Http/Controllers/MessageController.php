@@ -26,7 +26,7 @@ class MessageController extends Controller
         }
 
         $messages = $channel->messages()
-            ->with('user', 'reactions')
+            ->with('user', 'reactions', 'replyTo.user')
             ->latest()
             ->take(50)
             ->get()
@@ -84,6 +84,7 @@ class MessageController extends Controller
             'canManageRoles'     => Auth::user()->can('manageRoles', $channel->server),
             'canManageChannels'  => Auth::user()->can('manageChannels', $channel->server),
             'canKickMembers'     => Auth::user()->can('kickMembers', $channel->server),
+            'canBanMembers'      => Auth::user()->can('banMembers', $channel->server),
             'isOwner'            => $channel->server->owner_id === Auth::id(),
         ]);
     }
@@ -113,7 +114,7 @@ class MessageController extends Controller
         abort_if(!$channel->server, 404);
         $this->authorize('view', $channel->server);
 
-        $query = $channel->messages()->with('user', 'reactions')->latest();
+        $query = $channel->messages()->with('user', 'reactions', 'replyTo.user')->latest();
 
         if ($request->filled('before')) {
             $query->where('id', '<', $request->integer('before'));
@@ -131,8 +132,9 @@ class MessageController extends Controller
         $this->authorize('view', $channel->server);
 
         $data = $request->validate([
-            'content'    => 'nullable|string|max:2000',
-            'attachment' => 'nullable|image|max:8192',
+            'content'      => 'nullable|string|max:2000',
+            'attachment'   => 'nullable|image|max:8192',
+            'reply_to_id'  => 'nullable|integer|exists:messages,id',
         ]);
 
         abort_if(empty($data['content']) && !$request->hasFile('attachment'), 422);
@@ -142,12 +144,14 @@ class MessageController extends Controller
             : null;
 
         $message = Message::create([
-            'channel_id' => $channel->id,
-            'user_id'    => Auth::id(),
-            'content'    => $data['content'] ?? '',
-            'attachment' => $attachmentPath,
+            'channel_id'  => $channel->id,
+            'user_id'     => Auth::id(),
+            'content'     => $data['content'] ?? '',
+            'attachment'  => $attachmentPath,
+            'reply_to_id' => $data['reply_to_id'] ?? null,
         ]);
 
+        $message->loadMissing('replyTo.user');
         broadcast(new MessageSent($message))->toOthers();
 
         // Dispatch mention notifications
@@ -167,13 +171,19 @@ class MessageController extends Controller
             }
         }
 
-        $message->loadMissing('user');
+        $message->loadMissing('user', 'replyTo.user');
+        $replyTo = $message->replyTo;
         return response()->json([
             'id'               => $message->id,
             'content'          => $message->content,
             'attachment_url'   => $message->attachment_url,
             'reactions_grouped' => [],
             'created_at'       => $message->created_at,
+            'reply_to'         => $replyTo ? [
+                'id'      => $replyTo->id,
+                'content' => $replyTo->content,
+                'user'    => $replyTo->user ? ['id' => $replyTo->user->id, 'name' => $replyTo->user->name] : null,
+            ] : null,
             'user'             => [
                 'id'           => $message->user->id,
                 'name'         => $message->user->name,
