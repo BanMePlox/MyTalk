@@ -15,7 +15,8 @@ Broadcast::channel('conversation.{conversationId}', function ($user, $conversati
 Broadcast::channel('channel.{channelId}', function ($user, $channelId) {
     $channel = \App\Models\Channel::find($channelId);
     if (!$channel) return false;
-    return $channel->server->members()->where('user_id', $user->id)->exists();
+    if (!$channel->server->members()->where('user_id', $user->id)->exists()) return false;
+    return $channel->canUserView($user);
 });
 
 Broadcast::channel('presence-server.{serverId}', function ($user, $serverId) {

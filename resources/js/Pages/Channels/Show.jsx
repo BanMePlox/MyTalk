@@ -1,5 +1,48 @@
 import { useEffect, useRef, useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
+import hljs from 'highlight.js/lib/core';
+import 'highlight.js/styles/github-dark.css';
+
+// Register only the most common languages to keep bundle small
+import javascript from 'highlight.js/lib/languages/javascript';
+import typescript from 'highlight.js/lib/languages/typescript';
+import php from 'highlight.js/lib/languages/php';
+import python from 'highlight.js/lib/languages/python';
+import css from 'highlight.js/lib/languages/css';
+import xml from 'highlight.js/lib/languages/xml';
+import json from 'highlight.js/lib/languages/json';
+import bash from 'highlight.js/lib/languages/bash';
+import sql from 'highlight.js/lib/languages/sql';
+import java from 'highlight.js/lib/languages/java';
+import csharp from 'highlight.js/lib/languages/csharp';
+import cpp from 'highlight.js/lib/languages/cpp';
+import rust from 'highlight.js/lib/languages/rust';
+import go from 'highlight.js/lib/languages/go';
+import markdown from 'highlight.js/lib/languages/markdown';
+
+hljs.registerLanguage('javascript', javascript);
+hljs.registerLanguage('js', javascript);
+hljs.registerLanguage('typescript', typescript);
+hljs.registerLanguage('ts', typescript);
+hljs.registerLanguage('php', php);
+hljs.registerLanguage('python', python);
+hljs.registerLanguage('py', python);
+hljs.registerLanguage('css', css);
+hljs.registerLanguage('html', xml);
+hljs.registerLanguage('xml', xml);
+hljs.registerLanguage('json', json);
+hljs.registerLanguage('bash', bash);
+hljs.registerLanguage('sh', bash);
+hljs.registerLanguage('shell', bash);
+hljs.registerLanguage('sql', sql);
+hljs.registerLanguage('java', java);
+hljs.registerLanguage('csharp', csharp);
+hljs.registerLanguage('cs', csharp);
+hljs.registerLanguage('cpp', cpp);
+hljs.registerLanguage('rust', rust);
+hljs.registerLanguage('rs', rust);
+hljs.registerLanguage('go', go);
+hljs.registerLanguage('markdown', markdown);
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import ServerSettingsModal from '@/Components/ServerSettingsModal';
 
@@ -33,31 +76,250 @@ function TypingDots() {
 }
 
 // Resalta @Nombre/@Apodo en el contenido del mensaje
+function CodeBlock({ lang, code }) {
+    const [copied, setCopied] = useState(false);
+
+    const highlighted = (() => {
+        if (lang && hljs.getLanguage(lang)) {
+            try { return hljs.highlight(code, { language: lang }).value; } catch {}
+        }
+        try { return hljs.highlightAuto(code).value; } catch {}
+        return code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    })();
+
+    function copy() {
+        navigator.clipboard.writeText(code).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        });
+    }
+
+    return (
+        <div className="my-1 rounded-lg overflow-hidden border border-gray-700 text-sm">
+            <div className="flex items-center justify-between px-3 py-1 bg-gray-800 border-b border-gray-700">
+                <span className="text-xs text-gray-400 font-mono">{lang || 'código'}</span>
+                <button
+                    onClick={copy}
+                    className="text-xs text-gray-400 hover:text-gray-200 transition-colors flex items-center gap-1"
+                >
+                    {copied ? '✓ Copiado' : 'Copiar'}
+                </button>
+            </div>
+            <pre className="overflow-x-auto p-3 bg-[#0d1117] m-0">
+                <code
+                    className="hljs font-mono text-xs leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: highlighted }}
+                />
+            </pre>
+        </div>
+    );
+}
+
 function renderContent(text, members = [], selfName = '', selfNickname = '') {
-    if (!members.length) return text;
+    // Build mention pattern if there are members
+    const displayNames = members.length
+        ? [...members]
+            .map(m => (m.nickname || m.name))
+            .sort((a, b) => b.length - a.length)
+            .map(n => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+        : [];
 
-    // Usa nickname si existe, si no el nombre real
-    const displayNames = [...members]
-        .map(m => (m.nickname || m.name))
-        .sort((a, b) => b.length - a.length)
-        .map(n => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    const mentionRe = displayNames.length
+        ? new RegExp(`(@(?:${displayNames.join('|')}))`, 'g')
+        : null;
 
-    const parts = text.split(new RegExp(`(@(?:${displayNames.join('|')}))`, 'g'));
+    // Split text into: code blocks, inline code, and plain text segments
+    // Order matters: triple backtick first, then single backtick
+    const TOKEN_RE = /```(\w*)\n?([\s\S]*?)```|`([^`\n]+)`/g;
 
-    return parts.map((part, i) => {
-        if (part.startsWith('@')) {
-            const tag = part.slice(1);
-            const isSelf = tag === selfNickname || tag === selfName;
-            return (
-                <span key={i} className={`rounded px-0.5 font-medium ${
-                    isSelf ? 'bg-yellow-500/20 text-yellow-300' : 'bg-indigo-500/20 text-indigo-300'
-                }`}>
-                    {part}
-                </span>
+    const nodes = [];
+    let lastIndex = 0;
+    let match;
+    let keyCounter = 0;
+
+    function renderPlain(str) {
+        if (!str) return null;
+        if (!mentionRe) return str;
+        const parts = str.split(mentionRe);
+        return parts.map((part, i) => {
+            if (part.startsWith('@')) {
+                const tag = part.slice(1);
+                const isSelf = tag === selfNickname || tag === selfName;
+                return (
+                    <span key={`m${i}`} className={`rounded px-0.5 font-medium ${
+                        isSelf ? 'bg-yellow-500/20 text-yellow-300' : 'bg-indigo-500/20 text-indigo-300'
+                    }`}>{part}</span>
+                );
+            }
+            return part;
+        });
+    }
+
+    while ((match = TOKEN_RE.exec(text)) !== null) {
+        // Plain text before this match
+        if (match.index > lastIndex) {
+            const plain = text.slice(lastIndex, match.index);
+            nodes.push(<span key={keyCounter++}>{renderPlain(plain)}</span>);
+        }
+
+        if (match[1] !== undefined) {
+            // Triple backtick code block: ```lang\ncode```
+            nodes.push(<CodeBlock key={keyCounter++} lang={match[1].trim() || null} code={match[2]} />);
+        } else {
+            // Inline code: `code`
+            nodes.push(
+                <code key={keyCounter++} className="bg-gray-800 text-pink-300 font-mono text-[0.85em] rounded px-1 py-0.5">
+                    {match[3]}
+                </code>
             );
         }
-        return part;
-    });
+        lastIndex = TOKEN_RE.lastIndex;
+    }
+
+    // Remaining plain text
+    if (lastIndex < text.length) {
+        const plain = text.slice(lastIndex);
+        nodes.push(<span key={keyCounter++}>{renderPlain(plain)}</span>);
+    }
+
+    return nodes.length === 1 ? nodes[0] : nodes;
+}
+
+const HELP_PAGES = [
+    {
+        title: 'Bloque de código',
+        description: 'Rodea tu código con tres backticks. Añade el lenguaje justo después de los primeros tres para activar el coloreado.',
+        raw: '```javascript\nconst suma = (a, b) => a + b;\nconsole.log(suma(2, 3)); // 5\n```',
+        lang: 'javascript',
+        code: 'const suma = (a, b) => a + b;\nconsole.log(suma(2, 3)); // 5',
+    },
+    {
+        title: 'Código en línea',
+        description: 'Rodea una palabra o expresión corta con un solo backtick para resaltarla dentro de una frase.',
+        raw: 'Usa `console.log()` para depurar.',
+        inline: true,
+    },
+    {
+        title: 'Lenguajes soportados',
+        description: 'Puedes especificar cualquiera de estos lenguajes tras los tres backticks:',
+        langs: ['javascript · js', 'typescript · ts', 'python · py', 'php', 'html · xml', 'css', 'json', 'bash · sh · shell', 'sql', 'java', 'csharp · cs', 'cpp', 'rust · rs', 'go', 'markdown'],
+    },
+    {
+        title: 'Menciones',
+        description: 'Escribe @ seguido del nombre o apodo de un miembro para mencionarlo. Aparecerá un selector con sugerencias.',
+        raw: '@Pedro echa un vistazo a esto 👆',
+        mention: true,
+    },
+];
+
+function SyntaxHelpPopup({ onClose }) {
+    const [page, setPage] = useState(0);
+    const ref = useRef(null);
+    const current = HELP_PAGES[page];
+
+    useEffect(() => {
+        function handleClick(e) {
+            if (ref.current && !ref.current.contains(e.target)) onClose();
+        }
+        document.addEventListener('mousedown', handleClick);
+        return () => document.removeEventListener('mousedown', handleClick);
+    }, [onClose]);
+
+    return (
+        <div
+            ref={ref}
+            className="absolute bottom-full right-0 mb-2 w-80 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl z-30 overflow-hidden"
+        >
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700 bg-gray-800">
+                <span className="text-sm font-semibold text-gray-100">✦ Guía de formato</span>
+                <button onClick={onClose} className="text-gray-400 hover:text-gray-200 text-lg leading-none">×</button>
+            </div>
+
+            {/* Body */}
+            <div className="px-4 py-4 min-h-[180px]">
+                <p className="text-xs font-semibold text-indigo-400 uppercase tracking-wide mb-1">{current.title}</p>
+                <p className="text-xs text-gray-400 mb-3">{current.description}</p>
+
+                {current.code && (
+                    <div className="rounded-lg overflow-hidden border border-gray-700 text-xs">
+                        <div className="px-3 py-1 bg-gray-800 border-b border-gray-700 text-gray-500 font-mono">{current.lang}</div>
+                        <pre className="bg-[#0d1117] p-3 m-0 overflow-x-auto">
+                            <code
+                                className="hljs font-mono text-xs leading-relaxed"
+                                dangerouslySetInnerHTML={{
+                                    __html: (() => {
+                                        try { return hljs.highlight(current.code, { language: current.lang }).value; } catch { return current.code; }
+                                    })()
+                                }}
+                            />
+                        </pre>
+                        <div className="px-3 py-1.5 bg-gray-800 border-t border-gray-700 font-mono text-gray-500 text-xs">
+                            <span className="text-yellow-500">```</span>
+                            <span className="text-indigo-400">{current.lang}</span>
+                            <span className="text-gray-400"> …código… </span>
+                            <span className="text-yellow-500">```</span>
+                        </div>
+                    </div>
+                )}
+
+                {current.inline && (
+                    <div className="space-y-2">
+                        <div className="bg-gray-800 rounded-lg px-3 py-2 font-mono text-xs text-gray-300">
+                            Usa <span className="text-yellow-400">`</span>console.log()<span className="text-yellow-400">`</span> para depurar.
+                        </div>
+                        <div className="bg-gray-800 rounded-lg px-3 py-2 text-xs text-gray-300">
+                            Resultado: Usa <code className="bg-gray-700 text-pink-300 font-mono rounded px-1 py-0.5">console.log()</code> para depurar.
+                        </div>
+                    </div>
+                )}
+
+                {current.langs && (
+                    <div className="flex flex-wrap gap-1.5">
+                        {current.langs.map(l => (
+                            <span key={l} className="bg-gray-800 text-indigo-300 font-mono text-xs px-2 py-0.5 rounded border border-gray-700">{l}</span>
+                        ))}
+                    </div>
+                )}
+
+                {current.mention && (
+                    <div className="space-y-2">
+                        <div className="bg-gray-800 rounded-lg px-3 py-2 font-mono text-xs text-gray-300">
+                            <span className="text-yellow-400">@</span>Pedro echa un vistazo a esto 👆
+                        </div>
+                        <div className="bg-gray-800 rounded-lg px-3 py-2 text-xs text-gray-300">
+                            Resultado: <span className="bg-indigo-500/20 text-indigo-300 rounded px-0.5 font-medium">@Pedro</span> echa un vistazo a esto 👆
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Footer: paginación */}
+            <div className="flex items-center justify-between px-4 py-3 border-t border-gray-700 bg-gray-800">
+                <button
+                    onClick={() => setPage(p => Math.max(0, p - 1))}
+                    disabled={page === 0}
+                    className="text-xs text-gray-400 hover:text-gray-200 disabled:opacity-30 disabled:cursor-default px-2 py-1 rounded hover:bg-gray-700 transition-colors"
+                >← Anterior</button>
+
+                <div className="flex gap-1.5">
+                    {HELP_PAGES.map((_, i) => (
+                        <button
+                            key={i}
+                            onClick={() => setPage(i)}
+                            className={`w-1.5 h-1.5 rounded-full transition-colors ${i === page ? 'bg-indigo-400' : 'bg-gray-600 hover:bg-gray-400'}`}
+                        />
+                    ))}
+                </div>
+
+                <button
+                    onClick={() => setPage(p => Math.min(HELP_PAGES.length - 1, p + 1))}
+                    disabled={page === HELP_PAGES.length - 1}
+                    className="text-xs text-gray-400 hover:text-gray-200 disabled:opacity-30 disabled:cursor-default px-2 py-1 rounded hover:bg-gray-700 transition-colors"
+                >Siguiente →</button>
+            </div>
+        </div>
+    );
 }
 
 function StatusDot({ status, size = 'md' }) {
@@ -301,8 +563,8 @@ function ProfilePopover({ member, status, anchorX, anchorY, onClose, authId }) {
     );
 }
 
-export default function Show({ channel, messages: initialMessages, pinnedMessages: initialPinnedMessages = [], userServers = [], canManageMessages = false, canManageRoles = false, canManageChannels = false, canKickMembers = false, canBanMembers = false, isOwner = false }) {
-    const { auth, badges: initialBadges } = usePage().props;
+export default function Show({ channel, messages: initialMessages, pinnedMessages: initialPinnedMessages = [], userServers = [], visibleChannelIds = null, canManageMessages = false, canManageRoles = false, canManageChannels = false, canKickMembers = false, canBanMembers = false, canSendMessages = true, isOwner = false }) {
+    const { auth, badges: initialBadges, vapidPublicKey } = usePage().props;
     const [messages, setMessages] = useState(initialMessages);
     const [content, setContent] = useState('');
     const [sending, setSending] = useState(false);
@@ -317,6 +579,8 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
     // { userId: status } — solo usuarios actualmente conectados
     const [onlineUsers, setOnlineUsers] = useState({});
     const [myStatus, setMyStatus] = useState(auth.user.status ?? 'online');
+    const [myCustomStatus, setMyCustomStatus] = useState(auth.user.custom_status ?? '');
+    const [customStatusInput, setCustomStatusInput] = useState(auth.user.custom_status ?? '');
     const [statusOpen, setStatusOpen] = useState(false);
     const [profilePopover, setProfilePopover] = useState(null); // { member, anchorY }
 
@@ -384,11 +648,64 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
         () => Object.fromEntries(Object.entries(initialBadges?.channelMentions ?? {}).map(([k, v]) => [parseInt(k), v]))
     );
 
+    const [editHistoryMsgId, setEditHistoryMsgId] = useState(null);
+    const [editHistory, setEditHistory] = useState([]);
+    const [editHistoryLoading, setEditHistoryLoading] = useState(false);
+    const [syntaxHelpOpen, setSyntaxHelpOpen] = useState(false);
+
+    // Paginación de miembros: cuántos mostrar por sección
+    const MEMBERS_PAGE = 30;
+    const [membersVisible, setMembersVisible] = useState(MEMBERS_PAGE);
+
+    // Drag & drop de canales
+    const dragChannel = useRef(null); // { id, category_id }
+    const dragOverChannel = useRef(null);
+    const [dragOverId, setDragOverId] = useState(null);
+
     const bottomRef = useRef(null);
     const inputRef = useRef(null);
     const containerRef = useRef(null);
     const statusMenuRef = useRef(null);
     const fileInputRef = useRef(null);
+
+    // Registrar Service Worker y suscribirse a Web Push
+    useEffect(() => {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window) || !vapidPublicKey) return;
+
+        async function setupPush() {
+            const reg = await navigator.serviceWorker.register('/sw.js');
+            const permission = await Notification.requestPermission();
+            if (permission !== 'granted') return;
+
+            let sub = await reg.pushManager.getSubscription();
+            if (sub) return; // ya suscrito
+
+            // Convertir clave pública VAPID de base64url a Uint8Array
+            const base64 = vapidPublicKey.replace(/-/g, '+').replace(/_/g, '/');
+            const raw = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+
+            sub = await reg.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: raw,
+            });
+
+            const json = sub.toJSON();
+            await fetch(route('push.subscribe'), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
+                },
+                body: JSON.stringify({
+                    endpoint: json.endpoint,
+                    p256dh: json.keys.p256dh,
+                    auth: json.keys.auth,
+                }),
+            });
+        }
+
+        setupPush().catch(console.error);
+    }, [vapidPublicKey]);
 
     // Scroll al fondo al montar
     useEffect(() => {
@@ -458,6 +775,10 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                             ? { ...m, name: e.name, avatar_url: e.avatar_url, banner_color: e.banner_color }
                             : m
                     ));
+                    if (e.user_id === auth.user.id) {
+                        setMyCustomStatus(e.custom_status ?? '');
+                        setCustomStatusInput(e.custom_status ?? '');
+                    }
                 })
                 .listen('.NicknameUpdated', (e) => {
                     if (e.server_id !== channel.server_id) return;
@@ -605,10 +926,72 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
     }, [auth.user.id]);
 
     async function changeStatus(status) {
-        setStatusOpen(false);
         setMyStatus(status);
         setOnlineUsers((prev) => ({ ...prev, [auth.user.id]: status }));
         await window.axios.patch(route('user.status'), { status });
+    }
+
+    async function saveCustomStatus() {
+        const val = customStatusInput.trim();
+        setMyCustomStatus(val);
+        setStatusOpen(false);
+        await window.axios.patch(route('user.status'), { custom_status: val || null });
+    }
+
+    function handleDragStart(ch) {
+        dragChannel.current = { id: ch.id, category_id: ch.category_id };
+    }
+
+    function handleDragOver(e, ch) {
+        e.preventDefault();
+        dragOverChannel.current = { id: ch.id, category_id: ch.category_id };
+        setDragOverId(ch.id);
+    }
+
+    function handleDrop(e, targetCategoryId) {
+        e.preventDefault();
+        setDragOverId(null);
+        const src = dragChannel.current;
+        const tgt = dragOverChannel.current;
+        if (!src || !tgt || src.id === tgt.id) return;
+
+        setServerChannels(prev => {
+            // Build ordered list, move src before tgt, reassign positions
+            const list = [...prev];
+            const srcIdx = list.findIndex(c => c.id === src.id);
+            const tgtIdx = list.findIndex(c => c.id === tgt.id);
+            if (srcIdx === -1 || tgtIdx === -1) return prev;
+
+            const [moved] = list.splice(srcIdx, 1);
+            moved.category_id = tgt.category_id; // inherit target category
+            const newTgtIdx = list.findIndex(c => c.id === tgt.id);
+            list.splice(newTgtIdx, 0, moved);
+
+            const updated = list.map((c, i) => ({ ...c, position: i }));
+
+            // Persist to backend
+            const serverId = channel.server_id;
+            window.axios.patch(route('channels.reorder', serverId), {
+                channels: updated.map(c => ({ id: c.id, position: c.position, category_id: c.category_id ?? null })),
+            }).catch(console.error);
+
+            return updated;
+        });
+
+        dragChannel.current = null;
+        dragOverChannel.current = null;
+    }
+
+    async function openEditHistory(msgId) {
+        setEditHistoryMsgId(msgId);
+        setEditHistory([]);
+        setEditHistoryLoading(true);
+        try {
+            const res = await window.axios.get(route('messages.edits', msgId));
+            setEditHistory(res.data);
+        } finally {
+            setEditHistoryLoading(false);
+        }
     }
 
     async function loadMore() {
@@ -691,13 +1074,17 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
         const file = e.target.files[0];
         if (!file) return;
         setAttachmentFile(file);
-        setAttachmentPreview(URL.createObjectURL(file));
+        if (file.type.startsWith('image/')) {
+            setAttachmentPreview({ type: 'image', url: URL.createObjectURL(file), name: file.name });
+        } else {
+            setAttachmentPreview({ type: 'file', name: file.name });
+        }
         e.target.value = '';
     }
 
     function clearAttachment() {
         setAttachmentFile(null);
-        if (attachmentPreview) URL.revokeObjectURL(attachmentPreview);
+        if (attachmentPreview?.url) URL.revokeObjectURL(attachmentPreview.url);
         setAttachmentPreview(null);
     }
 
@@ -715,7 +1102,8 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
         const optimistic = {
             id: `tmp-${Date.now()}`,
             content: text,
-            attachment_url: preview,
+            attachment_url: preview?.type === 'image' ? preview.url : null,
+            attachment_name: preview?.name ?? null,
             created_at: new Date().toISOString(),
             reply_to: replyTo ?? null,
             user: { id: auth.user.id, name: auth.user.name, avatar_url: auth.user.avatar_url, banner_color: auth.user.banner_color },
@@ -1225,30 +1613,46 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
 
                     <nav className="flex-1 overflow-y-auto p-2 space-y-1">
                         {(() => {
-                            const allChannels = serverChannels;
+                            const visibleSet = visibleChannelIds ? new Set(visibleChannelIds) : null;
+                            const allChannels = visibleSet
+                                ? serverChannels.filter(ch => visibleSet.has(ch.id))
+                                : serverChannels;
                             const categories = serverCategories;
                             const categorized = new Set(allChannels.filter(ch => ch.category_id).map(ch => ch.id));
                             const uncategorized = allChannels.filter(ch => !ch.category_id);
 
                             function ChannelLink({ ch }) {
+                                const isOver = dragOverId === ch.id;
                                 return (
-                                    <Link
+                                    <div
                                         key={ch.id}
-                                        href={route('channels.show', ch.id)}
-                                        className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm ${
-                                            ch.id === channel.id
-                                                ? 'bg-gray-700 text-white'
-                                                : 'text-gray-400 hover:bg-gray-700 hover:text-white'
-                                        }`}
+                                        draggable={canManageChannels || isOwner}
+                                        onDragStart={() => handleDragStart(ch)}
+                                        onDragOver={(e) => handleDragOver(e, ch)}
+                                        onDrop={(e) => handleDrop(e, ch.category_id)}
+                                        onDragLeave={() => setDragOverId(null)}
+                                        className={`transition-all ${isOver ? 'border-t-2 border-indigo-400' : 'border-t-2 border-transparent'}`}
                                     >
-                                        <span className="text-gray-500">#</span>
-                                        <span className="flex-1 truncate">{ch.name}</span>
-                                        {channelMentionBadges[ch.id] > 0 && (
-                                            <span className="ml-auto min-w-[1.1rem] h-[1.1rem] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 shrink-0">
-                                                {channelMentionBadges[ch.id] > 9 ? '9+' : channelMentionBadges[ch.id]}
-                                            </span>
-                                        )}
-                                    </Link>
+                                        <Link
+                                            href={route('channels.show', ch.id)}
+                                            className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm ${
+                                                ch.id === channel.id
+                                                    ? 'bg-gray-700 text-white'
+                                                    : 'text-gray-400 hover:bg-gray-700 hover:text-white'
+                                            } ${(canManageChannels || isOwner) ? 'cursor-grab active:cursor-grabbing' : ''}`}
+                                        >
+                                            {ch.type === 'announcement'
+                                                ? <span className="text-gray-500" title="Canal de anuncios">📢</span>
+                                                : <span className="text-gray-500">#</span>
+                                            }
+                                            <span className="flex-1 truncate">{ch.name}</span>
+                                            {channelMentionBadges[ch.id] > 0 && (
+                                                <span className="ml-auto min-w-[1.1rem] h-[1.1rem] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 shrink-0">
+                                                    {channelMentionBadges[ch.id] > 9 ? '9+' : channelMentionBadges[ch.id]}
+                                                </span>
+                                            )}
+                                        </Link>
+                                    </div>
                                 );
                             }
 
@@ -1303,12 +1707,29 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                             </div>
                             <div className="text-left min-w-0">
                                 <p className="text-sm text-gray-200 truncate leading-tight">{auth.user.name}</p>
-                                <p className="text-xs text-gray-400 leading-tight">{STATUS_CONFIG[myStatus]?.label}</p>
+                                <p className="text-xs text-gray-400 truncate leading-tight">
+                                    {myCustomStatus || STATUS_CONFIG[myStatus]?.label}
+                                </p>
                             </div>
                         </button>
 
                         {statusOpen && (
-                            <div className="absolute bottom-full left-2 mb-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl w-44 py-1 z-10">
+                            <div className="absolute bottom-full left-2 mb-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl w-56 py-1 z-10">
+                                <div className="px-3 py-2 border-b border-gray-700">
+                                    <p className="text-xs text-gray-400 mb-1">Estado personalizado</p>
+                                    <div className="flex gap-1">
+                                        <input
+                                            type="text"
+                                            value={customStatusInput}
+                                            onChange={(e) => setCustomStatusInput(e.target.value)}
+                                            onKeyDown={(e) => e.key === 'Enter' && saveCustomStatus()}
+                                            placeholder="¿Qué estás haciendo?"
+                                            maxLength={60}
+                                            className="flex-1 bg-gray-900 text-white text-xs rounded px-2 py-1 outline-none placeholder-gray-500"
+                                        />
+                                        <button onClick={saveCustomStatus} className="text-xs bg-indigo-600 hover:bg-indigo-500 text-white rounded px-2 py-1">✓</button>
+                                    </div>
+                                </div>
                                 {Object.entries(STATUS_CONFIG).map(([key, { dot, label }]) => (
                                     <button
                                         key={key}
@@ -1337,7 +1758,10 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
                             </svg>
                         </button>
-                        <span className="flex-1"># {channel.name}</span>
+                        <span className="flex-1">
+                            {channel.type === 'announcement' ? '📢' : '#'} {channel.name}
+                            {channel.type === 'announcement' && <span className="ml-2 text-xs font-normal text-gray-400">Solo administradores pueden publicar</span>}
+                        </span>
                         {pinnedMessages.length > 0 && (
                             <button
                                 type="button"
@@ -1521,18 +1945,34 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                         ) : (
                                             <>
                                                 {msg.content && (
-                                                    <p className={`text-sm ${isTmp ? 'text-gray-500' : 'text-gray-300'}`}>
+                                                    <div className={`text-sm ${isTmp ? 'text-gray-500' : 'text-gray-300'}`}>
                                                         {renderContent(msg.content, members, auth.user.name, members.find(m => m.id === auth.user.id)?.nickname ?? '')}
                                                         {!isTmp && msg.updated_at && msg.updated_at !== msg.created_at && (
-                                                            <span className="text-xs text-gray-500 ml-1.5">(editado)</span>
+                                                            <button
+                                                                onClick={() => openEditHistory(msg.id)}
+                                                                className="text-xs text-gray-500 hover:text-gray-300 ml-1.5 underline-offset-2 hover:underline"
+                                                            >(editado)</button>
                                                         )}
-                                                    </p>
+                                                    </div>
                                                 )}
-                                                {msg.attachment_url && (
-                                                    <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer" className="block mt-1">
-                                                        <img src={msg.attachment_url} alt="adjunto" className="max-w-xs max-h-64 rounded-lg object-cover border border-gray-700 hover:opacity-90 transition-opacity" />
-                                                    </a>
-                                                )}
+                                                {msg.attachment_url && (() => {
+                                                    const isImage = /\.(png|jpe?g|gif|webp|bmp|svg)(\?|$)/i.test(msg.attachment_url);
+                                                    return isImage ? (
+                                                        <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer" className="block mt-1">
+                                                            <img src={msg.attachment_url} alt="adjunto" className="max-w-xs max-h-64 rounded-lg object-cover border border-gray-700 hover:opacity-90 transition-opacity" />
+                                                        </a>
+                                                    ) : (
+                                                        <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer" download={msg.attachment_name ?? true} className="mt-1 inline-flex items-center gap-2 bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-indigo-300 hover:text-indigo-200 hover:border-indigo-500 transition-colors">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                            </svg>
+                                                            <span className="truncate max-w-[240px]">{msg.attachment_name ?? 'Archivo adjunto'}</span>
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                                            </svg>
+                                                        </a>
+                                                    );
+                                                })()}
                                             </>
                                         )}
                                     </div>
@@ -1673,7 +2113,16 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                             {/* Previsualización de adjunto */}
                             {attachmentPreview && (
                                 <div className="mb-2 relative inline-block">
-                                    <img src={attachmentPreview} alt="preview" className="max-h-32 rounded-lg border border-gray-600" />
+                                    {attachmentPreview.type === 'image' ? (
+                                        <img src={attachmentPreview.url} alt="preview" className="max-h-32 rounded-lg border border-gray-600" />
+                                    ) : (
+                                        <div className="flex items-center gap-2 bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-300">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-indigo-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                            <span className="truncate max-w-[200px]">{attachmentPreview.name}</span>
+                                        </div>
+                                    )}
                                     <button
                                         type="button"
                                         onClick={clearAttachment}
@@ -1682,13 +2131,14 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                 </div>
                             )}
 
-                        <div className="flex gap-2 bg-gray-700 rounded-lg px-4 py-2">
-                            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={pickFile} />
+                        {canSendMessages && (channel.type !== 'announcement' || canManageMessages || isOwner) ? (
+                        <div className="relative flex gap-2 bg-gray-700 rounded-lg px-4 py-2">
+                            <input ref={fileInputRef} type="file" className="hidden" onChange={pickFile} />
                             <button
                                 type="button"
                                 onClick={() => fileInputRef.current?.click()}
                                 className="text-gray-400 hover:text-gray-200 transition-colors shrink-0"
-                                title="Adjuntar imagen"
+                                title="Adjuntar archivo"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
@@ -1704,13 +2154,28 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                 className="flex-1 bg-transparent text-sm text-white placeholder-gray-400 outline-none"
                             />
                             <button
+                                type="button"
+                                onClick={() => setSyntaxHelpOpen(o => !o)}
+                                className="text-gray-500 hover:text-gray-300 transition-colors shrink-0 w-5 h-5 rounded-full border border-gray-500 hover:border-gray-300 flex items-center justify-center text-xs font-bold"
+                                title="Guía de formato"
+                            >?</button>
+                            <button
                                 type="submit"
                                 disabled={sending || (!content.trim() && !attachmentFile)}
                                 className="text-indigo-400 hover:text-indigo-300 disabled:opacity-40"
                             >
                                 Enviar
                             </button>
+                            {syntaxHelpOpen && <SyntaxHelpPopup onClose={() => setSyntaxHelpOpen(false)} />}
                         </div>
+                        ) : (
+                        <div className="flex items-center justify-center bg-gray-700/50 rounded-lg px-4 py-3 text-sm text-gray-500 select-none">
+                            {channel.type === 'announcement'
+                                ? '📢 Este canal es de solo lectura'
+                                : '🔒 No tienes permiso para enviar mensajes en este canal'
+                            }
+                        </div>
+                        )}
                     </form>
                     </div>
                 </div>
@@ -1770,6 +2235,35 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                     </div>
                 )}
 
+                {/* Modal historial de ediciones */}
+                {editHistoryMsgId && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <div className="absolute inset-0 bg-black/60" onClick={() => setEditHistoryMsgId(null)} />
+                        <div className="relative bg-gray-900 rounded-xl border border-gray-700 w-full max-w-md p-5 shadow-2xl">
+                            <h3 className="text-gray-100 font-semibold mb-3">Historial de ediciones</h3>
+                            {editHistoryLoading ? (
+                                <p className="text-sm text-gray-400">Cargando...</p>
+                            ) : editHistory.length === 0 ? (
+                                <p className="text-sm text-gray-400">Sin historial previo.</p>
+                            ) : (
+                                <div className="space-y-3 max-h-72 overflow-y-auto">
+                                    {editHistory.map((entry, i) => (
+                                        <div key={i} className="bg-gray-800 rounded-lg px-3 py-2">
+                                            <p className="text-xs text-gray-500 mb-1">
+                                                {new Date(entry.edited_at).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })}
+                                            </p>
+                                            <p className="text-sm text-gray-300">{entry.content}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            <div className="flex justify-end mt-4">
+                                <button onClick={() => setEditHistoryMsgId(null)} className="px-4 py-2 text-sm text-gray-400 hover:text-gray-200 rounded-lg hover:bg-gray-800">Cerrar</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Menú contextual */}
                 {contextMenu && (
                     <ContextMenu
@@ -1811,6 +2305,14 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
 
                     const noRoleMembers = allMembers.filter(m => !assigned.has(m.id));
 
+                    // Flatten all members in display order to apply global pagination
+                    const allOrdered = [
+                        ...buckets.flatMap(b => b.members),
+                        ...noRoleMembers,
+                    ];
+                    const totalVisible = membersVisible;
+                    const hiddenCount = allOrdered.length - totalVisible;
+
                     const renderMember = (member) => {
                         const status = onlineUsers[member.id];
                         const customStatus = status ? (member.custom_status ?? null) : null;
@@ -1841,30 +2343,47 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                         );
                     };
 
+                    // Slice each bucket respecting the global visibility cap
+                    let rem = totalVisible;
+                    const bucketSlices = buckets.map(({ role, members: bMembers }) => {
+                        const slice = bMembers.slice(0, rem);
+                        rem = Math.max(0, rem - bMembers.length);
+                        return { role, slice, total: bMembers.length };
+                    });
+                    const noRoleSlice = noRoleMembers.slice(0, rem);
+
                     return (
                         <aside className="hidden md:flex w-48 bg-gray-900 flex-col shrink-0 border-l border-gray-700">
                             <div className="px-3 py-3 border-b border-gray-700 text-xs font-semibold text-gray-400 uppercase tracking-wide">
                                 Miembros &mdash; {allMembers.length}
                             </div>
                             <div className="flex-1 overflow-y-auto p-2">
-                                {buckets.map(({ role, members }) => (
+                                {bucketSlices.map(({ role, slice, total }) => slice.length === 0 ? null : (
                                     <div key={role.id} className="mb-3">
                                         <p className="px-2 mb-1 text-xs font-semibold uppercase tracking-wide"
                                             style={{ color: role.color }}>
-                                            {role.name} &mdash; {members.length}
+                                            {role.name} &mdash; {total}
                                         </p>
-                                        {members.map(renderMember)}
+                                        {slice.map(renderMember)}
                                     </div>
                                 ))}
-                                {noRoleMembers.length > 0 && (
+                                {noRoleSlice.length > 0 && (
                                     <div className={buckets.length > 0 ? 'mt-1' : ''}>
                                         {buckets.length > 0 && (
                                             <p className="px-2 mb-1 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                                                 Miembros &mdash; {noRoleMembers.length}
                                             </p>
                                         )}
-                                        {noRoleMembers.map(renderMember)}
+                                        {noRoleSlice.map(renderMember)}
                                     </div>
+                                )}
+                                {hiddenCount > 0 && (
+                                    <button
+                                        onClick={() => setMembersVisible(v => v + MEMBERS_PAGE)}
+                                        className="w-full mt-2 text-xs text-gray-500 hover:text-gray-300 py-1.5 rounded hover:bg-gray-800 transition-colors"
+                                    >
+                                        Ver {Math.min(hiddenCount, MEMBERS_PAGE)} más ({hiddenCount} ocultos)
+                                    </button>
                                 )}
                             </div>
                         </aside>

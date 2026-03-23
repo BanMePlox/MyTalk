@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Storage;
 
 class Message extends Model
 {
-    protected $fillable = ['channel_id', 'user_id', 'content', 'attachment', 'pinned_at', 'pinned_by', 'reply_to_id'];
+    protected $fillable = ['channel_id', 'user_id', 'content', 'attachment', 'attachment_name', 'pinned_at', 'pinned_by', 'reply_to_id'];
 
     protected $casts = ['pinned_at' => 'datetime'];
 
@@ -39,6 +39,11 @@ class Message extends Model
     public function replyTo(): BelongsTo
     {
         return $this->belongsTo(Message::class, 'reply_to_id')->with('user');
+    }
+
+    public function edits(): HasMany
+    {
+        return $this->hasMany(MessageEdit::class)->orderBy('edited_at');
     }
 
     public function reactions(): HasMany

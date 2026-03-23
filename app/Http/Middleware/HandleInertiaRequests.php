@@ -25,6 +25,7 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            'vapidPublicKey' => config('services.vapid.public_key'),
             'badges' => function () {
                 if (!Auth::check()) return null;
 

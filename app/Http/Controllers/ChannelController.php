@@ -14,17 +14,48 @@ class ChannelController extends Controller
 
         $data = $request->validate([
             'name'        => 'required|string|max:100',
+            'type'        => 'nullable|in:text,announcement',
             'category_id' => 'nullable|exists:channel_categories,id',
         ]);
 
         $position = $server->channels()->max('position') + 1;
         $server->channels()->create([
             'name'        => strtolower(str_replace(' ', '-', $data['name'])),
+            'type'        => $data['type'] ?? 'text',
             'category_id' => $data['category_id'] ?? null,
             'position'    => $position,
         ]);
 
         return redirect()->route('servers.show', $server);
+    }
+
+    public function reorder(Request $request, Server $server)
+    {
+        $this->authorize('manageChannels', $server);
+
+        $items = $request->validate([
+            'channels'              => 'required|array',
+            'channels.*.id'         => 'required|integer|exists:channels,id',
+            'channels.*.position'   => 'required|integer|min:0',
+            'channels.*.category_id'=> 'nullable|integer|exists:channel_categories,id',
+        ])['channels'];
+
+        foreach ($items as $item) {
+            Channel::where('id', $item['id'])->where('server_id', $server->id)->update([
+                'position'    => $item['position'],
+                'category_id' => $item['category_id'] ?? null,
+            ]);
+        }
+
+        return response()->noContent();
+    }
+
+    public function updateType(Request $request, Channel $channel)
+    {
+        $this->authorize('manageChannels', $channel->server);
+        $data = $request->validate(['type' => 'required|in:text,announcement']);
+        $channel->update(['type' => $data['type']]);
+        return response()->json(['type' => $channel->type]);
     }
 
     public function assign(Request $request, Channel $channel)

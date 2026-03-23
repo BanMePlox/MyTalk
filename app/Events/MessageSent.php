@@ -30,9 +30,10 @@ class MessageSent implements ShouldBroadcastNow
         $replyTo = $this->message->replyTo;
 
         return [
-            'id'             => $this->message->id,
-            'content'        => $this->message->content,
-            'attachment_url' => $this->message->attachment_url,
+            'id'              => $this->message->id,
+            'content'         => $this->message->content,
+            'attachment_url'  => $this->message->attachment_url,
+            'attachment_name' => $this->message->attachment_name,
             'created_at'     => $this->message->created_at,
             'reply_to'       => $replyTo ? [
                 'id'      => $replyTo->id,

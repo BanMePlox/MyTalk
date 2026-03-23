@@ -28,10 +28,11 @@ class UserProfileUpdated implements ShouldBroadcastNow
     public function broadcastWith(): array
     {
         return [
-            'user_id'      => $this->user->id,
-            'name'         => $this->user->name,
-            'avatar_url'   => $this->user->avatar_url,
-            'banner_color' => $this->user->banner_color,
+            'user_id'       => $this->user->id,
+            'name'          => $this->user->name,
+            'avatar_url'    => $this->user->avatar_url,
+            'banner_color'  => $this->user->banner_color,
+            'custom_status' => $this->user->custom_status,
         ];
     }
 }

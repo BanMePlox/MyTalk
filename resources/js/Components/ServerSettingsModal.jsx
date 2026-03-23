@@ -527,6 +527,178 @@ function BansTab({ server }) {
     );
 }
 
+function ChannelsTab({ server, roles, canManageChannels }) {
+    // Local state: { channelId: { roleId: { can_view, can_send } } }
+    const [perms, setPerms] = useState(() => {
+        const map = {};
+        (server.channels ?? []).forEach(ch => {
+            map[ch.id] = {};
+            (ch.channel_permissions ?? []).forEach(p => {
+                map[ch.id][p.role_id] = { can_view: p.can_view, can_send: p.can_send };
+            });
+        });
+        return map;
+    });
+    const [channelTypes, setChannelTypes] = useState(() =>
+        Object.fromEntries((server.channels ?? []).map(ch => [ch.id, ch.type ?? 'text']))
+    );
+    const [expanded, setExpanded] = useState(null); // channelId
+    const [saving, setSaving] = useState({}); // { `${channelId}-${roleId}`: bool }
+
+    async function changeType(channelId, type) {
+        setChannelTypes(prev => ({ ...prev, [channelId]: type }));
+        try {
+            await window.axios.patch(route('channels.type', channelId), { type });
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async function save(channelId, roleId, newPerm) {
+        const key = `${channelId}-${roleId}`;
+        setSaving(prev => ({ ...prev, [key]: true }));
+        try {
+            await window.axios.put(route('channels.permissions.upsert', { channel: channelId, role: roleId }), newPerm);
+            setPerms(prev => ({
+                ...prev,
+                [channelId]: { ...prev[channelId], [roleId]: newPerm },
+            }));
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setSaving(prev => ({ ...prev, [key]: false }));
+        }
+    }
+
+    async function remove(channelId, roleId) {
+        const key = `${channelId}-${roleId}`;
+        setSaving(prev => ({ ...prev, [key]: true }));
+        try {
+            await window.axios.delete(route('channels.permissions.destroy', { channel: channelId, role: roleId }));
+            setPerms(prev => {
+                const next = { ...prev, [channelId]: { ...prev[channelId] } };
+                delete next[channelId][roleId];
+                return next;
+            });
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setSaving(prev => ({ ...prev, [key]: false }));
+        }
+    }
+
+    const channels = server.channels ?? [];
+
+    return (
+        <div className="space-y-2">
+            {channels.length === 0 && <p className="text-gray-500 text-sm">No hay canales.</p>}
+            {channels.map(ch => {
+                const chPerms = perms[ch.id] ?? {};
+                const isOpen = expanded === ch.id;
+                const hasOverrides = Object.keys(chPerms).length > 0;
+
+                return (
+                    <div key={ch.id} className="bg-gray-800 rounded-lg overflow-hidden">
+                        {/* Channel header */}
+                        <button
+                            onClick={() => setExpanded(isOpen ? null : ch.id)}
+                            className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-gray-750 transition-colors text-left"
+                        >
+                            <span className="text-gray-500 text-sm">{channelTypes[ch.id] === 'announcement' ? '📢' : '#'}</span>
+                            <span className="flex-1 text-sm font-medium text-gray-100">{ch.name}</span>
+                            {hasOverrides && (
+                                <span className="text-xs bg-indigo-600/40 text-indigo-300 px-1.5 py-0.5 rounded">
+                                    {Object.keys(chPerms).length} override{Object.keys(chPerms).length > 1 ? 's' : ''}
+                                </span>
+                            )}
+                            <span className={`text-gray-400 text-xs transition-transform ${isOpen ? 'rotate-90' : ''}`}>›</span>
+                        </button>
+
+                        {/* Permissions panel */}
+                        {isOpen && (
+                            <div className="border-t border-gray-700 px-3 py-3 space-y-3">
+                                <div className="flex items-center gap-3">
+                                    <span className="text-xs text-gray-400">Tipo:</span>
+                                    <select
+                                        value={channelTypes[ch.id] ?? 'text'}
+                                        onChange={e => changeType(ch.id, e.target.value)}
+                                        className="bg-gray-700 text-gray-200 text-xs rounded px-2 py-1 border border-gray-600 outline-none"
+                                    >
+                                        <option value="text"># Texto</option>
+                                        <option value="announcement">📢 Anuncios</option>
+                                    </select>
+                                </div>
+                                {roles.length === 0 && (
+                                    <p className="text-xs text-gray-500">No hay roles en este servidor. Crea roles primero.</p>
+                                )}
+                                {roles.map(role => {
+                                    const override = chPerms[role.id];
+                                    const key = `${ch.id}-${role.id}`;
+                                    const isSaving = saving[key];
+
+                                    return (
+                                        <div key={role.id} className="flex items-center gap-3">
+                                            {/* Role badge */}
+                                            <div className="flex items-center gap-1.5 w-28 shrink-0">
+                                                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: role.color }} />
+                                                <span className="text-xs text-gray-200 truncate">{role.name}</span>
+                                            </div>
+
+                                            {/* Toggles or "default" label */}
+                                            {override ? (
+                                                <div className="flex items-center gap-3 flex-1">
+                                                    <label className="flex items-center gap-1.5 text-xs text-gray-300 cursor-pointer">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={override.can_view}
+                                                            disabled={isSaving || !canManageChannels}
+                                                            onChange={e => save(ch.id, role.id, { ...override, can_view: e.target.checked })}
+                                                            className="accent-indigo-500"
+                                                        />
+                                                        Ver canal
+                                                    </label>
+                                                    <label className="flex items-center gap-1.5 text-xs text-gray-300 cursor-pointer">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={override.can_send}
+                                                            disabled={isSaving || !canManageChannels}
+                                                            onChange={e => save(ch.id, role.id, { ...override, can_send: e.target.checked })}
+                                                            className="accent-indigo-500"
+                                                        />
+                                                        Enviar mensajes
+                                                    </label>
+                                                    {canManageChannels && (
+                                                        <button
+                                                            onClick={() => remove(ch.id, role.id)}
+                                                            disabled={isSaving}
+                                                            className="text-xs text-gray-500 hover:text-red-400 transition-colors ml-auto"
+                                                            title="Quitar override"
+                                                        >✕ quitar</button>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center gap-2 flex-1">
+                                                    <span className="text-xs text-gray-500 italic">Por defecto (todo permitido)</span>
+                                                    {canManageChannels && (
+                                                        <button
+                                                            onClick={() => save(ch.id, role.id, { can_view: true, can_send: true })}
+                                                            className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+                                                        >+ Añadir override</button>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
+
 export default function ServerSettingsModal({ show, onClose, server, roles: initialRoles, canManageRoles, canKickMembers, canBanMembers = false, isOwner, canManageChannels = false, reloadKey = 'server', onChannelAssign, onCategoryChange }) {
     const [tab, setTab]   = useState('roles');
     const [roles, setRoles] = useState(initialRoles ?? []);
@@ -549,6 +721,7 @@ export default function ServerSettingsModal({ show, onClose, server, roles: init
                         { key: 'roles', label: 'Roles', show: true },
                         { key: 'members', label: 'Miembros', show: true },
                         { key: 'categories', label: 'Categorías', show: true },
+                        { key: 'channels', label: 'Canales', show: canManageChannels || isOwner },
                         { key: 'bans', label: 'Bans', show: canBanMembers || isOwner },
                     ].filter(t => t.show).map(t => (
                         <button key={t.key} onClick={() => setTab(t.key)}
@@ -586,6 +759,13 @@ export default function ServerSettingsModal({ show, onClose, server, roles: init
                             canManageChannels={canManageChannels}
                             onChannelAssign={onChannelAssign}
                             onCategoryChange={onCategoryChange}
+                        />
+                    )}
+                    {tab === 'channels' && (
+                        <ChannelsTab
+                            server={server}
+                            roles={roles}
+                            canManageChannels={canManageChannels}
                         />
                     )}
                     {tab === 'bans' && <BansTab server={server} />}

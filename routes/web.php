@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\BanController;
+use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ChannelPermissionController;
 use App\Http\Controllers\NicknameController;
 use App\Http\Controllers\FriendshipController;
 use App\Http\Controllers\ChannelController;
@@ -55,8 +57,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/servers/{server}/bans/{user}', [BanController::class, 'destroy'])->name('bans.destroy');
 
     Route::post('/servers/{server}/channels', [ChannelController::class, 'store'])->name('channels.store');
+    Route::patch('/servers/{server}/channels/reorder', [ChannelController::class, 'reorder'])->name('channels.reorder');
     Route::patch('/channels/{channel}/category', [ChannelController::class, 'assign'])->name('channels.assign');
+    Route::patch('/channels/{channel}/type', [ChannelController::class, 'updateType'])->name('channels.type');
     Route::delete('/channels/{channel}', [ChannelController::class, 'destroy'])->name('channels.destroy');
+    Route::put('/channels/{channel}/permissions/{role}', [ChannelPermissionController::class, 'upsert'])->name('channels.permissions.upsert');
+    Route::delete('/channels/{channel}/permissions/{role}', [ChannelPermissionController::class, 'destroy'])->name('channels.permissions.destroy');
 
     Route::post('/servers/{server}/categories', [CategoryController::class, 'store'])->name('categories.store');
     Route::patch('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
@@ -82,6 +88,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/channels/{channel}/messages', [MessageController::class, 'more'])->name('messages.more');
     Route::post('/channels/{channel}/messages', [MessageController::class, 'store'])->middleware('throttle:120,1')->name('messages.store');
     Route::patch('/messages/{message}', [MessageController::class, 'update'])->name('messages.update');
+    Route::get('/messages/{message}/edits', [MessageController::class, 'edits'])->name('messages.edits');
     Route::delete('/messages/{message}', [MessageController::class, 'destroy'])->name('messages.destroy');
     Route::get('/channels/{channel}/search', [MessageController::class, 'search'])->name('messages.search');
     Route::patch('/messages/{message}/pin',   [MessageController::class, 'pin'])  ->name('messages.pin');
@@ -89,6 +96,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/messages/{message}/reactions', [ReactionController::class, 'toggle'])->name('messages.react');
 
     Route::get('/search', GlobalSearchController::class)->name('search.global');
+
+    Route::post('/push/subscribe', [PushSubscriptionController::class, 'store'])->name('push.subscribe');
+    Route::post('/push/unsubscribe', [PushSubscriptionController::class, 'destroy'])->name('push.unsubscribe');
 });
 
 require __DIR__.'/auth.php';

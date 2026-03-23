@@ -9,6 +9,8 @@ use App\Events\MessageSent;
 use App\Events\MessageUpdated;
 use App\Models\Channel;
 use App\Models\Message;
+use App\Models\MessageEdit;
+use App\Services\PushNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +24,12 @@ class MessageController extends Controller
     {
         abort_if(!$channel->server, 404);
         if (!$channel->server->members()->where('user_id', Auth::id())->exists()) {
+            return Inertia::location(route('friends.index'));
+        }
+
+        // Check channel-level view permission
+        $channel->loadMissing('server');
+        if (!$channel->canUserView(Auth::user())) {
             return Inertia::location(route('friends.index'));
         }
 
@@ -45,6 +53,56 @@ class MessageController extends Controller
             ->update(['count' => 0]);
 
         $channel->load('server.categories.channels', 'server.channels', 'server.members', 'server.roles');
+
+        // Load channel permissions for all channels in this server
+        $allChannelIds = $channel->server->channels->pluck('id');
+        $channelPermsMap = \App\Models\ChannelPermission::whereIn('channel_id', $allChannelIds)
+            ->get()
+            ->groupBy('channel_id')
+            ->map(fn($rows) => $rows->map(fn($p) => [
+                'role_id'  => $p->role_id,
+                'can_view' => $p->can_view,
+                'can_send' => $p->can_send,
+            ])->values());
+
+        // Attach permissions to each channel and filter to only those the user can view
+        $authUser = Auth::user();
+        $channel->server->channels->each(function ($ch) use ($channelPermsMap) {
+            $ch->channel_permissions = $channelPermsMap->get($ch->id, collect())->all();
+        });
+
+        // Filter visible channels for the sidebar (owners see everything)
+        $isOwner = $channel->server->owner_id === $authUser->id;
+        if ($isOwner) {
+            $visibleChannelIds = $channel->server->channels->pluck('id')->all();
+        } else {
+            $userRoleIds = DB::table('server_member_roles')
+                ->where('user_id', $authUser->id)
+                ->where('server_id', $channel->server_id)
+                ->pluck('role_id')
+                ->all();
+
+            // Load all can_view permissions for channels in this server
+            $allViewPerms = \App\Models\ChannelPermission::whereIn('channel_id', $allChannelIds)
+                ->get(['channel_id', 'role_id', 'can_view'])
+                ->groupBy('channel_id');
+
+            $visibleChannelIds = $channel->server->channels
+                ->filter(function ($ch) use ($allViewPerms, $userRoleIds) {
+                    $perms = $allViewPerms->get($ch->id);
+                    // No overrides → visible
+                    if (!$perms || $perms->isEmpty()) return true;
+                    $userPerms = $perms->whereIn('role_id', $userRoleIds);
+                    // Explicit deny for any of user's roles → hidden
+                    if ($userPerms->where('can_view', false)->isNotEmpty()) return false;
+                    // Explicit allow for any of user's roles → visible
+                    if ($userPerms->where('can_view', true)->isNotEmpty()) return true;
+                    // Restricted channel (has explicit allows) but user has no override → hidden
+                    return $perms->where('can_view', true)->isEmpty();
+                })
+                ->pluck('id')
+                ->all();
+        }
 
         $pinnedMessages = $channel->messages()
             ->pinned()
@@ -81,11 +139,13 @@ class MessageController extends Controller
             'messages'           => $messages,
             'pinnedMessages'     => $pinnedMessages,
             'userServers'        => $userServers,
-            'canManageMessages'  => Auth::user()->can('manageMessages', $channel->server),
-            'canManageRoles'     => Auth::user()->can('manageRoles', $channel->server),
-            'canManageChannels'  => Auth::user()->can('manageChannels', $channel->server),
-            'canKickMembers'     => Auth::user()->can('kickMembers', $channel->server),
-            'canBanMembers'      => Auth::user()->can('banMembers', $channel->server),
+            'visibleChannelIds'  => $visibleChannelIds,
+            'canManageMessages'  => $authUser->can('manageMessages', $channel->server),
+            'canManageRoles'     => $authUser->can('manageRoles', $channel->server),
+            'canManageChannels'  => $authUser->can('manageChannels', $channel->server),
+            'canKickMembers'     => $authUser->can('kickMembers', $channel->server),
+            'canBanMembers'      => $authUser->can('banMembers', $channel->server),
+            'canSendMessages'    => $channel->canUserSend($authUser),
             'isOwner'            => $channel->server->owner_id === Auth::id(),
         ]);
     }
@@ -131,45 +191,69 @@ class MessageController extends Controller
     {
         abort_if(!$channel->server, 404);
         $this->authorize('view', $channel->server);
+        abort_if(!$channel->canUserSend(Auth::user()), 403);
+
+        // Announcement channels: only owners and admins can post
+        if ($channel->type === 'announcement') {
+            $authUser = Auth::user();
+            $isPrivileged = $channel->server->owner_id === $authUser->id
+                || $authUser->can('manageMessages', $channel->server);
+            abort_if(!$isPrivileged, 403);
+        }
 
         $data = $request->validate([
             'content'      => 'nullable|string|max:2000',
-            'attachment'   => 'nullable|image|max:8192',
+            'attachment'   => 'nullable|file|max:20480',
             'reply_to_id'  => 'nullable|integer|exists:messages,id',
         ]);
 
         abort_if(empty($data['content']) && !$request->hasFile('attachment'), 422);
 
-        $attachmentPath = $request->hasFile('attachment')
-            ? $request->file('attachment')->store('attachments', 'public')
-            : null;
+        $attachmentPath = null;
+        $attachmentName = null;
+        if ($request->hasFile('attachment')) {
+            $file = $request->file('attachment');
+            $attachmentName = $file->getClientOriginalName();
+            $attachmentPath = $file->store('attachments', 'public');
+        }
 
         $message = Message::create([
-            'channel_id'  => $channel->id,
-            'user_id'     => Auth::id(),
-            'content'     => $data['content'] ?? '',
-            'attachment'  => $attachmentPath,
-            'reply_to_id' => $data['reply_to_id'] ?? null,
+            'channel_id'      => $channel->id,
+            'user_id'         => Auth::id(),
+            'content'         => $data['content'] ?? '',
+            'attachment'      => $attachmentPath,
+            'attachment_name' => $attachmentName,
+            'reply_to_id'     => $data['reply_to_id'] ?? null,
         ]);
 
         $message->loadMissing('replyTo.user');
         broadcast(new MessageSent($message))->toOthers();
 
-        // Dispatch mention notifications
+        // Dispatch mention notifications + push to offline users
         $message->load('user', 'channel.server');
         $members = $channel->server->members()->where('user_id', '!=', Auth::id())->get();
         $content = $data['content'] ?? '';
-        foreach ($members as $member) {
-            if (str_contains($content, '@' . $member->name)) {
-                broadcast(new MentionReceived($message, $member));
+        $senderName = $message->user->name;
+        $channelUrl = route('channels.show', $channel->id);
+        $push = app(PushNotificationService::class);
 
-                // Incrementar contador en BD
+        foreach ($members as $member) {
+            $isMentioned = str_contains($content, '@' . $member->name);
+            if ($isMentioned) {
+                broadcast(new MentionReceived($message, $member));
                 DB::table('unread_mentions')->upsert(
                     ['user_id' => $member->id, 'server_id' => $channel->server_id, 'channel_id' => $channel->id, 'count' => 1],
                     ['user_id', 'channel_id'],
                     ['count' => DB::raw('count + 1')]
                 );
             }
+
+            // Send push notification (mention or regular message)
+            $notifTitle = $isMentioned
+                ? "{$senderName} te mencionó en #{$channel->name}"
+                : "#{$channel->name} — {$senderName}";
+            $notifBody = $content ?: '📎 Archivo adjunto';
+            $push->sendToUser($member->id, $notifTitle, $notifBody, $channelUrl);
         }
 
         $message->loadMissing('user', 'replyTo.user');
@@ -178,6 +262,7 @@ class MessageController extends Controller
             'id'               => $message->id,
             'content'          => $message->content,
             'attachment_url'   => $message->attachment_url,
+            'attachment_name'  => $message->attachment_name,
             'reactions_grouped' => [],
             'created_at'       => $message->created_at,
             'reply_to'         => $replyTo ? [
@@ -200,11 +285,27 @@ class MessageController extends Controller
 
         $data = $request->validate(['content' => 'required|string|max:2000']);
 
+        // Save old version to history before overwriting
+        MessageEdit::create([
+            'message_id' => $message->id,
+            'content'    => $message->content,
+            'edited_at'  => $message->updated_at ?? $message->created_at,
+        ]);
+
         $message->update(['content' => $data['content']]);
 
         broadcast(new MessageUpdated($message))->toOthers();
 
         return response()->json(['id' => $message->id, 'content' => $message->content, 'updated_at' => $message->updated_at]);
+    }
+
+    public function edits(Message $message)
+    {
+        abort_if($message->user_id !== Auth::id() && !Auth::user()->can('manageMessages', optional($message->channel)->server), 403);
+
+        return response()->json(
+            $message->edits()->get(['content', 'edited_at'])
+        );
     }
 
     public function destroy(Message $message)
