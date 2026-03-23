@@ -26,6 +26,11 @@ class Channel extends Model
         return $this->hasMany(Message::class);
     }
 
+    public function threads(): HasMany
+    {
+        return $this->hasMany(Thread::class);
+    }
+
     public function permissions(): HasMany
     {
         return $this->hasMany(ChannelPermission::class);

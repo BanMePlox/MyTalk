@@ -34,7 +34,8 @@ class MessageController extends Controller
         }
 
         $messages = $channel->messages()
-            ->with('user', 'reactions', 'replyTo.user')
+            ->whereNull('thread_id')
+            ->with('user', 'reactions', 'replyTo.user', 'thread')
             ->latest()
             ->take(50)
             ->get()
@@ -105,6 +106,7 @@ class MessageController extends Controller
         }
 
         $pinnedMessages = $channel->messages()
+            ->whereNull('thread_id')
             ->pinned()
             ->with('user', 'pinnedBy')
             ->orderBy('pinned_at')
@@ -159,6 +161,7 @@ class MessageController extends Controller
         if (strlen($q) < 2) return response()->json([]);
 
         $results = $channel->messages()
+            ->whereNull('thread_id')
             ->with('user')
             ->where('content', 'like', '%' . $q . '%')
             ->latest()
@@ -175,7 +178,7 @@ class MessageController extends Controller
         abort_if(!$channel->server, 404);
         $this->authorize('view', $channel->server);
 
-        $query = $channel->messages()->with('user', 'reactions', 'replyTo.user')->latest();
+        $query = $channel->messages()->whereNull('thread_id')->with('user', 'reactions', 'replyTo.user', 'thread')->latest();
 
         if ($request->filled('before')) {
             $query->where('id', '<', $request->integer('before'));

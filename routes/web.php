@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\BanController;
+use App\Http\Controllers\ThreadController;
+use App\Http\Controllers\LinkPreviewController;
 use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ChannelPermissionController;
@@ -95,7 +97,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/messages/{message}/unpin', [MessageController::class, 'unpin'])->name('messages.unpin');
     Route::post('/messages/{message}/reactions', [ReactionController::class, 'toggle'])->name('messages.react');
 
+    Route::get('/channels/{channel}/threads', [ThreadController::class, 'index'])->name('threads.index');
+    Route::post('/messages/{message}/thread', [ThreadController::class, 'create'])->name('threads.create');
+    Route::get('/threads/{thread}', [ThreadController::class, 'show'])->name('threads.show');
+    Route::patch('/threads/{thread}', [ThreadController::class, 'update'])->name('threads.update');
+    Route::post('/threads/{thread}/messages', [ThreadController::class, 'store'])->middleware('throttle:120,1')->name('threads.store');
+
     Route::get('/search', GlobalSearchController::class)->name('search.global');
+
+    Route::get('/link-preview', [LinkPreviewController::class, 'show'])->name('link.preview');
 
     Route::post('/push/subscribe', [PushSubscriptionController::class, 'store'])->name('push.subscribe');
     Route::post('/push/unsubscribe', [PushSubscriptionController::class, 'destroy'])->name('push.unsubscribe');

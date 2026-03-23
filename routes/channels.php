@@ -19,6 +19,12 @@ Broadcast::channel('channel.{channelId}', function ($user, $channelId) {
     return $channel->canUserView($user);
 });
 
+Broadcast::channel('thread.{threadId}', function ($user, $threadId) {
+    $thread = \App\Models\Thread::find($threadId);
+    if (!$thread) return false;
+    return $thread->channel->server->members()->where('user_id', $user->id)->exists();
+});
+
 Broadcast::channel('presence-server.{serverId}', function ($user, $serverId) {
     $server = \App\Models\Server::find($serverId);
     if (!$server) return false;

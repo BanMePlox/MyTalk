@@ -137,9 +137,35 @@ function renderContent(text, members = [], selfName = '', selfNickname = '') {
     let match;
     let keyCounter = 0;
 
+    function renderMarkdown(str, baseKey) {
+        // Process **bold**, *italic*, ~~strikethrough~~, and URLs in a plain string
+        const MD_RE = /\*\*(.+?)\*\*|\*(.+?)\*|~~(.+?)~~|(https?:\/\/[^\s<>"']+)/g;
+        const parts = [];
+        let last = 0, m, k = 0;
+        while ((m = MD_RE.exec(str)) !== null) {
+            if (m.index > last) parts.push(str.slice(last, m.index));
+            if (m[1] !== undefined)
+                parts.push(<strong key={`${baseKey}-b${k++}`} className="font-bold text-white">{m[1]}</strong>);
+            else if (m[2] !== undefined)
+                parts.push(<em key={`${baseKey}-i${k++}`} className="italic">{m[2]}</em>);
+            else if (m[3] !== undefined)
+                parts.push(<span key={`${baseKey}-s${k++}`} className="line-through opacity-70">{m[3]}</span>);
+            else if (m[4] !== undefined)
+                parts.push(
+                    <a key={`${baseKey}-u${k++}`} href={m[4]} target="_blank" rel="noopener noreferrer"
+                        className="text-indigo-400 hover:text-indigo-300 hover:underline break-all">
+                        {m[4]}
+                    </a>
+                );
+            last = MD_RE.lastIndex;
+        }
+        if (last < str.length) parts.push(str.slice(last));
+        return parts.length === 1 && typeof parts[0] === 'string' ? parts[0] : parts;
+    }
+
     function renderPlain(str) {
         if (!str) return null;
-        if (!mentionRe) return str;
+        if (!mentionRe) return renderMarkdown(str, 'p');
         const parts = str.split(mentionRe);
         return parts.map((part, i) => {
             if (part.startsWith('@')) {
@@ -151,7 +177,7 @@ function renderContent(text, members = [], selfName = '', selfNickname = '') {
                     }`}>{part}</span>
                 );
             }
-            return part;
+            return renderMarkdown(part, `p${i}`);
         });
     }
 
@@ -318,6 +344,120 @@ function SyntaxHelpPopup({ onClose }) {
                     className="text-xs text-gray-400 hover:text-gray-200 disabled:opacity-30 disabled:cursor-default px-2 py-1 rounded hover:bg-gray-700 transition-colors"
                 >Siguiente →</button>
             </div>
+        </div>
+    );
+}
+
+// Regex to detect URLs in plain text
+const URL_RE = /https?:\/\/[^\s<>"']+/g;
+
+function getYouTubeId(url) {
+    const m = url.match(/(?:youtube\.com\/(?:watch\?(?:.*[?&])?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    return m ? m[1] : null;
+}
+
+function YouTubeEmbed({ url }) {
+    const videoId = getYouTubeId(url);
+    const [playing, setPlaying] = useState(false);
+
+    if (!videoId) return null;
+
+    const thumb = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+    const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+
+    return (
+        <div className="mt-2 max-w-sm rounded-lg overflow-hidden border border-gray-700 bg-black">
+            {playing ? (
+                <iframe
+                    src={embedUrl}
+                    className="w-full aspect-video"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    title="YouTube video"
+                />
+            ) : (
+                <button
+                    onClick={() => setPlaying(true)}
+                    className="relative w-full aspect-video group block"
+                >
+                    <img
+                        src={thumb}
+                        alt="YouTube thumbnail"
+                        className="w-full h-full object-cover"
+                    />
+                    {/* Play button overlay */}
+                    <span className="absolute inset-0 flex items-center justify-center">
+                        <span className="w-14 h-14 bg-red-600 group-hover:bg-red-500 rounded-full flex items-center justify-center shadow-lg transition-colors">
+                            <svg className="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z" />
+                            </svg>
+                        </span>
+                    </span>
+                </button>
+            )}
+        </div>
+    );
+}
+
+function LinkPreviewCard({ url }) {
+    const [data, setData] = useState(undefined); // undefined=loading, null=no preview
+
+    useEffect(() => {
+        let cancelled = false;
+        window.axios.get(route('link.preview'), { params: { url } })
+            .then(res => { if (!cancelled) setData(res.data); })
+            .catch(() => { if (!cancelled) setData(null); });
+        return () => { cancelled = true; };
+    }, [url]);
+
+    if (data === undefined) return null; // silently load
+    if (!data) return null;
+
+    const domain = (() => { try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return url; } })();
+
+    return (
+        <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 flex gap-3 max-w-lg bg-gray-800 border border-gray-700 rounded-lg overflow-hidden hover:border-gray-500 transition-colors group"
+        >
+            {data.image && (
+                <img
+                    src={data.image}
+                    alt=""
+                    className="w-20 h-20 object-cover shrink-0"
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                />
+            )}
+            <div className="flex flex-col justify-center px-3 py-2.5 min-w-0">
+                {data.site_name && (
+                    <p className="text-[10px] text-indigo-400 uppercase tracking-wide font-semibold mb-0.5 truncate">{data.site_name}</p>
+                )}
+                {!data.site_name && (
+                    <p className="text-[10px] text-gray-500 mb-0.5 truncate">{domain}</p>
+                )}
+                {data.title && (
+                    <p className="text-sm font-semibold text-gray-100 group-hover:text-white truncate leading-snug">{data.title}</p>
+                )}
+                {data.description && (
+                    <p className="text-xs text-gray-400 mt-0.5 line-clamp-2 leading-snug">{data.description}</p>
+                )}
+            </div>
+        </a>
+    );
+}
+
+function LinkPreviewList({ content }) {
+    const urls = [...new Set([...(content.matchAll(URL_RE))].map(m => m[0]).slice(0, 3))];
+    if (!urls.length) return null;
+    return (
+        <div className="flex flex-col gap-1">
+            {urls.map(url =>
+                getYouTubeId(url)
+                    ? <YouTubeEmbed key={url} url={url} />
+                    : <LinkPreviewCard key={url} url={url} />
+            )}
         </div>
     );
 }
@@ -652,6 +792,8 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
     const [editHistory, setEditHistory] = useState([]);
     const [editHistoryLoading, setEditHistoryLoading] = useState(false);
     const [syntaxHelpOpen, setSyntaxHelpOpen] = useState(false);
+    const [isAtBottom, setIsAtBottom] = useState(true);
+    const [newMsgCount, setNewMsgCount] = useState(0);
 
     // Paginación de miembros: cuántos mostrar por sección
     const MEMBERS_PAGE = 30;
@@ -662,7 +804,20 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
     const dragOverChannel = useRef(null);
     const [dragOverId, setDragOverId] = useState(null);
 
+    // Hilos (threads)
+    const [threadPanelId, setThreadPanelId] = useState(null);
+    const [threadData, setThreadData] = useState(null);
+    const [threadLoading, setThreadLoading] = useState(false);
+    const [threadContent, setThreadContent] = useState('');
+    const [threadSending, setThreadSending] = useState(false);
+    const [threadNameEdit, setThreadNameEdit] = useState(false);
+    const [threadNameInput, setThreadNameInput] = useState('');
+    const [threadListOpen, setThreadListOpen] = useState(false);
+    const [threadList, setThreadList] = useState(null); // null = not loaded
+    const [threadListLoading, setThreadListLoading] = useState(false);
+
     const bottomRef = useRef(null);
+    const threadBottomRef = useRef(null);
     const inputRef = useRef(null);
     const containerRef = useRef(null);
     const statusMenuRef = useRef(null);
@@ -711,6 +866,26 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
     useEffect(() => {
         bottomRef.current?.scrollIntoView();
     }, []);
+
+    // Detectar si el usuario está al fondo del chat
+    useEffect(() => {
+        const el = containerRef.current;
+        if (!el) return;
+        function onScroll() {
+            const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+            setIsAtBottom(atBottom);
+            if (atBottom) setNewMsgCount(0);
+        }
+        el.addEventListener('scroll', onScroll, { passive: true });
+        return () => el.removeEventListener('scroll', onScroll);
+    }, []);
+
+    // Auto-resize textarea
+    useEffect(() => {
+        if (!inputRef.current) return;
+        inputRef.current.style.height = '0px';
+        inputRef.current.style.height = Math.min(inputRef.current.scrollHeight, 160) + 'px';
+    }, [content]);
 
     // Limpiar badge del canal actual al entrar (channel.id cambia en navegación Inertia)
     useEffect(() => {
@@ -800,7 +975,14 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
 
         echoChannel.listen('MessageSent', (e) => {
             setMessages((prev) => [...prev, e]);
-            bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+            setIsAtBottom(prev => {
+                if (prev) {
+                    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 0);
+                    return true;
+                }
+                setNewMsgCount(c => c + 1);
+                return false;
+            });
         });
 
         echoChannel.listen('.MessageUpdated', (e) => {
@@ -813,6 +995,13 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
 
         echoChannel.listen('.MessageReactionUpdated', (e) => {
             setMessages((prev) => prev.map((m) => m.id === e.message_id ? { ...m, reactions_grouped: e.reactions } : m));
+        });
+
+        echoChannel.listen('.ThreadUpdated', (e) => {
+            setMessages((prev) => prev.map((m) => m.id === e.message_id
+                ? { ...m, thread: { id: e.thread_id, reply_count: e.reply_count, last_reply_at: e.last_reply_at } }
+                : m
+            ));
         });
 
         echoChannel.listen('.MessagePinToggled', (e) => {
@@ -850,10 +1039,27 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
             echoChannel.stopListening('.MessageDeleted');
             echoChannel.stopListening('.MessageReactionUpdated');
             echoChannel.stopListening('.MessagePinToggled');
+            echoChannel.stopListening('.ThreadUpdated');
             echoChannel.stopListeningForWhisper('typing');
             Object.values(typingTimeouts.current).forEach(clearTimeout);
         };
     }, [channel.id]);
+
+    // Escuchar mensajes nuevos en el hilo abierto
+    useEffect(() => {
+        if (!threadPanelId) return;
+        const ch = window.Echo.private(`thread.${threadPanelId}`);
+        ch.listen('ThreadMessageSent', (e) => {
+            if (e.user?.id === auth.user.id) return; // ya añadido optimistamente
+            setThreadData((prev) => prev ? {
+                ...prev,
+                messages: [...prev.messages, e],
+                thread: { ...prev.thread, reply_count: prev.thread.reply_count + 1 },
+            } : prev);
+            setTimeout(() => threadBottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 0);
+        });
+        return () => ch.stopListening('ThreadMessageSent');
+    }, [threadPanelId]);
 
     // Notificaciones de menciones
     useEffect(() => {
@@ -936,6 +1142,102 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
         setMyCustomStatus(val);
         setStatusOpen(false);
         await window.axios.patch(route('user.status'), { custom_status: val || null });
+    }
+
+    async function openThread(threadId) {
+        if (threadPanelId === threadId) {
+            setThreadPanelId(null);
+            setThreadData(null);
+            setThreadNameEdit(false);
+            return;
+        }
+        setThreadPanelId(threadId);
+        setThreadData(null);
+        setThreadNameEdit(false);
+        setThreadLoading(true);
+        try {
+            const res = await window.axios.get(route('threads.show', threadId));
+            setThreadData(res.data);
+            setTimeout(() => threadBottomRef.current?.scrollIntoView(), 0);
+        } catch {
+            setThreadPanelId(null);
+        } finally {
+            setThreadLoading(false);
+        }
+    }
+
+    async function createThread(msg) {
+        try {
+            const res = await window.axios.post(route('threads.create', msg.id));
+            const thread = res.data;
+            setMessages((prev) => prev.map((m) => m.id === msg.id
+                ? { ...m, thread: { id: thread.id, reply_count: 0, last_reply_at: null } }
+                : m
+            ));
+            // Append to thread list if it's loaded
+            setThreadList((prev) => prev ? [
+                { id: thread.id, name: null, reply_count: 0, last_reply_at: null, created_at: thread.created_at,
+                  starter_message: { id: msg.id, content: msg.content, user: msg.user } },
+                ...prev,
+            ] : prev);
+            await openThread(thread.id);
+        } catch { /* ignore */ }
+    }
+
+    async function submitThreadReply() {
+        if (!threadContent.trim() || threadSending || !threadPanelId) return;
+        const text = threadContent.trim();
+        setThreadContent('');
+        setThreadSending(true);
+        const optimistic = {
+            id: `tmp-${Date.now()}`,
+            content: text,
+            created_at: new Date().toISOString(),
+            user: { id: auth.user.id, name: auth.user.name, avatar_url: auth.user.avatar_url, banner_color: auth.user.banner_color },
+        };
+        setThreadData((prev) => prev ? { ...prev, messages: [...prev.messages, optimistic] } : prev);
+        setTimeout(() => threadBottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 0);
+        try {
+            const res = await window.axios.post(route('threads.store', threadPanelId), { content: text });
+            setThreadData((prev) => prev ? {
+                ...prev,
+                messages: prev.messages.map((m) => m.id === optimistic.id ? res.data : m),
+                thread: { ...prev.thread, reply_count: prev.thread.reply_count + 1, last_reply_at: res.data.created_at },
+            } : prev);
+            // also update channel message thread badge
+            setMessages((prev) => prev.map((m) => m.thread?.id === threadPanelId
+                ? { ...m, thread: { ...m.thread, reply_count: m.thread.reply_count + 1 } }
+                : m
+            ));
+        } catch {
+            setThreadData((prev) => prev ? { ...prev, messages: prev.messages.filter((m) => m.id !== optimistic.id) } : prev);
+            setThreadContent(text);
+        } finally {
+            setThreadSending(false);
+        }
+    }
+
+    async function openThreadList() {
+        if (threadListOpen) { setThreadListOpen(false); return; }
+        setThreadListOpen(true);
+        setThreadListLoading(true);
+        try {
+            const res = await window.axios.get(route('threads.index', channel.id));
+            setThreadList(res.data);
+        } catch { /* ignore */ } finally {
+            setThreadListLoading(false);
+        }
+    }
+
+    async function saveThreadName() {
+        if (!threadPanelId) return;
+        const name = threadNameInput.trim() || null;
+        setThreadNameEdit(false);
+        setThreadData((prev) => prev ? { ...prev, thread: { ...prev.thread, name } } : prev);
+        setThreadList((prev) => prev ? prev.map((t) => t.id === threadPanelId ? { ...t, name } : t) : prev);
+        try {
+            await window.axios.patch(route('threads.update', threadPanelId), { name });
+        } catch { /* ignore */ }
     }
 
     function handleDragStart(ch) {
@@ -1055,18 +1357,24 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
     }
 
     function onKeyDown(e) {
-        if (!mentionSuggestions.length) return;
-        if (e.key === 'ArrowDown') {
+        if (mentionSuggestions.length) {
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                setMentionIndex(i => Math.min(i + 1, mentionSuggestions.length - 1));
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setMentionIndex(i => Math.max(i - 1, 0));
+            } else if (e.key === 'Enter' || e.key === 'Tab') {
+                e.preventDefault();
+                selectMention(mentionSuggestions[mentionIndex]);
+            } else if (e.key === 'Escape') {
+                setMentionSuggestions([]);
+            }
+            return;
+        }
+        if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            setMentionIndex(i => Math.min(i + 1, mentionSuggestions.length - 1));
-        } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            setMentionIndex(i => Math.max(i - 1, 0));
-        } else if (e.key === 'Enter' || e.key === 'Tab') {
-            e.preventDefault();
-            selectMention(mentionSuggestions[mentionIndex]);
-        } else if (e.key === 'Escape') {
-            setMentionSuggestions([]);
+            submit({ preventDefault: () => {} });
         }
     }
 
@@ -1747,7 +2055,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                 </aside>
 
                 {/* Área principal: mensajes */}
-                <div className="flex-1 flex flex-col overflow-hidden pb-[3.5rem] sm:pb-0 relative">
+                <div className="flex-1 flex flex-col overflow-hidden pb-[3.5rem] sm:pb-0 relative" style={{ position: 'relative' }}>
                     <header className="px-4 py-3 border-b border-gray-700 font-semibold shrink-0 flex items-center gap-3">
                         <button
                             type="button"
@@ -1762,6 +2070,14 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                             {channel.type === 'announcement' ? '📢' : '#'} {channel.name}
                             {channel.type === 'announcement' && <span className="ml-2 text-xs font-normal text-gray-400">Solo administradores pueden publicar</span>}
                         </span>
+                        <button
+                            type="button"
+                            onClick={openThreadList}
+                            className={`text-gray-400 hover:text-white transition-colors ${threadListOpen ? 'text-white' : ''}`}
+                            title="Hilos del canal"
+                        >
+                            <span className="text-base leading-none">💬</span>
+                        </button>
                         {pinnedMessages.length > 0 && (
                             <button
                                 type="button"
@@ -1838,6 +2154,182 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                         </div>
                     )}
 
+                    {/* Panel lista de hilos */}
+                    {threadListOpen && (
+                        <div className="absolute top-0 right-0 h-full w-80 bg-gray-900 border-l border-gray-700 shadow-2xl z-20 flex flex-col">
+                            <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-700 shrink-0">
+                                <span className="text-indigo-400 text-base">💬</span>
+                                <p className="text-sm font-semibold text-gray-200 flex-1">Hilos</p>
+                                {threadList && (
+                                    <span className="text-xs text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded-full">{threadList.length}</span>
+                                )}
+                                <button onClick={() => setThreadListOpen(false)} className="text-gray-500 hover:text-gray-300 text-lg leading-none ml-1">&times;</button>
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                                {threadListLoading ? (
+                                    <p className="text-xs text-gray-500 px-1 py-2">Cargando...</p>
+                                ) : !threadList || threadList.length === 0 ? (
+                                    <p className="text-xs text-gray-500 px-1 py-2">No hay hilos en este canal.</p>
+                                ) : threadList.map((t) => (
+                                    <button
+                                        key={t.id}
+                                        onClick={() => { setThreadListOpen(false); openThread(t.id); }}
+                                        className="w-full text-left bg-gray-800 rounded-lg p-3 border border-gray-700/60 hover:border-indigo-500/50 transition-colors group"
+                                    >
+                                        <div className="flex items-start justify-between gap-2 mb-1.5">
+                                            <p className="text-sm font-semibold text-gray-100 group-hover:text-white leading-snug truncate">
+                                                {t.name || (t.starter_message?.content
+                                                    ? t.starter_message.content.slice(0, 60) + (t.starter_message.content.length > 60 ? '…' : '')
+                                                    : 'Hilo'
+                                                )}
+                                            </p>
+                                        </div>
+                                        {t.starter_message && (
+                                            <div className="flex items-center gap-1.5 mb-1.5">
+                                                <Avatar user={t.starter_message.user} size="sm" />
+                                                <span className="text-xs text-gray-400 truncate">{t.starter_message.user?.name}</span>
+                                            </div>
+                                        )}
+                                        <div className="flex items-center gap-2 text-[10px] text-gray-500">
+                                            <span>💬 {t.reply_count} {t.reply_count === 1 ? 'respuesta' : 'respuestas'}</span>
+                                            {t.last_reply_at && (
+                                                <>
+                                                    <span>·</span>
+                                                    <span>Último: {new Date(t.last_reply_at).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                                                </>
+                                            )}
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Panel de hilo */}
+                    {threadPanelId && (
+                        <div className="absolute top-0 right-0 h-full w-80 bg-gray-900 border-l border-gray-700 shadow-2xl z-30 flex flex-col">
+                            <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-700 shrink-0">
+                                <span className="text-indigo-400 text-base shrink-0">💬</span>
+                                <div className="flex-1 min-w-0">
+                                    {threadNameEdit ? (
+                                        <input
+                                            autoFocus
+                                            type="text"
+                                            value={threadNameInput}
+                                            onChange={(e) => setThreadNameInput(e.target.value)}
+                                            onKeyDown={(e) => { if (e.key === 'Enter') saveThreadName(); if (e.key === 'Escape') setThreadNameEdit(false); }}
+                                            onBlur={saveThreadName}
+                                            maxLength={100}
+                                            placeholder="Título del hilo..."
+                                            className="w-full bg-gray-800 border border-indigo-500 rounded px-2 py-0.5 text-sm text-white outline-none placeholder-gray-500"
+                                        />
+                                    ) : (
+                                        <button
+                                            onClick={() => { setThreadNameInput(threadData?.thread?.name ?? ''); setThreadNameEdit(true); }}
+                                            className="text-sm font-semibold text-gray-200 hover:text-white truncate block w-full text-left transition-colors"
+                                            title="Click para editar título"
+                                        >
+                                            {threadData?.thread?.name || 'Hilo'}
+                                        </button>
+                                    )}
+                                </div>
+                                {threadData && (
+                                    <span className="text-xs text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded-full shrink-0">
+                                        {threadData.thread.reply_count} resp.
+                                    </span>
+                                )}
+                                <button
+                                    onClick={() => { setThreadPanelId(null); setThreadData(null); setThreadNameEdit(false); }}
+                                    className="text-gray-500 hover:text-gray-300 text-lg leading-none ml-1 shrink-0"
+                                >&times;</button>
+                            </div>
+
+                            {threadLoading ? (
+                                <div className="flex-1 flex items-center justify-center">
+                                    <p className="text-sm text-gray-400">Cargando...</p>
+                                </div>
+                            ) : threadData ? (
+                                <>
+                                    <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                                        {/* Mensaje original */}
+                                        {threadData.starter_message && (
+                                            <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700/50">
+                                                <div className="flex items-center gap-2 mb-1.5">
+                                                    <Avatar user={threadData.starter_message.user} size="sm" />
+                                                    <span className="text-xs font-semibold text-white">{threadData.starter_message.user?.name}</span>
+                                                    <span className="text-[10px] text-gray-500 ml-auto">
+                                                        {new Date(threadData.starter_message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    </span>
+                                                </div>
+                                                <div className="text-sm text-gray-300">
+                                                    {renderContent(threadData.starter_message.content || '', members, auth.user.name, members.find((m) => m.id === auth.user.id)?.nickname ?? '')}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {threadData.messages.length > 0 && (
+                                            <div className="flex items-center gap-2 my-1">
+                                                <div className="flex-1 h-px bg-gray-700" />
+                                                <span className="text-[10px] text-gray-500 shrink-0">
+                                                    {threadData.thread.reply_count} {threadData.thread.reply_count === 1 ? 'respuesta' : 'respuestas'}
+                                                </span>
+                                                <div className="flex-1 h-px bg-gray-700" />
+                                            </div>
+                                        )}
+
+                                        {/* Respuestas del hilo */}
+                                        {threadData.messages.map((msg) => {
+                                            const isTmp = String(msg.id).startsWith('tmp-');
+                                            return (
+                                                <div key={msg.id} className={`flex gap-2.5 ${isTmp ? 'opacity-60' : ''}`}>
+                                                    <Avatar user={msg.user} size="sm" />
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-baseline gap-1.5 mb-0.5">
+                                                            <span className="text-xs font-semibold text-white">{msg.user?.name}</span>
+                                                            <span className="text-[10px] text-gray-500">
+                                                                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                            </span>
+                                                        </div>
+                                                        <div className="text-sm text-gray-300 break-words">
+                                                            {renderContent(msg.content || '', members, auth.user.name, members.find((m) => m.id === auth.user.id)?.nickname ?? '')}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                        <div ref={threadBottomRef} />
+                                    </div>
+
+                                    {/* Input del hilo */}
+                                    <div className="p-3 border-t border-gray-700 shrink-0">
+                                        <div className="flex gap-2 bg-gray-700 rounded-lg px-3 py-2">
+                                            <textarea
+                                                rows={1}
+                                                value={threadContent}
+                                                onChange={(e) => setThreadContent(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                                        e.preventDefault();
+                                                        submitThreadReply();
+                                                    }
+                                                }}
+                                                placeholder="Responder en el hilo..."
+                                                className="flex-1 bg-transparent text-sm text-white placeholder-gray-400 outline-none resize-none leading-5 max-h-24"
+                                                style={{ overflowY: 'hidden' }}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={submitThreadReply}
+                                                disabled={threadSending || !threadContent.trim()}
+                                                className="text-indigo-400 hover:text-indigo-300 disabled:opacity-40 text-sm shrink-0"
+                                            >Enviar</button>
+                                        </div>
+                                    </div>
+                                </>
+                            ) : null}
+                        </div>
+                    )}
+
                     {/* Panel de búsqueda */}
                     {searchOpen && (
                         <div className="shrink-0 border-b border-gray-700 bg-gray-850 px-4 py-3">
@@ -1880,7 +2372,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                             </button>
                         )}
 
-                        {messages.map((msg) => {
+                        {messages.map((msg, index) => {
                             const member = members.find(m => m.id === msg.user?.id) ?? msg.user;
                             const displayName = member?.nickname ?? member?.name ?? msg.user?.name;
                             const memberRoles = member ? (memberRolesMap[member.id] ?? member?.server_roles ?? []) : [];
@@ -1888,6 +2380,12 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                             const isOwn = msg.user?.id === auth.user.id;
                             const isTmp = String(msg.id).startsWith('tmp-');
                             const isEditing = editingId === msg.id;
+                            const prevMsg = messages[index - 1];
+                            const isGrouped = !!(prevMsg
+                                && prevMsg.user?.id === msg.user?.id
+                                && !msg.reply_to
+                                && !msg.pinned_at
+                                && (new Date(msg.created_at) - new Date(prevMsg.created_at)) < 5 * 60 * 1000);
                             const openPopover = (e) => {
                                 if (!member) return;
                                 setProfilePopover({ member, anchorX: e.clientX, anchorY: e.clientY });
@@ -1896,18 +2394,30 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                             return (
                                 <div
                                     key={msg.id}
-                                    className={`group flex gap-3 px-2 py-0.5 rounded-lg hover:bg-gray-700/40 relative ${msg.pinned_at ? 'border-l-2 border-yellow-500/50' : ''}`}
+                                    className={`group flex gap-3 px-2 rounded-lg hover:bg-gray-700/40 relative ${msg.pinned_at ? 'border-l-2 border-yellow-500/50' : ''} ${isGrouped ? 'py-0' : 'py-0.5 mt-2'}`}
                                     onContextMenu={(e) => !isTmp && openContextMenu('message', e, msg, memberWithRoles)}
                                 >
-                                    <button
-                                        type="button"
-                                        onClick={openPopover}
-                                        onContextMenu={(e) => { e.stopPropagation(); member && openContextMenu('user', e, msg, memberWithRoles); }}
-                                        className="shrink-0 self-start mt-0.5 hover:opacity-80 transition-opacity"
-                                    >
-                                        <Avatar user={msg.user} />
-                                    </button>
+                                    {isGrouped ? (
+                                        <div className="w-9 shrink-0 flex items-center justify-end">
+                                            <span
+                                                className="text-[10px] text-gray-600 group-hover:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity leading-none select-none"
+                                                title={new Date(msg.created_at).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' })}
+                                            >
+                                                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                        </div>
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            onClick={openPopover}
+                                            onContextMenu={(e) => { e.stopPropagation(); member && openContextMenu('user', e, msg, memberWithRoles); }}
+                                            className="shrink-0 self-start mt-0.5 hover:opacity-80 transition-opacity"
+                                        >
+                                            <Avatar user={msg.user} />
+                                        </button>
+                                    )}
                                     <div className="flex-1 min-w-0">
+                                        {!isGrouped && (
                                         <div className="flex items-baseline gap-2">
                                             <button
                                                 type="button"
@@ -1918,10 +2428,14 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                             >
                                                 {displayName}
                                             </button>
-                                            <span className="text-xs text-gray-500">
+                                            <span
+                                                className="text-xs text-gray-500"
+                                                title={new Date(msg.created_at).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' })}
+                                            >
                                                 {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </span>
                                         </div>
+                                        )}
                                         {msg.reply_to && (
                                             <div className="flex items-center gap-1.5 mb-0.5 text-xs text-gray-400 border-l-2 border-gray-500 pl-2 mt-0.5">
                                                 <span className="font-semibold text-gray-300 shrink-0">{msg.reply_to.user?.name}</span>
@@ -1955,12 +2469,21 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                         )}
                                                     </div>
                                                 )}
+                                                {!isTmp && msg.content && <LinkPreviewList content={msg.content} />}
                                                 {msg.attachment_url && (() => {
                                                     const isImage = /\.(png|jpe?g|gif|webp|bmp|svg)(\?|$)/i.test(msg.attachment_url);
+                                                    const isVideo = /\.(mp4|webm|ogg|mov|mkv)(\?|$)/i.test(msg.attachment_url);
                                                     return isImage ? (
                                                         <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer" className="block mt-1">
                                                             <img src={msg.attachment_url} alt="adjunto" className="max-w-xs max-h-64 rounded-lg object-cover border border-gray-700 hover:opacity-90 transition-opacity" />
                                                         </a>
+                                                    ) : isVideo ? (
+                                                        <video
+                                                            src={msg.attachment_url}
+                                                            controls
+                                                            preload="metadata"
+                                                            className="mt-1 max-w-sm max-h-64 rounded-lg border border-gray-700 bg-black"
+                                                        />
                                                     ) : (
                                                         <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer" download={msg.attachment_name ?? true} className="mt-1 inline-flex items-center gap-2 bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-indigo-300 hover:text-indigo-200 hover:border-indigo-500 transition-colors">
                                                             <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -1978,6 +2501,14 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                     </div>
                                     {!isTmp && !isEditing && (
                                         <div className="absolute right-2 top-0 -translate-y-1/2 hidden group-hover:flex items-center gap-1 bg-gray-800 border border-gray-700 rounded-lg px-1 py-0.5 shadow-lg z-10">
+                                            <button
+                                                type="button"
+                                                onClick={() => msg.thread ? openThread(msg.thread.id) : createThread(msg)}
+                                                className="text-gray-400 hover:text-indigo-300 px-1.5 py-0.5 rounded text-xs transition-colors"
+                                                title={msg.thread ? `Hilo (${msg.thread.reply_count} respuestas)` : 'Crear hilo'}
+                                            >
+                                                💬{msg.thread?.reply_count > 0 ? ` ${msg.thread.reply_count}` : ''}
+                                            </button>
                                             <button
                                                 type="button"
                                                 onClick={() => { setReplyingTo({ id: msg.id, content: msg.content, user: msg.user }); inputRef.current?.focus(); }}
@@ -2037,6 +2568,24 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                             )}
                                         </div>
                                     )}
+                                    {/* Badge de hilo */}
+                                    {!isTmp && msg.thread && msg.thread.reply_count > 0 && (
+                                        <button
+                                            onClick={() => openThread(msg.thread.id)}
+                                            className={`flex items-center gap-1.5 text-xs mt-1 rounded px-2 py-1 transition-colors ${
+                                                threadPanelId === msg.thread.id
+                                                    ? 'text-indigo-300 bg-indigo-600/20'
+                                                    : 'text-indigo-400 hover:text-indigo-300 bg-gray-800/50 hover:bg-gray-700/50'
+                                            }`}
+                                        >
+                                            <span>💬</span>
+                                            <span className="font-medium">
+                                                {msg.thread.reply_count} {msg.thread.reply_count === 1 ? 'respuesta' : 'respuestas'}
+                                            </span>
+                                            <span className="text-gray-500">·</span>
+                                            <span className="text-gray-400">Ver hilo →</span>
+                                        </button>
+                                    )}
                                     {/* Burbujas de reacciones */}
                                     {(msg.reactions_grouped?.length > 0) && (
                                         <div className="flex flex-wrap gap-1 mt-1">
@@ -2065,6 +2614,24 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                         })}
                         <div ref={bottomRef} />
                     </div>
+
+                    {/* Botón scroll to bottom */}
+                    {!isAtBottom && (
+                        <button
+                            onClick={() => {
+                                bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+                                setNewMsgCount(0);
+                            }}
+                            className="absolute bottom-24 right-6 flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium px-3 py-1.5 rounded-full shadow-lg transition-colors z-10"
+                        >
+                            {newMsgCount > 0 && (
+                                <span className="bg-white text-indigo-600 font-bold rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
+                                    {newMsgCount > 9 ? '9+' : newMsgCount}
+                                </span>
+                            )}
+                            ↓ Ir al fondo
+                        </button>
+                    )}
 
                     <div className="shrink-0">
                         {/* Indicador de escritura */}
@@ -2144,14 +2711,15 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                                 </svg>
                             </button>
-                            <input
+                            <textarea
                                 ref={inputRef}
-                                type="text"
+                                rows={1}
                                 value={content}
                                 onChange={onType}
                                 onKeyDown={onKeyDown}
                                 placeholder={`Mensaje en #${channel.name}`}
-                                className="flex-1 bg-transparent text-sm text-white placeholder-gray-400 outline-none"
+                                className="flex-1 bg-transparent text-sm text-white placeholder-gray-400 outline-none resize-none leading-5 max-h-40 self-center"
+                                style={{ overflowY: 'hidden' }}
                             />
                             <button
                                 type="button"
