@@ -70,6 +70,7 @@ class MessageController extends Controller
             ->groupBy('user_id');
 
         $channel->server->members->each(function ($member) use ($memberRoleMap) {
+            $member->nickname     = $member->pivot->nickname ?? null;
             $member->server_roles = $memberRoleMap->get($member->id, collect())
                 ->map(fn($r) => ['id' => $r->id, 'name' => $r->name, 'color' => $r->color])
                 ->values();

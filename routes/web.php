@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BanController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\NicknameController;
 use App\Http\Controllers\FriendshipController;
 use App\Http\Controllers\ChannelController;
 use App\Http\Controllers\DirectMessageController;
@@ -38,6 +39,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/servers/{server}/leave', [ServerController::class, 'leave'])->name('servers.leave');
     Route::delete('/servers/{server}', [ServerController::class, 'destroy'])->name('servers.destroy');
     Route::post('/servers/{server}/icon', [ServerController::class, 'updateIcon'])->name('servers.icon');
+    Route::patch('/servers/{server}/name', [ServerController::class, 'updateName'])->name('servers.name');
+    Route::patch('/servers/{server}/nickname', [NicknameController::class, 'update'])->name('servers.nickname');
 
     Route::get('/servers/{server}/roles', [RoleController::class, 'index'])->name('roles.index');
     Route::post('/servers/{server}/roles', [RoleController::class, 'store'])->name('roles.store');

@@ -32,19 +32,22 @@ function TypingDots() {
     );
 }
 
-// Resalta @Nombre en el contenido del mensaje
-function renderContent(text, members = [], selfName = '') {
+// Resalta @Nombre/@Apodo en el contenido del mensaje
+function renderContent(text, members = [], selfName = '', selfNickname = '') {
     if (!members.length) return text;
 
-    const escaped = [...members]
-        .sort((a, b) => b.name.length - a.name.length)
-        .map(m => m.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    // Usa nickname si existe, si no el nombre real
+    const displayNames = [...members]
+        .map(m => (m.nickname || m.name))
+        .sort((a, b) => b.length - a.length)
+        .map(n => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
 
-    const parts = text.split(new RegExp(`(@(?:${escaped.join('|')}))`, 'g'));
+    const parts = text.split(new RegExp(`(@(?:${displayNames.join('|')}))`, 'g'));
 
     return parts.map((part, i) => {
         if (part.startsWith('@')) {
-            const isSelf = part.slice(1) === selfName;
+            const tag = part.slice(1);
+            const isSelf = tag === selfNickname || tag === selfName;
             return (
                 <span key={i} className={`rounded px-0.5 font-medium ${
                     isSelf ? 'bg-yellow-500/20 text-yellow-300' : 'bg-indigo-500/20 text-indigo-300'
@@ -242,7 +245,8 @@ function ProfilePopover({ member, status, anchorX, anchorY, onClose, authId }) {
                 </div>
 
                 {/* Nombre y rol */}
-                <p className="font-bold text-white text-lg leading-tight">{member.name}</p>
+                <p className="font-bold text-white text-lg leading-tight">{member.nickname ?? member.name}</p>
+                {member.nickname && <p className="text-xs text-gray-400">{member.name}</p>}
                 {ROLE_LABEL[member.pivot?.role] && (
                     <p className={`text-xs font-medium ${ROLE_COLOR[member.pivot?.role]}`}>{ROLE_LABEL[member.pivot?.role]}</p>
                 )}
@@ -330,6 +334,11 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
     const [toasts, setToasts] = useState([]);
 
     const [replyingTo, setReplyingTo] = useState(null); // { id, content, user }
+    const [nicknameOpen, setNicknameOpen] = useState(false);
+    const [nicknameInput, setNicknameInput] = useState('');
+    const [serverNameEdit, setServerNameEdit] = useState(false);
+    const [serverNameInput, setServerNameInput] = useState('');
+    const [serverName, setServerName] = useState(channel.server?.name ?? '');
 
     const [attachmentFile, setAttachmentFile] = useState(null);
     const [attachmentPreview, setAttachmentPreview] = useState(null);
@@ -449,6 +458,15 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                             ? { ...m, name: e.name, avatar_url: e.avatar_url, banner_color: e.banner_color }
                             : m
                     ));
+                })
+                .listen('.NicknameUpdated', (e) => {
+                    if (e.server_id !== channel.server_id) return;
+                    setMembers((prev) => prev.map((m) =>
+                        m.id === e.user_id ? { ...m, nickname: e.nickname } : m
+                    ));
+                })
+                .listen('.ServerNameUpdated', (e) => {
+                    if (e.server_id === channel.server_id) setServerName(e.name);
                 });
         });
 
@@ -624,7 +642,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
         if (match) {
             const query = match[1].toLowerCase();
             setMentionSuggestions(
-                (channel.server?.members ?? []).filter(m => m.name.toLowerCase().includes(query))
+                members.filter(m => (m.nickname ?? m.name).toLowerCase().includes(query))
             );
             setMentionStart(match.index);
         } else {
@@ -642,11 +660,12 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
     function selectMention(member) {
         const before = content.slice(0, mentionStart);
         const after = content.slice(inputRef.current?.selectionStart ?? content.length);
-        const inserted = `${before}@${member.name} ${after}`;
+        const tag = member.nickname ?? member.name;
+        const inserted = `${before}@${tag} ${after}`;
         setContent(inserted);
         setMentionSuggestions([]);
         setTimeout(() => {
-            const pos = (before + '@' + member.name + ' ').length;
+            const pos = (before + '@' + tag + ' ').length;
             inputRef.current?.setSelectionRange(pos, pos);
             inputRef.current?.focus();
         }, 0);
@@ -894,6 +913,25 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
         } catch { /* ignore */ }
     }
 
+    async function saveNickname() {
+        const nick = nicknameInput.trim() || null;
+        try {
+            await window.axios.patch(route('servers.nickname', channel.server.id), { nickname: nick });
+            setMembers((prev) => prev.map((m) => m.id === auth.user.id ? { ...m, nickname: nick } : m));
+        } catch { /* ignore */ }
+        setNicknameOpen(false);
+    }
+
+    async function saveServerName() {
+        const name = serverNameInput.trim();
+        if (!name) return;
+        setServerNameEdit(false);
+        try {
+            await window.axios.patch(route('servers.name', channel.server.id), { name });
+            setServerName(name);
+        } catch { /* ignore */ }
+    }
+
     async function doGlobalSearch(q) {
         setGlobalQuery(q);
         clearTimeout(globalSearchTimeout.current);
@@ -1045,7 +1083,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                             onClick={() => setServerDropdownOpen(o => !o)}
                             className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-800 transition-colors group"
                         >
-                            <span className="font-bold text-white truncate">{channel.server?.name}</span>
+                            <span className="font-bold text-white truncate">{serverName}</span>
                             <svg xmlns="http://www.w3.org/2000/svg" className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${serverDropdownOpen ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
                                 <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                             </svg>
@@ -1061,6 +1099,34 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                     <span>🔗</span>
                                     <span>{inviteCopied ? '¡Copiado!' : 'Copiar invitación'}</span>
                                 </button>
+
+                                {/* Cambiar nombre */}
+                                {isOwner && (
+                                    serverNameEdit ? (
+                                        <div className="px-3 py-2">
+                                            <input
+                                                autoFocus
+                                                type="text"
+                                                value={serverNameInput}
+                                                onChange={e => setServerNameInput(e.target.value)}
+                                                onKeyDown={e => { if (e.key === 'Enter') saveServerName(); if (e.key === 'Escape') setServerNameEdit(false); }}
+                                                placeholder="Nuevo nombre..."
+                                                className="w-full bg-gray-800 border border-gray-600 text-gray-200 placeholder-gray-500 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 mb-1.5"
+                                            />
+                                            <div className="flex gap-2">
+                                                <button onClick={saveServerName} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-2 py-1 rounded">Guardar</button>
+                                                <button onClick={() => setServerNameEdit(false)} className="text-gray-400 hover:text-gray-200 text-xs px-2 py-1 rounded hover:bg-gray-700">Cancelar</button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <button
+                                            onClick={() => { setServerNameInput(channel.server?.name ?? ''); setServerNameEdit(true); }}
+                                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-200 hover:bg-gray-700 transition-colors"
+                                        >
+                                            <span>✏️</span> Cambiar nombre
+                                        </button>
+                                    )
+                                )}
 
                                 {/* Cambiar icono */}
                                 {isOwner && (
@@ -1121,7 +1187,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                 {isOwner ? (
                                     confirmDeleteServer ? (
                                         <div className="px-3 py-2">
-                                            <p className="text-xs text-red-400 mb-2">¿Eliminar <strong>{channel.server?.name}</strong>? Esta acción es irreversible.</p>
+                                            <p className="text-xs text-red-400 mb-2">¿Eliminar <strong>{serverName}</strong>? Esta acción es irreversible.</p>
                                             <div className="flex gap-2">
                                                 <button
                                                     onClick={() => router.delete(route('servers.destroy', channel.server.id))}
@@ -1212,6 +1278,19 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
 
                     {/* Usuario actual + selector de estado */}
                     <div className="p-3 border-t border-gray-700 relative" ref={statusMenuRef}>
+                        {channel.server && (
+                            <button
+                                onClick={() => {
+                                    const me = members.find(m => m.id === auth.user.id);
+                                    setNicknameInput(me?.nickname ?? '');
+                                    setNicknameOpen(true);
+                                }}
+                                className="w-full text-left text-xs text-gray-500 hover:text-gray-300 px-1 mb-1 transition-colors truncate"
+                                title="Cambiar apodo en este servidor"
+                            >
+                                {(() => { const me = members.find(m => m.id === auth.user.id); return me?.nickname ? `Apodo: ${me.nickname}` : '+ Apodo en este servidor'; })()}
+                            </button>
+                        )}
                         <button
                             onClick={() => setStatusOpen((o) => !o)}
                             className="flex items-center gap-2 w-full hover:bg-gray-800 rounded px-1 py-1 transition-colors"
@@ -1378,7 +1457,8 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                         )}
 
                         {messages.map((msg) => {
-                            const member = (channel.server?.members ?? []).find(m => m.id === msg.user?.id) ?? msg.user;
+                            const member = members.find(m => m.id === msg.user?.id) ?? msg.user;
+                            const displayName = member?.nickname ?? member?.name ?? msg.user?.name;
                             const memberRoles = member ? (memberRolesMap[member.id] ?? member?.server_roles ?? []) : [];
                             const primaryColor = memberRoles[0]?.color;
                             const isOwn = msg.user?.id === auth.user.id;
@@ -1412,7 +1492,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                 className="font-semibold hover:underline leading-none"
                                                 style={primaryColor ? { color: primaryColor } : { color: 'white' }}
                                             >
-                                                {msg.user?.name}
+                                                {displayName}
                                             </button>
                                             <span className="text-xs text-gray-500">
                                                 {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -1442,7 +1522,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                             <>
                                                 {msg.content && (
                                                     <p className={`text-sm ${isTmp ? 'text-gray-500' : 'text-gray-300'}`}>
-                                                        {renderContent(msg.content, channel.server?.members, auth.user.name)}
+                                                        {renderContent(msg.content, members, auth.user.name, members.find(m => m.id === auth.user.id)?.nickname ?? '')}
                                                         {!isTmp && msg.updated_at && msg.updated_at !== msg.created_at && (
                                                             <span className="text-xs text-gray-500 ml-1.5">(editado)</span>
                                                         )}
@@ -1583,7 +1663,8 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                             }`}
                                         >
                                             <Avatar user={member} size="sm" />
-                                            <span>{member.name}</span>
+                                            <span>{member.nickname ?? member.name}</span>
+                                            {member.nickname && <span className="text-xs text-gray-500">{member.name}</span>}
                                         </button>
                                     ))}
                                 </div>
@@ -1650,7 +1731,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                 <ServerSettingsModal
                     show={serverSettingsOpen}
                     onClose={() => setServerSettingsOpen(false)}
-                    server={{ ...channel.server, channels: serverChannels, categories: serverCategories, members: members.map(m => ({ ...m, server_roles: memberRolesMap[m.id] ?? m.server_roles ?? [] })) }}
+                    server={{ ...channel.server, name: serverName, channels: serverChannels, categories: serverCategories, members: members.map(m => ({ ...m, server_roles: memberRolesMap[m.id] ?? m.server_roles ?? [] })) }}
                     roles={channel.server?.roles ?? []}
                     canManageRoles={canManageRoles}
                     canManageChannels={canManageChannels}
@@ -1663,6 +1744,31 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                     }
                     onCategoryChange={(updated) => setServerCategories(updated)}
                 />
+
+                {/* Modal cambiar apodo */}
+                {nicknameOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <div className="absolute inset-0 bg-black/60" onClick={() => setNicknameOpen(false)} />
+                        <div className="relative bg-gray-900 rounded-xl border border-gray-700 w-full max-w-sm p-5 shadow-2xl">
+                            <h3 className="text-gray-100 font-semibold mb-1">Cambiar apodo</h3>
+                            <p className="text-xs text-gray-400 mb-3">Solo visible en <span className="text-gray-200">{serverName}</span>. Déjalo vacío para usar tu nombre real.</p>
+                            <input
+                                autoFocus
+                                type="text"
+                                value={nicknameInput}
+                                onChange={e => setNicknameInput(e.target.value)}
+                                onKeyDown={e => { if (e.key === 'Enter') saveNickname(); if (e.key === 'Escape') setNicknameOpen(false); }}
+                                placeholder={auth.user.name}
+                                maxLength={32}
+                                className="w-full bg-gray-800 border border-gray-600 text-gray-100 placeholder-gray-500 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-4"
+                            />
+                            <div className="flex gap-2 justify-end">
+                                <button onClick={() => setNicknameOpen(false)} className="px-4 py-2 text-sm text-gray-400 hover:text-gray-200 rounded-lg hover:bg-gray-800">Cancelar</button>
+                                <button onClick={saveNickname} className="px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium">Guardar</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Menú contextual */}
                 {contextMenu && (
@@ -1688,7 +1794,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
 
                 {/* Sidebar derecho: miembros — oculto en móvil */}
                 {(() => {
-                    const allMembers = channel.server?.members ?? [];
+                    const allMembers = members;
                     const serverRoles = channel.server?.roles ?? [];
 
                     // Assign each member to exactly one bucket: their first (primary) role by position
@@ -1725,7 +1831,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                 <div className="min-w-0">
                                     <p className={`text-sm truncate leading-tight ${!status ? 'text-gray-500' : ''}`}
                                         style={status && memberWithRoles.server_roles[0] ? { color: memberWithRoles.server_roles[0].color } : undefined}>
-                                        {member.name}
+                                        {member.nickname ?? member.name}
                                     </p>
                                     {customStatus && (
                                         <p className="text-xs text-gray-400 truncate leading-tight">{customStatus}</p>

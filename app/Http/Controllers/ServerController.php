@@ -44,6 +44,18 @@ class ServerController extends Controller
         return redirect()->route('servers.show', $server);
     }
 
+    public function updateName(Request $request, Server $server)
+    {
+        $this->authorize('delete', $server); // solo el owner
+
+        $data = $request->validate(['name' => 'required|string|max:100']);
+        $server->update(['name' => $data['name']]);
+
+        broadcast(new \App\Events\ServerNameUpdated($server->id, $server->name));
+
+        return response()->json(['name' => $server->name]);
+    }
+
     public function updateIcon(Request $request, Server $server)
     {
         $this->authorize('delete', $server); // solo el owner
@@ -80,6 +92,7 @@ class ServerController extends Controller
             ->groupBy('user_id');
 
         $membersWithRoles = $server->members->map(function ($m) use ($memberRoleMap) {
+            $m->nickname     = $m->pivot->nickname ?? null;
             $m->server_roles = $memberRoleMap->get($m->id, collect())->map(fn($r) => [
                 'id'    => $r->id,
                 'name'  => $r->name,

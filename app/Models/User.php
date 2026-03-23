@@ -66,7 +66,7 @@ class User extends Authenticatable
     public function servers(): BelongsToMany
     {
         return $this->belongsToMany(Server::class, 'server_members')
-            ->withPivot('role')
+            ->withPivot('role', 'nickname')
             ->withTimestamps();
     }
 
