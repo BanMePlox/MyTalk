@@ -163,6 +163,10 @@ Consulta [`docs/ADMIN.md`](docs/ADMIN.md) para instrucciones detalladas de despl
 
 ---
 
+## Autor
+
+Desarrollado por **Pedro Jiménez Luján**.
+
 ## Licencia
 
-MIT
+Este proyecto es de código abierto y está disponible bajo la licencia **MIT**. Puedes usarlo, modificarlo y distribuirlo libremente, incluso con fines comerciales, siempre que se mantenga el aviso de copyright original.
