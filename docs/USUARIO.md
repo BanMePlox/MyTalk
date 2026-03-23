@@ -1,4 +1,4 @@
-# Guía de usuario
+# Guía de usuario — MyTalk
 
 Aplicación de chat en tiempo real similar a Discord. Permite crear servidores, organizar la comunicación en canales y chatear con otros usuarios.
 
@@ -18,34 +18,49 @@ Aplicación de chat en tiempo real similar a Discord. Permite crear servidores, 
 ### Crear un servidor
 
 1. En la pantalla principal (**Mis Servidores**), rellena el campo **Nombre del servidor** y pulsa **Crear**.
-2. Se creará el servidor y entrarás automáticamente a su página. Se genera un canal `#general` por defecto.
+2. Se creará el servidor con un canal `#general` por defecto.
 
-### Unirse a un servidor existente
+### Unirse a un servidor
 
-1. Consigue el **código de invitación** del servidor (8 caracteres, visible para los miembros en la página del servidor).
-2. En **Mis Servidores**, escribe el código en el campo **Unirse con código** y pulsa **Unirse**.
+1. Consigue el **enlace de invitación** del servidor (disponible en el menú desplegable del servidor → *Copiar invitación*).
+2. Abre el enlace en el navegador o usa el campo **Unirse con código** en *Mis Servidores*.
 
-### Compartir tu servidor
+### Ajustes del servidor
 
-El código de invitación aparece en la parte inferior de la página del servidor, en el apartado **Código de invitación**. Compártelo con quien quieras que se una.
+El menú desplegable (nombre del servidor en la cabecera del sidebar) permite:
+
+- **Copiar invitación** — comparte el enlace con quien quieras.
+- **Cambiar nombre** — solo el propietario.
+- **Cambiar icono** — sube una imagen cuadrada; solo el propietario.
+- **Ajustes del servidor** — gestión de roles, miembros, canales, categorías y baneos.
+- **Abandonar / Eliminar** — los miembros pueden abandonar; el propietario puede eliminar el servidor.
 
 ---
 
 ## Canales
 
-### Ver canales
+### Tipos de canal
 
-Dentro de un servidor verás la lista de todos sus canales. Haz clic en cualquiera para entrar y ver los mensajes.
+| Tipo | Descripción |
+|------|-------------|
+| `#` Texto | Canal normal; cualquier miembro con permiso puede escribir. |
+| `📢` Anuncios | Solo el propietario y los administradores pueden publicar; el resto solo lee. |
 
-### Crear un canal (solo owner y admin)
+### Navegar entre canales
 
-Si eres propietario o administrador del servidor, verás un formulario en la parte inferior de la lista de canales:
+Los canales aparecen en el sidebar izquierdo agrupados por **categorías**. Haz clic en el nombre de una categoría para colapsarla/expandirla.
 
-1. Escribe el nombre del nuevo canal en el campo de texto (por ejemplo: `anuncios`).
-2. Pulsa **+ Canal**.
-3. El canal aparecerá en la lista con el nombre en minúsculas y los espacios convertidos a guiones (por ejemplo: `mi canal` → `mi-canal`).
+### Crear un canal (propietario o con permiso)
 
-> Los miembros regulares no pueden crear canales.
+En el menú desplegable del servidor hay un formulario **Nuevo canal**. Escribe el nombre y pulsa **+**.
+
+### Reordenar canales (arrastrar y soltar)
+
+Si tienes permiso de gestión de canales, arrastra cualquier canal a la posición deseada dentro del sidebar.
+
+### Permisos por canal
+
+Los canales pueden tener permisos específicos por rol que sobreescriben los permisos globales del servidor. Un canal sin permisos definidos es visible para todos. Si un canal tiene permisos explícitos de "ver", solo los roles con permiso explícito pueden verlo.
 
 ---
 
@@ -53,21 +68,166 @@ Si eres propietario o administrador del servidor, verás un formulario en la par
 
 ### Enviar un mensaje
 
-1. Entra en un canal.
-2. Escribe tu mensaje en el campo de texto en la parte inferior.
-3. Pulsa **Enviar** o la tecla `Enter`.
+Escribe en el campo de texto inferior y pulsa **Enviar** o `Enter`. Para insertar un salto de línea sin enviar usa `Shift+Enter`.
 
-Los mensajes aparecen en tiempo real para todos los usuarios conectados al mismo canal.
+### Adjuntar archivos
 
-### Historial de mensajes
+Haz clic en el icono 📎 junto al campo de texto para adjuntar imágenes, vídeos u otros archivos (máx. 20 MB).
 
-Al entrar en un canal puedes ver todos los mensajes anteriores. La vista se desplaza automáticamente al mensaje más reciente.
+- Las **imágenes** se muestran inline.
+- Los **vídeos** (mp4, webm, etc.) muestran un reproductor con miniatura.
+- Otros archivos aparecen como enlace de descarga.
+
+### Responder a un mensaje
+
+Pasa el cursor sobre un mensaje y haz clic en **↩** para responder. Tu mensaje mostrará una referencia al original. También puedes usar el menú contextual (botón derecho).
+
+### Editar un mensaje
+
+Solo puedes editar tus propios mensajes. Haz clic en ✏️ en la barra de acciones o en el menú contextual. Guarda con `Enter`, cancela con `Esc`.
+
+Los mensajes editados muestran *(editado)*. Haz clic en *(editado)* para ver el historial completo de versiones anteriores.
+
+### Eliminar un mensaje
+
+Haz clic en 🗑️ en la barra de acciones. Se pedirá confirmación. Los administradores con permiso de gestión de mensajes pueden eliminar mensajes de otros.
+
+### Reaccionar con emojis
+
+Haz clic en 😊 en la barra de acciones y elige un emoji. Haz clic en una reacción existente para añadir o quitar la tuya.
+
+### Fijar mensajes
+
+Los administradores pueden fijar mensajes con el icono 📌 en la barra de acciones. Los mensajes fijados se muestran en el panel 📌 del header del canal.
+
+### Cargar mensajes anteriores
+
+Desplázate hacia arriba o pulsa el botón **↑ Cargar mensajes anteriores** para ver el historial.
 
 ---
 
-## Perfil
+## Formato de mensajes
 
-Desde el menú de navegación puedes acceder a tu perfil para:
-- Cambiar tu nombre y correo.
-- Actualizar tu contraseña.
-- Eliminar tu cuenta.
+MyTalk soporta markdown básico y bloques de código con syntax highlighting.
+
+| Sintaxis | Resultado |
+|----------|-----------|
+| `**texto**` | **negrita** |
+| `*texto*` | *cursiva* |
+| `~~texto~~` | ~~tachado~~ |
+| `` `código` `` | código inline |
+| ` ```js\ncódigo\n``` ` | bloque de código con coloreado |
+| `@Nombre` | mención (notifica al usuario) |
+
+Pulsa el botón **?** junto al campo de texto para abrir la guía de formato con ejemplos.
+
+### Lenguajes de código soportados
+
+`javascript`, `typescript`, `python`, `php`, `html/xml`, `css`, `json`, `bash/sh`, `sql`, `java`, `csharp`, `cpp`, `rust`, `go`, `markdown`.
+
+---
+
+## Vista previa de enlaces
+
+Al enviar un mensaje con una URL, la aplicación intenta obtener una vista previa (título, descripción, imagen). Los enlaces de **YouTube** muestran la miniatura del vídeo y se pueden reproducir inline.
+
+---
+
+## Hilos
+
+Los hilos permiten responder a un mensaje específico en un espacio separado sin saturar el canal principal.
+
+### Crear un hilo
+
+Pasa el cursor sobre cualquier mensaje y pulsa 💬 en la barra de acciones. Se creará un hilo vinculado a ese mensaje y se abrirá el panel lateral.
+
+### Abrir un hilo existente
+
+- Haz clic en el badge **💬 N respuestas · Ver hilo →** que aparece bajo el mensaje.
+- O pulsa el botón 💬 del header del canal para ver la **lista de todos los hilos** del canal.
+
+### Título del hilo
+
+El título aparece en el header del panel. Haz clic en él para editarlo (máx. 100 caracteres). Si no tiene título, se muestra el inicio del mensaje original.
+
+### Lista de hilos del canal
+
+Pulsa el icono 💬 en el header del canal para abrir el panel con todos los hilos, ordenados por actividad reciente.
+
+---
+
+## Menciones
+
+Escribe `@` seguido del nombre o apodo de un miembro para mencionarlo. Aparecerá un desplegable con sugerencias; usa las flechas ↑↓ para navegar y `Enter` o `Tab` para seleccionar.
+
+Los usuarios mencionados reciben una notificación y un badge en el canal correspondiente.
+
+---
+
+## Búsqueda
+
+### Buscar en el canal actual
+
+Pulsa el icono de filtro en el header del canal para buscar mensajes dentro del canal activo.
+
+### Búsqueda global
+
+Pulsa el icono de lupa o usa `Ctrl+K` para buscar en todos los servidores y canales a los que tienes acceso.
+
+---
+
+## Mensajes directos y amigos
+
+### Solicitudes de amistad
+
+1. En **Amigos** (icono 👥 en el rail de servidores), busca a un usuario por nombre y envíale una solicitud.
+2. El destinatario la acepta o rechaza desde la misma sección.
+
+### Conversaciones directas
+
+Haz clic en el avatar de un miembro o usa el menú contextual → *Mensaje directo* para abrir una conversación privada.
+
+### Grupos de DM
+
+En *Mensajes directos*, crea un grupo e invita a varios usuarios.
+
+---
+
+## Estado y perfil
+
+### Cambiar estado
+
+Haz clic en tu avatar en la parte inferior del sidebar para desplegar el selector de estado:
+
+| Estado | Color | Significado |
+|--------|-------|-------------|
+| En línea | 🟢 verde | Disponible |
+| Ausente | 🟡 amarillo | Inactivo |
+| No molestar | 🔴 rojo | Sin notificaciones |
+
+### Estado personalizado
+
+En el mismo menú, escribe un texto libre en el campo superior (máx. 60 caracteres) y pulsa ✓.
+
+### Apodo en un servidor
+
+Haz clic en el botón de apodo en la parte inferior del sidebar (dentro de un servidor) para establecer un nombre diferente visible solo en ese servidor.
+
+---
+
+## Notificaciones
+
+Si concedes permiso, la aplicación envía **notificaciones push** al navegador incluso cuando la pestaña está cerrada: menciones, mensajes directos y nuevos mensajes en canales.
+
+---
+
+## Atajos de teclado
+
+| Atajo | Acción |
+|-------|--------|
+| `Enter` | Enviar mensaje |
+| `Shift+Enter` | Salto de línea |
+| `Ctrl+K` | Búsqueda global |
+| `↑ / ↓` | Navegar sugerencias de menciones |
+| `Tab` / `Enter` | Seleccionar mención |
+| `Esc` | Cancelar edición / cerrar menú |

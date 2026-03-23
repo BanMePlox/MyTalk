@@ -1,59 +1,168 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# MyTalk
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplicación de chat en tiempo real inspirada en Discord. Construida con **Laravel 12**, **React 18** e **Inertia.js**, con WebSockets propios via Laravel Reverb.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Características
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### Servidores y canales
+- Crear servidores y unirse mediante enlace de invitación
+- Canales de **texto** y de **anuncios** (solo admins pueden publicar)
+- **Categorías** para organizar canales
+- **Permisos por rol y canal** (ver / escribir) — lógica compatible con Discord
+- Reordenamiento de canales por **drag & drop**
+- Icono y nombre de servidor personalizables
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### Mensajes
+- Envío en tiempo real vía WebSocket
+- **Adjuntos**: imágenes, vídeos (con miniatura) y archivos genéricos (hasta 20 MB)
+- **Respuestas** a mensajes concretos
+- **Edición** con historial de versiones anteriores
+- **Eliminación** (propia o por moderadores)
+- **Reacciones** emoji
+- **Mensajes fijados** con panel lateral
+- Carga de historial paginada (scroll infinito hacia arriba)
+- Agrupación visual de mensajes consecutivos del mismo usuario
 
-## Learning Laravel
+### Formato de texto
+- Markdown básico: **negrita**, *cursiva*, ~~tachado~~
+- Código inline y **bloques de código** con syntax highlighting (14 lenguajes)
+- **Vista previa de enlaces** (Open Graph)
+- **Embeds de YouTube** con miniatura y reproductor inline
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+### Hilos
+- Crear un hilo desde cualquier mensaje del canal
+- Panel lateral con el mensaje original + respuestas en tiempo real
+- **Título editable** por cualquier miembro
+- Panel de **lista de hilos** del canal ordenado por actividad
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### Menciones y notificaciones
+- Autocompletado `@usuario` con sugerencias
+- Badges de menciones no leídas por canal y servidor
+- **Notificaciones push** (Web Push / VAPID) — funcionan con la pestaña cerrada
+- Notificaciones nativas del navegador y toasts in-app
 
-## Laravel Sponsors
+### Mensajes directos y amigos
+- Conversaciones **1:1** y **grupos** de DM
+- Sistema de **solicitudes de amistad**
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### Roles y moderación
+- Roles personalizados por servidor con color
+- Permisos granulares: gestionar canales, mensajes, roles, expulsar, banear
+- **Expulsión** y **baneo** de miembros (con razón opcional)
+- Lista de baneados con opción de desbanear
 
-### Premium Partners
+### Perfil y presencia
+- Avatar, banner de color y bio
+- **Estado**: en línea, ausente, no molestar
+- **Estado personalizado** (texto libre)
+- **Apodo** por servidor
+- Indicador de presencia en tiempo real para todos los miembros del servidor
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### UX
+- Indicador **"X está escribiendo..."**
+- Búsqueda de mensajes en el canal activo
+- **Búsqueda global** (`Ctrl+K`) en todos los servidores
+- Scroll-to-bottom con contador de mensajes nuevos
+- Diseño responsive con sidebar móvil
 
-## Contributing
+---
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Stack tecnológico
 
-## Code of Conduct
+| Capa | Tecnologías |
+|------|-------------|
+| **Backend** | PHP 8.2, Laravel 12, Laravel Reverb, Inertia.js, minishlink/web-push |
+| **Frontend** | React 18, Tailwind CSS, Laravel Echo, highlight.js |
+| **Base de datos** | SQLite (dev) / MySQL (prod) |
+| **Tooling** | Vite 7, Concurrently, Laravel Pint, PHPUnit |
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+---
 
-## Security Vulnerabilities
+## Instalación
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### Requisitos
 
-## License
+- PHP 8.2+
+- Composer 2.x
+- Node.js 18+ y npm 9+
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### Pasos
+
+```bash
+# 1. Clonar el repositorio
+git clone https://github.com/tu-usuario/mytalk.git
+cd mytalk
+
+# 2. Instalar dependencias, configurar .env y migrar la base de datos
+composer run setup
+
+# 3. Instalar dependencias frontend y compilar assets
+npm install && npm run build
+```
+
+El script `composer run setup` equivale a:
+
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate
+```
+
+---
+
+## Arrancar en desarrollo
+
+```bash
+# Terminal 1 — servidor, colas, Vite y logs en paralelo
+composer run dev
+
+# Terminal 2 — servidor WebSocket
+php artisan reverb:start
+```
+
+La aplicación estará disponible en **http://localhost:8000**.
+
+---
+
+## Configuración
+
+Edita el archivo `.env` generado. Las variables más relevantes:
+
+```dotenv
+# Nombre de la app
+APP_NAME="MyTalk"
+
+# Reverb (tiempo real)
+BROADCAST_CONNECTION=reverb
+REVERB_APP_KEY=clave-secreta
+REVERB_APP_SECRET=secreto-muy-seguro
+
+# Colas (necesarias para broadcasting)
+QUEUE_CONNECTION=database
+
+# Web Push (notificaciones push — opcional)
+VAPID_SUBJECT=mailto:admin@tudominio.com
+VAPID_PUBLIC_KEY=...
+VAPID_PRIVATE_KEY=...
+```
+
+Consulta [`docs/ADMIN.md`](docs/ADMIN.md) para instrucciones detalladas de despliegue en producción y generación de claves VAPID.
+
+---
+
+## Documentación
+
+| Documento | Descripción |
+|-----------|-------------|
+| [`docs/USUARIO.md`](docs/USUARIO.md) | Guía de uso para usuarios finales |
+| [`docs/ADMIN.md`](docs/ADMIN.md) | Instalación, despliegue y administración |
+| [`docs/TECNOLOGIAS.md`](docs/TECNOLOGIAS.md) | Stack técnico y arquitectura |
+
+---
+
+## Licencia
+
+MIT
