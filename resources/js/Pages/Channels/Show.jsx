@@ -355,6 +355,12 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
     const [memberRolesMap, setMemberRolesMap] = useState(() =>
         Object.fromEntries((channel.server?.members ?? []).map(m => [m.id, m.server_roles ?? []]))
     );
+    // Members local state for real-time profile updates
+    const [members, setMembers] = useState(channel.server?.members ?? []);
+    // Channel-level mention badges { channelId: count } — inicializados desde backend
+    const [channelMentionBadges, setChannelMentionBadges] = useState(
+        () => Object.fromEntries(Object.entries(initialBadges?.channelMentions ?? {}).map(([k, v]) => [parseInt(k), v]))
+    );
 
     const bottomRef = useRef(null);
     const inputRef = useRef(null);
@@ -366,6 +372,16 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
     useEffect(() => {
         bottomRef.current?.scrollIntoView();
     }, []);
+
+    // Limpiar badge del canal actual al entrar (channel.id cambia en navegación Inertia)
+    useEffect(() => {
+        setChannelMentionBadges((prev) => {
+            if (!prev[channel.id]) return prev;
+            const next = { ...prev };
+            delete next[channel.id];
+            return next;
+        });
+    }, [channel.id]);
 
     // Cerrar menús al hacer clic fuera
     useEffect(() => {
@@ -413,6 +429,13 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                 .listen('.MemberRoleUpdated', (e) => {
                     if (e.server_id && e.server_id !== channel.server_id) return;
                     setMemberRolesMap((prev) => ({ ...prev, [e.user_id]: e.roles }));
+                })
+                .listen('.UserProfileUpdated', (e) => {
+                    setMembers((prev) => prev.map((m) =>
+                        m.id === e.user_id
+                            ? { ...m, name: e.name, avatar_url: e.avatar_url, banner_color: e.banner_color }
+                            : m
+                    ));
                 });
         });
 
@@ -489,9 +512,13 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
         const userChannel = window.Echo.private(`App.Models.User.${auth.user.id}`);
 
         userChannel.listen('.MentionReceived', (e) => {
-            // Solo incrementar badge si no estamos en ese servidor ahora mismo
+            // Badge de servidor: solo para otros servidores
             if (e.server_id && e.server_id !== channel.server_id) {
                 setMentionBadges((prev) => ({ ...prev, [e.server_id]: (prev[e.server_id] ?? 0) + 1 }));
+            }
+            // Badge de canal: siempre que no sea el canal actual
+            if (e.channel_id && e.channel_id !== channel.id) {
+                setChannelMentionBadges((prev) => ({ ...prev, [e.channel_id]: (prev[e.channel_id] ?? 0) + 1 }));
             }
             if (document.hidden) {
                 new Notification(`${e.sender} te mencionó en #${e.channel}`, {
@@ -532,10 +559,17 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
             setPendingFriendRequests((prev) => prev + 1);
         });
 
+        userChannel.listen('.MemberKicked', (e) => {
+            if (e.server_id === channel.server_id) {
+                router.visit(route('friends.index'));
+            }
+        });
+
         return () => {
             userChannel.stopListening('.MentionReceived');
             userChannel.stopListening('.NewDirectMessage');
             userChannel.stopListening('.FriendRequestReceived');
+            userChannel.stopListening('.MemberKicked');
         };
     }, [auth.user.id]);
 
@@ -1112,7 +1146,13 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                 : 'text-gray-400 hover:bg-gray-700 hover:text-white'
                                         }`}
                                     >
-                                        <span className="text-gray-500">#</span> {ch.name}
+                                        <span className="text-gray-500">#</span>
+                                        <span className="flex-1 truncate">{ch.name}</span>
+                                        {channelMentionBadges[ch.id] > 0 && (
+                                            <span className="ml-auto min-w-[1.1rem] h-[1.1rem] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 shrink-0">
+                                                {channelMentionBadges[ch.id] > 9 ? '9+' : channelMentionBadges[ch.id]}
+                                            </span>
+                                        )}
                                     </Link>
                                 );
                             }
@@ -1560,7 +1600,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                 <ServerSettingsModal
                     show={serverSettingsOpen}
                     onClose={() => setServerSettingsOpen(false)}
-                    server={{ ...channel.server, channels: serverChannels, categories: serverCategories, members: (channel.server?.members ?? []).map(m => ({ ...m, server_roles: memberRolesMap[m.id] ?? m.server_roles ?? [] })) }}
+                    server={{ ...channel.server, channels: serverChannels, categories: serverCategories, members: members.map(m => ({ ...m, server_roles: memberRolesMap[m.id] ?? m.server_roles ?? [] })) }}
                     roles={channel.server?.roles ?? []}
                     canManageRoles={canManageRoles}
                     canManageChannels={canManageChannels}

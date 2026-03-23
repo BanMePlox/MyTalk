@@ -21,7 +21,9 @@ class MessageController extends Controller
     public function index(Channel $channel): Response
     {
         abort_if(!$channel->server, 404);
-        $this->authorize('view', $channel->server);
+        if (!$channel->server->members()->where('user_id', Auth::id())->exists()) {
+            return Inertia::location(route('friends.index'));
+        }
 
         $messages = $channel->messages()
             ->with('user', 'reactions')
@@ -36,10 +38,10 @@ class MessageController extends Controller
             $server->first_channel_id = $server->channels()->value('id');
         });
 
-        // Resetear menciones no leídas de este servidor
+        // Resetear menciones no leídas de este canal
         DB::table('unread_mentions')
             ->where('user_id', Auth::id())
-            ->where('server_id', $channel->server_id)
+            ->where('channel_id', $channel->id)
             ->update(['count' => 0]);
 
         $channel->load('server.categories.channels', 'server.channels', 'server.members', 'server.roles');
@@ -158,8 +160,8 @@ class MessageController extends Controller
 
                 // Incrementar contador en BD
                 DB::table('unread_mentions')->upsert(
-                    ['user_id' => $member->id, 'server_id' => $channel->server_id, 'count' => 1],
-                    ['user_id', 'server_id'],
+                    ['user_id' => $member->id, 'server_id' => $channel->server_id, 'channel_id' => $channel->id, 'count' => 1],
+                    ['user_id', 'channel_id'],
                     ['count' => DB::raw('count + 1')]
                 );
             }

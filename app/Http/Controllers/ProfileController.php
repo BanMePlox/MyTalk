@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\UserProfileUpdated;
 use App\Http\Requests\ProfileUpdateRequest;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
@@ -45,6 +46,10 @@ class ProfileController extends Controller
         }
 
         $user->save();
+
+        $user->servers()->pluck('servers.id')->each(
+            fn($serverId) => broadcast(new UserProfileUpdated($user, $serverId))
+        );
 
         return Redirect::route('profile.edit');
     }

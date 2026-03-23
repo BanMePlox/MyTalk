@@ -30,10 +30,16 @@ class HandleInertiaRequests extends Middleware
 
                 $userId = Auth::id();
 
-                $mentions = DB::table('unread_mentions')
+                $mentionRows = DB::table('unread_mentions')
                     ->where('user_id', $userId)
                     ->where('count', '>', 0)
-                    ->pluck('count', 'server_id');
+                    ->get(['server_id', 'channel_id', 'count']);
+
+                // server_id → total count (for server rail badge)
+                $mentions = $mentionRows->groupBy('server_id')->map(fn($rows) => $rows->sum('count'));
+
+                // channel_id → count (for channel sidebar badge)
+                $channelMentions = $mentionRows->pluck('count', 'channel_id');
 
                 $conversations = Conversation::whereHas('users', fn($q) => $q->where('user_id', $userId))
                     ->with(['users'])
@@ -81,6 +87,7 @@ class HandleInertiaRequests extends Middleware
 
                 return [
                     'mentions'             => $mentions,
+                    'channelMentions'      => $channelMentions,
                     'dms'                  => $conversations->sum('unread'),
                     'dmConversations'      => $conversations,
                     'pendingFriendRequests' => $pendingFriendRequests,

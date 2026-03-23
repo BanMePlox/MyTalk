@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\MemberKicked;
 use App\Events\MemberRoleUpdated;
 use App\Models\Server;
 use App\Models\User;
@@ -63,6 +64,8 @@ class MemberController extends Controller
             ->where('server_id', $server->id)
             ->where('user_id', $user->id)
             ->delete();
+
+        broadcast(new MemberKicked($server->id, $user->id));
 
         return response()->noContent();
     }

@@ -32,6 +32,7 @@ class DirectMessageSent implements ShouldBroadcastNow
         return [
             'id'              => $this->message->id,
             'content'         => $this->message->content,
+            'attachment_url'  => $this->message->attachment_url,
             'created_at'      => $this->message->created_at,
             'conversation_id' => $this->message->conversation_id,
             'user'            => [
