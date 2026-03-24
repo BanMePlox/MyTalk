@@ -42,7 +42,7 @@ class ServerEmojiController extends Controller
             'id'   => $emoji->id,
             'name' => $emoji->name,
             'url'  => $emoji->url,
-        ]))->toOthers();
+        ]));
 
         return response()->json($emoji);
     }
@@ -55,7 +55,7 @@ class ServerEmojiController extends Controller
         $emojiId  = $emoji->id;
         Storage::disk('public')->delete($emoji->image_path);
         $emoji->delete();
-        broadcast(new ServerEmojiUpdated('deleted', $serverId, $emojiId))->toOthers();
+        broadcast(new ServerEmojiUpdated('deleted', $serverId, $emojiId));
 
         return response()->json(['ok' => true]);
     }
