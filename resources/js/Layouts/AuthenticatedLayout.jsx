@@ -14,9 +14,9 @@ export default function AuthenticatedLayout({ header, children }) {
                         {/* Logo + nav links */}
                         <div className="flex items-center gap-6">
                             <Link href={route('servers.index')} className="flex items-center gap-2.5 shrink-0">
-                                <img src="/images/logo.svg" alt="Logo" className="h-8 w-8" />
+                                <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center font-bold text-sm text-white shadow shadow-indigo-500/30">M</div>
                                 <span className="font-bold text-white text-base tracking-tight hidden sm:block">
-                                    Discord<span className="text-indigo-400">App</span>
+                                    My<span className="text-indigo-400">Talk</span>
                                 </span>
                             </Link>
 
