@@ -29,7 +29,7 @@ class PushNotificationService
         $subscriptions = PushSubscription::where('user_id', $userId)->get();
         if ($subscriptions->isEmpty()) return;
 
-        $payload = json_encode(['title' => $title, 'body' => $body, 'url' => $url]);
+        $payload = json_encode(['title' => $title, 'body' => $body, 'url' => $url, 'icon' => '/icon.svg']);
 
         foreach ($subscriptions as $sub) {
             $subscription = Subscription::create([
