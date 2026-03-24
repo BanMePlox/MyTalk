@@ -699,7 +699,7 @@ function ChannelsTab({ server, roles, canManageChannels }) {
     );
 }
 
-function EmojisTab({ server, initialEmojis }) {
+function EmojisTab({ server, initialEmojis, onEmojiAdded, onEmojiDeleted }) {
     const [emojis, setEmojis] = useState(initialEmojis ?? []);
     const [name, setName]     = useState('');
     const [error, setError]   = useState('');
@@ -724,6 +724,7 @@ function EmojisTab({ server, initialEmojis }) {
             form.append('image', file);
             const res = await window.axios.post(`/servers/${server.id}/emojis`, form);
             setEmojis(prev => [...prev, res.data]);
+            onEmojiAdded?.(res.data);
             setName('');
             if (fileRef.current) fileRef.current.value = '';
         } catch (err) {
@@ -737,6 +738,7 @@ function EmojisTab({ server, initialEmojis }) {
         try {
             await window.axios.delete(route('server.emojis.destroy', emoji.id));
             setEmojis(prev => prev.filter(e => e.id !== emoji.id));
+            onEmojiDeleted?.(emoji.id);
             setConfirmDelete(null);
         } catch {}
     }
@@ -792,7 +794,7 @@ function EmojisTab({ server, initialEmojis }) {
     );
 }
 
-export default function ServerSettingsModal({ show, onClose, server, roles: initialRoles, canManageRoles, canKickMembers, canBanMembers = false, isOwner, canManageChannels = false, serverEmojis = [], reloadKey = 'server', onChannelAssign, onCategoryChange }) {
+export default function ServerSettingsModal({ show, onClose, server, roles: initialRoles, canManageRoles, canKickMembers, canBanMembers = false, isOwner, canManageChannels = false, serverEmojis = [], onEmojiAdded, onEmojiDeleted, reloadKey = 'server', onChannelAssign, onCategoryChange }) {
     const [tab, setTab]   = useState('roles');
     const [roles, setRoles] = useState(initialRoles ?? []);
 
@@ -863,7 +865,7 @@ export default function ServerSettingsModal({ show, onClose, server, roles: init
                         />
                     )}
                     {tab === 'bans' && <BansTab server={server} />}
-                    {tab === 'emojis' && <EmojisTab server={server} initialEmojis={serverEmojis} />}
+                    {tab === 'emojis' && <EmojisTab server={server} initialEmojis={serverEmojis} onEmojiAdded={onEmojiAdded} onEmojiDeleted={onEmojiDeleted} />}
                 </div>
             </div>
         </div>

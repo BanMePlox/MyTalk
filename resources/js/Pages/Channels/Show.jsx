@@ -713,7 +713,7 @@ function ProfilePopover({ member, status, anchorX, anchorY, onClose, authId }) {
     );
 }
 
-export default function Show({ channel, messages: initialMessages, pinnedMessages: initialPinnedMessages = [], userServers = [], visibleChannelIds = null, canManageMessages = false, canManageRoles = false, canManageChannels = false, canKickMembers = false, canBanMembers = false, canSendMessages = true, isOwner = false, serverEmojis = [] }) {
+export default function Show({ channel, messages: initialMessages, pinnedMessages: initialPinnedMessages = [], userServers = [], visibleChannelIds = null, canManageMessages = false, canManageRoles = false, canManageChannels = false, canKickMembers = false, canBanMembers = false, canSendMessages = true, isOwner = false, serverEmojis: initialServerEmojis = [] }) {
     const { auth, badges: initialBadges, vapidPublicKey } = usePage().props;
     const [messages, setMessages] = useState(initialMessages);
     const [content, setContent] = useState('');
@@ -793,6 +793,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
     );
     // Members local state for real-time profile updates
     const [members, setMembers] = useState(channel.server?.members ?? []);
+    const [serverEmojis, setServerEmojis] = useState(initialServerEmojis);
     // Channel-level mention badges { channelId: count } — inicializados desde backend
     const [channelMentionBadges, setChannelMentionBadges] = useState(
         () => Object.fromEntries(Object.entries(initialBadges?.channelMentions ?? {}).map(([k, v]) => [parseInt(k), v]))
@@ -2843,6 +2844,8 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                     canBanMembers={canBanMembers}
                     isOwner={isOwner}
                     serverEmojis={serverEmojis}
+                    onEmojiAdded={(emoji) => setServerEmojis(prev => [...prev, emoji])}
+                    onEmojiDeleted={(id) => setServerEmojis(prev => prev.filter(e => e.id !== id))}
                     reloadKey="channel"
                     onChannelAssign={(channelId, categoryId) =>
                         setServerChannels(prev => prev.map(ch => ch.id === channelId ? { ...ch, category_id: categoryId ? parseInt(categoryId) : null } : ch))
