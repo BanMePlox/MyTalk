@@ -24,12 +24,12 @@ class PushNotificationService
     /**
      * Send a push notification to all subscriptions of a given user.
      */
-    public function sendToUser(int $userId, string $title, string $body, string $url = '/'): void
+    public function sendToUser(int $userId, string $title, string $body, string $url = '/', ?string $icon = null): void
     {
         $subscriptions = PushSubscription::where('user_id', $userId)->get();
         if ($subscriptions->isEmpty()) return;
 
-        $payload = json_encode(['title' => $title, 'body' => $body, 'url' => $url, 'icon' => '/icon.svg']);
+        $payload = json_encode(['title' => $title, 'body' => $body, 'url' => $url, 'icon' => $icon ?? '/icon.svg']);
 
         foreach ($subscriptions as $sub) {
             $subscription = Subscription::create([

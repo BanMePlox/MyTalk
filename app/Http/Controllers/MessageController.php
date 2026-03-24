@@ -256,7 +256,7 @@ class MessageController extends Controller
                 ? "{$senderName} te mencionó en #{$channel->name}"
                 : "#{$channel->name} — {$senderName}";
             $notifBody = $content ?: '📎 Archivo adjunto';
-            $push->sendToUser($member->id, $notifTitle, $notifBody, $channelUrl);
+            $push->sendToUser($member->id, $notifTitle, $notifBody, $channelUrl, Auth::user()->avatar_url);
         }
 
         $message->loadMissing('user', 'replyTo.user');
