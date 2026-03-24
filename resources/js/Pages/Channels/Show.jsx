@@ -975,6 +975,14 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                 })
                 .listen('.ServerNameUpdated', (e) => {
                     if (e.server_id === channel.server_id) setServerName(e.name);
+                })
+                .listen('.ServerEmojiUpdated', (e) => {
+                    if (e.server_id !== channel.server_id) return;
+                    if (e.action === 'added' && e.emoji) {
+                        setServerEmojis(prev => [...prev, e.emoji]);
+                    } else if (e.action === 'deleted' && e.emoji_id) {
+                        setServerEmojis(prev => prev.filter(em => em.id !== e.emoji_id));
+                    }
                 });
         });
 

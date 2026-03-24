@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\ServerEmojiUpdated;
 use App\Models\Server;
 use App\Models\ServerEmoji;
 use Illuminate\Http\Request;
@@ -36,15 +37,25 @@ class ServerEmojiController extends Controller
             'image_path' => $path,
         ]);
 
-        return response()->json($emoji->refresh()->append('url'));
+        $emoji->refresh()->append('url');
+        broadcast(new ServerEmojiUpdated('added', $server->id, $emoji->id, [
+            'id'   => $emoji->id,
+            'name' => $emoji->name,
+            'url'  => $emoji->url,
+        ]))->toOthers();
+
+        return response()->json($emoji);
     }
 
     public function destroy(ServerEmoji $emoji)
     {
         abort_if($emoji->server->owner_id !== Auth::id(), 403);
 
+        $serverId = $emoji->server_id;
+        $emojiId  = $emoji->id;
         Storage::disk('public')->delete($emoji->image_path);
         $emoji->delete();
+        broadcast(new ServerEmojiUpdated('deleted', $serverId, $emojiId))->toOthers();
 
         return response()->json(['ok' => true]);
     }
