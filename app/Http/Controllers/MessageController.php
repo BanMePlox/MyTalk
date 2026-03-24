@@ -136,6 +136,10 @@ class MessageController extends Controller
                 ->values();
         });
 
+        $serverEmojis = $channel->server->emojis()
+            ->get(['id', 'name', 'image_path'])
+            ->map(fn($e) => ['id' => $e->id, 'name' => $e->name, 'url' => $e->url]);
+
         return Inertia::render('Channels/Show', [
             'channel'            => $channel,
             'messages'           => $messages,
@@ -149,6 +153,7 @@ class MessageController extends Controller
             'canBanMembers'      => $authUser->can('banMembers', $channel->server),
             'canSendMessages'    => $channel->canUserSend($authUser),
             'isOwner'            => $channel->server->owner_id === Auth::id(),
+            'serverEmojis'       => $serverEmojis,
         ]);
     }
 

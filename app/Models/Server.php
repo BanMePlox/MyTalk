@@ -53,4 +53,9 @@ class Server extends Model
     {
         return $this->hasMany(Role::class)->orderBy('position');
     }
+
+    public function emojis(): HasMany
+    {
+        return $this->hasMany(ServerEmoji::class)->orderBy('name');
+    }
 }

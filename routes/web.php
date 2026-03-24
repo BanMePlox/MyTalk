@@ -107,6 +107,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post('/push/subscribe', [PushSubscriptionController::class, 'store'])->name('push.subscribe');
     Route::post('/push/unsubscribe', [PushSubscriptionController::class, 'destroy'])->name('push.unsubscribe');
+
+    Route::get('/servers/{server}/emojis', [\App\Http\Controllers\ServerEmojiController::class, 'index'])->name('server.emojis.index');
+    Route::post('/servers/{server}/emojis', [\App\Http\Controllers\ServerEmojiController::class, 'store'])->name('server.emojis.store');
+    Route::delete('/emojis/{emoji}', [\App\Http\Controllers\ServerEmojiController::class, 'destroy'])->name('server.emojis.destroy');
 });
 
 require __DIR__.'/auth.php';

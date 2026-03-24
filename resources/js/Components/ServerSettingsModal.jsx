@@ -699,7 +699,99 @@ function ChannelsTab({ server, roles, canManageChannels }) {
     );
 }
 
-export default function ServerSettingsModal({ show, onClose, server, roles: initialRoles, canManageRoles, canKickMembers, canBanMembers = false, isOwner, canManageChannels = false, reloadKey = 'server', onChannelAssign, onCategoryChange }) {
+function EmojisTab({ server, initialEmojis }) {
+    const [emojis, setEmojis] = useState(initialEmojis ?? []);
+    const [name, setName]     = useState('');
+    const [file, setFile]     = useState(null);
+    const [error, setError]   = useState('');
+    const [uploading, setUploading] = useState(false);
+    const [confirmDelete, setConfirmDelete] = useState(null);
+
+    async function upload(e) {
+        e.preventDefault();
+        setError('');
+        if (!name.trim() || !file) return;
+        if (!/^[a-z0-9_]+$/.test(name)) {
+            setError('Solo letras minúsculas, números y guiones bajos.');
+            return;
+        }
+        setUploading(true);
+        try {
+            const form = new FormData();
+            form.append('name', name);
+            form.append('image', file);
+            const res = await window.axios.post(route('server.emojis.store', server.id), form);
+            setEmojis(prev => [...prev, res.data]);
+            setName('');
+            setFile(null);
+            e.target.reset();
+        } catch (err) {
+            setError(err.response?.data?.message ?? 'Error al subir el emoji.');
+        } finally {
+            setUploading(false);
+        }
+    }
+
+    async function remove(emoji) {
+        try {
+            await window.axios.delete(route('server.emojis.destroy', emoji.id));
+            setEmojis(prev => prev.filter(e => e.id !== emoji.id));
+            setConfirmDelete(null);
+        } catch {}
+    }
+
+    return (
+        <div className="space-y-4">
+            <form onSubmit={upload} className="flex flex-col gap-2">
+                <p className="text-xs text-gray-400">Sube imágenes PNG/GIF (máx. 512 KB). Úsalas en mensajes con <code className="bg-gray-700 text-pink-300 rounded px-1">:nombre:</code></p>
+                <div className="flex gap-2">
+                    <input
+                        type="text"
+                        placeholder="nombre (ej: pepe)"
+                        value={name}
+                        onChange={e => setName(e.target.value.toLowerCase())}
+                        className="flex-1 bg-gray-700 text-gray-100 rounded px-3 py-1.5 text-sm border border-gray-600 focus:outline-none focus:border-indigo-500"
+                    />
+                    <input
+                        type="file"
+                        accept="image/*"
+                        onChange={e => setFile(e.target.files[0] ?? null)}
+                        className="text-xs text-gray-300 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer"
+                    />
+                    <button
+                        type="submit"
+                        disabled={uploading}
+                        className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm rounded disabled:opacity-50"
+                    >{uploading ? '...' : 'Subir'}</button>
+                </div>
+                {error && <p className="text-xs text-red-400">{error}</p>}
+            </form>
+
+            {emojis.length === 0 ? (
+                <p className="text-sm text-gray-500">No hay emojis aún.</p>
+            ) : (
+                <div className="grid grid-cols-2 gap-2">
+                    {emojis.map(emoji => (
+                        <div key={emoji.id} className="flex items-center gap-3 bg-gray-800 rounded-lg px-3 py-2">
+                            <img src={emoji.url} alt={emoji.name} className="w-8 h-8 object-contain" />
+                            <span className="text-sm text-gray-200 flex-1 font-mono">:{emoji.name}:</span>
+                            {confirmDelete === emoji.id ? (
+                                <div className="flex gap-1">
+                                    <button onClick={() => remove(emoji)} className="text-xs bg-red-600 hover:bg-red-700 text-white px-2 py-0.5 rounded">Eliminar</button>
+                                    <button onClick={() => setConfirmDelete(null)} className="text-xs text-gray-400 hover:text-gray-200">✕</button>
+                                </div>
+                            ) : (
+                                <button onClick={() => setConfirmDelete(emoji.id)} className="text-gray-500 hover:text-red-400 text-sm">🗑️</button>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
+export default function ServerSettingsModal({ show, onClose, server, roles: initialRoles, canManageRoles, canKickMembers, canBanMembers = false, isOwner, canManageChannels = false, serverEmojis = [], reloadKey = 'server', onChannelAssign, onCategoryChange }) {
     const [tab, setTab]   = useState('roles');
     const [roles, setRoles] = useState(initialRoles ?? []);
 
@@ -723,6 +815,7 @@ export default function ServerSettingsModal({ show, onClose, server, roles: init
                         { key: 'categories', label: 'Categorías', show: true },
                         { key: 'channels', label: 'Canales', show: canManageChannels || isOwner },
                         { key: 'bans', label: 'Bans', show: canBanMembers || isOwner },
+                        { key: 'emojis', label: 'Emojis', show: isOwner },
                     ].filter(t => t.show).map(t => (
                         <button key={t.key} onClick={() => setTab(t.key)}
                             className={`px-4 py-2 text-sm font-medium rounded-t transition-colors ${
@@ -769,6 +862,7 @@ export default function ServerSettingsModal({ show, onClose, server, roles: init
                         />
                     )}
                     {tab === 'bans' && <BansTab server={server} />}
+                    {tab === 'emojis' && <EmojisTab server={server} initialEmojis={serverEmojis} />}
                 </div>
             </div>
         </div>
