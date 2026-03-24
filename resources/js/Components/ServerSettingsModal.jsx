@@ -722,12 +722,12 @@ function EmojisTab({ server, initialEmojis }) {
             const form = new FormData();
             form.append('name', name);
             form.append('image', file);
-            const res = await window.axios.post(route('server.emojis.store', server.id), form);
+            const res = await window.axios.post(`/servers/${server.id}/emojis`, form);
             setEmojis(prev => [...prev, res.data]);
             setName('');
             if (fileRef.current) fileRef.current.value = '';
         } catch (err) {
-            setError(err.response?.data?.message ?? 'Error al subir el emoji.');
+            setError(err.response?.data?.message ?? err.message ?? 'Error al subir el emoji.');
         } finally {
             setUploading(false);
         }
