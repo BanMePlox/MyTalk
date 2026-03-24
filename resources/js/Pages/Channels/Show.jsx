@@ -756,6 +756,10 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
 
     const [attachmentFile, setAttachmentFile] = useState(null);
     const [attachmentPreview, setAttachmentPreview] = useState(null);
+    const [recording, setRecording] = useState(false);
+    const [recordingTime, setRecordingTime] = useState(0);
+    const mediaRecorderRef = useRef(null);
+    const recordingTimerRef = useRef(null);
     const [editingId, setEditingId] = useState(null);
     const [editContent, setEditContent] = useState('');
     const [mobileSidebar, setMobileSidebar] = useState(false);
@@ -1426,6 +1430,52 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
         setAttachmentFile(null);
         if (attachmentPreview?.url) URL.revokeObjectURL(attachmentPreview.url);
         setAttachmentPreview(null);
+    }
+
+    async function startRecording() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/ogg';
+            const mr = new MediaRecorder(stream, { mimeType });
+            const chunks = [];
+            mr.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+            mr.onstop = () => {
+                stream.getTracks().forEach(t => t.stop());
+                const blob = new Blob(chunks, { type: mimeType });
+                const ext = mimeType.includes('webm') ? 'webm' : 'ogg';
+                const file = new File([blob], `voz-${Date.now()}.${ext}`, { type: mimeType });
+                setAttachmentFile(file);
+                setAttachmentPreview({ type: 'audio', name: file.name, url: URL.createObjectURL(blob) });
+                setRecording(false);
+                setRecordingTime(0);
+                clearInterval(recordingTimerRef.current);
+            };
+            mr.start();
+            mediaRecorderRef.current = mr;
+            setRecording(true);
+            setRecordingTime(0);
+            recordingTimerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000);
+        } catch {
+            alert('No se pudo acceder al micrófono.');
+        }
+    }
+
+    function stopRecording() {
+        mediaRecorderRef.current?.stop();
+        clearInterval(recordingTimerRef.current);
+    }
+
+    function cancelRecording() {
+        if (mediaRecorderRef.current?.state === 'recording') {
+            mediaRecorderRef.current.ondataavailable = null;
+            mediaRecorderRef.current.onstop = () => {
+                mediaRecorderRef.current.stream?.getTracks().forEach(t => t.stop());
+            };
+            mediaRecorderRef.current.stop();
+        }
+        clearInterval(recordingTimerRef.current);
+        setRecording(false);
+        setRecordingTime(0);
     }
 
     async function submit(e) {
@@ -2505,7 +2555,15 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                 {msg.attachment_url && (() => {
                                                     const isImage = /\.(png|jpe?g|gif|webp|bmp|svg)(\?|$)/i.test(msg.attachment_url);
                                                     const isVideo = /\.(mp4|webm|ogg|mov|mkv)(\?|$)/i.test(msg.attachment_url);
-                                                    return isImage ? (
+                                                    const isAudio = /\.(mp3|wav|webm|ogg|m4a|aac|opus)(\?|$)/i.test(msg.attachment_url) && !isVideo;
+                                                    return isAudio ? (
+                                                        <audio
+                                                            src={msg.attachment_url}
+                                                            controls
+                                                            preload="metadata"
+                                                            className="mt-1 w-64 h-10 rounded-lg"
+                                                        />
+                                                    ) : isImage ? (
                                                         <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer" className="block mt-1">
                                                             <img src={msg.attachment_url} alt="adjunto" className="max-w-xs max-h-64 rounded-lg object-cover border border-gray-700 hover:opacity-90 transition-opacity" />
                                                         </a>
@@ -2736,6 +2794,11 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                 <div className="mb-2 relative inline-block">
                                     {attachmentPreview.type === 'image' ? (
                                         <img src={attachmentPreview.url} alt="preview" className="max-h-32 rounded-lg border border-gray-600" />
+                                    ) : attachmentPreview.type === 'audio' ? (
+                                        <div className="flex items-center gap-2 bg-gray-800 border border-gray-600 rounded-lg px-3 py-2">
+                                            <span className="text-red-400 text-sm">🎤</span>
+                                            <audio src={attachmentPreview.url} controls className="h-8 w-48" />
+                                        </div>
                                     ) : (
                                         <div className="flex items-center gap-2 bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-300">
                                             <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-indigo-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -2755,6 +2818,17 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                         {canSendMessages && (channel.type !== 'announcement' || canManageMessages || isOwner) ? (
                         <div className="relative flex gap-2 bg-gray-700 rounded-lg px-4 py-2">
                             <input ref={fileInputRef} type="file" className="hidden" onChange={pickFile} />
+                            {recording ? (
+                                <div className="flex items-center gap-2 flex-1">
+                                    <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />
+                                    <span className="text-red-400 text-sm font-mono">
+                                        {String(Math.floor(recordingTime / 60)).padStart(2,'0')}:{String(recordingTime % 60).padStart(2,'0')}
+                                    </span>
+                                    <span className="text-gray-400 text-xs flex-1">Grabando...</span>
+                                    <button type="button" onClick={cancelRecording} className="text-gray-400 hover:text-red-400 text-sm px-2">✕ Cancelar</button>
+                                    <button type="button" onClick={stopRecording} className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-1 rounded-lg">Enviar</button>
+                                </div>
+                            ) : (<>
                             <button
                                 type="button"
                                 onClick={() => fileInputRef.current?.click()}
@@ -2807,6 +2881,18 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                 className="text-gray-500 hover:text-gray-300 transition-colors shrink-0 w-5 h-5 rounded-full border border-gray-500 hover:border-gray-300 flex items-center justify-center text-xs font-bold"
                                 title="Guía de formato"
                             >?</button>
+                            {!attachmentFile && (
+                                <button
+                                    type="button"
+                                    onClick={startRecording}
+                                    className="text-gray-400 hover:text-red-400 transition-colors shrink-0"
+                                    title="Mensaje de voz"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                                    </svg>
+                                </button>
+                            )}
                             <button
                                 type="submit"
                                 disabled={sending || (!content.trim() && !attachmentFile)}
@@ -2815,6 +2901,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                 Enviar
                             </button>
                             {syntaxHelpOpen && <SyntaxHelpPopup onClose={() => setSyntaxHelpOpen(false)} />}
+                        </>)}
                         </div>
                         ) : (
                         <div className="flex items-center justify-center bg-gray-700/50 rounded-lg px-4 py-3 text-sm text-gray-500 select-none">
