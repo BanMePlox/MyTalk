@@ -13,7 +13,7 @@ class UserStatusController extends Controller
     {
         $data = $request->validate([
             'status'        => 'sometimes|in:online,away,dnd',
-            'custom_status' => 'present|nullable|string|max:60',
+            'custom_status' => 'sometimes|nullable|string|max:60',
         ]);
 
         $user = Auth::user();
