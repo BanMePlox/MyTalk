@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { router } from '@inertiajs/react';
 
 const PERMISSIONS = [
@@ -702,15 +702,17 @@ function ChannelsTab({ server, roles, canManageChannels }) {
 function EmojisTab({ server, initialEmojis }) {
     const [emojis, setEmojis] = useState(initialEmojis ?? []);
     const [name, setName]     = useState('');
-    const [file, setFile]     = useState(null);
     const [error, setError]   = useState('');
     const [uploading, setUploading] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState(null);
+    const fileRef = useRef(null);
 
     async function upload(e) {
         e.preventDefault();
         setError('');
-        if (!name.trim() || !file) return;
+        const file = fileRef.current?.files[0];
+        if (!name.trim()) { setError('Introduce un nombre.'); return; }
+        if (!file) { setError('Selecciona un archivo.'); return; }
         if (!/^[a-z0-9_]+$/.test(name)) {
             setError('Solo letras minúsculas, números y guiones bajos.');
             return;
@@ -723,8 +725,7 @@ function EmojisTab({ server, initialEmojis }) {
             const res = await window.axios.post(route('server.emojis.store', server.id), form);
             setEmojis(prev => [...prev, res.data]);
             setName('');
-            setFile(null);
-            e.target.reset();
+            if (fileRef.current) fileRef.current.value = '';
         } catch (err) {
             setError(err.response?.data?.message ?? 'Error al subir el emoji.');
         } finally {
@@ -753,9 +754,9 @@ function EmojisTab({ server, initialEmojis }) {
                         className="flex-1 bg-gray-700 text-gray-100 rounded px-3 py-1.5 text-sm border border-gray-600 focus:outline-none focus:border-indigo-500"
                     />
                     <input
+                        ref={fileRef}
                         type="file"
                         accept="image/*"
-                        onChange={e => setFile(e.target.files[0] ?? null)}
                         className="text-xs text-gray-300 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer"
                     />
                     <button
