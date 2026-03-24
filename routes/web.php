@@ -23,10 +23,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return Auth::check()
-        ? redirect()->route('servers.index')
-        : redirect()->route('login');
-});
+    return inertia('Welcome', ['auth' => ['user' => Auth::user()]]);
+})->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/user/status', [UserStatusController::class, 'update'])->name('user.status');
