@@ -4,8 +4,8 @@ self.addEventListener('push', function (event) {
     event.waitUntil(
         self.registration.showNotification(data.title, {
             body: data.body,
-            icon: data.icon || '/favicon.ico',
-            badge: '/favicon.ico',
+            icon: data.icon || '/icon.svg',
+            badge: '/icon.svg',
             data: { url: data.url || '/' },
         })
     );
