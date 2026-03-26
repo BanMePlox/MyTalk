@@ -25,6 +25,18 @@ Broadcast::channel('thread.{threadId}', function ($user, $threadId) {
     return $thread->channel->server->members()->where('user_id', $user->id)->exists();
 });
 
+Broadcast::channel('presence-voice.{channelId}', function ($user, $channelId) {
+    $channel = \App\Models\Channel::find($channelId);
+    if (!$channel) return false;
+    if (!$channel->server->members()->where('user_id', $user->id)->exists()) return false;
+
+    return [
+        'id'         => $user->id,
+        'name'       => $user->name,
+        'avatar_url' => $user->avatar_url,
+    ];
+});
+
 Broadcast::channel('presence-server.{serverId}', function ($user, $serverId) {
     $server = \App\Models\Server::find($serverId);
     if (!$server) return false;

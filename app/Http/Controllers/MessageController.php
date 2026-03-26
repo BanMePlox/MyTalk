@@ -13,6 +13,7 @@ use App\Models\MessageEdit;
 use App\Services\PushNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -140,6 +141,31 @@ class MessageController extends Controller
             ->get(['id', 'name', 'image_path'])
             ->map(fn($e) => ['id' => $e->id, 'name' => $e->name, 'url' => $e->url]);
 
+        // Load current voice participants from cache for all voice channels in the server.
+        // On page load the user can never be in a call, so clean up any zombie presence
+        // they left behind (e.g. if the leave fetch failed) and broadcast the leave event.
+        $voiceParticipants = [];
+        foreach ($channel->server->channels->where('type', 'voice') as $vc) {
+            $cacheKey     = "voice_participants_{$vc->id}";
+            $participants = Cache::get($cacheKey, []);
+
+            if (isset($participants[$authUser->id])) {
+                unset($participants[$authUser->id]);
+                Cache::put($cacheKey, $participants, now()->addHours(8));
+                broadcast(new \App\Events\VoicePresenceChanged(
+                    $channel->server_id,
+                    'leave',
+                    ['id' => $authUser->id, 'name' => $authUser->name, 'avatar_url' => $authUser->avatar_url],
+                    $vc->id
+                ));
+            }
+
+            $filtered = array_values($participants);
+            if (!empty($filtered)) {
+                $voiceParticipants[$vc->id] = $filtered;
+            }
+        }
+
         return Inertia::render('Channels/Show', [
             'channel'            => $channel,
             'messages'           => $messages,
@@ -154,6 +180,7 @@ class MessageController extends Controller
             'canSendMessages'    => $channel->canUserSend($authUser),
             'isOwner'            => $channel->server->owner_id === Auth::id(),
             'serverEmojis'       => $serverEmojis,
+            'initialVoiceParticipants' => $voiceParticipants,
         ]);
     }
 

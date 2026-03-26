@@ -53,7 +53,7 @@ class ChannelController extends Controller
     public function updateType(Request $request, Channel $channel)
     {
         $this->authorize('manageChannels', $channel->server);
-        $data = $request->validate(['type' => 'required|in:text,announcement']);
+        $data = $request->validate(['type' => 'required|in:text,announcement,voice']);
         $channel->update(['type' => $data['type']]);
         return response()->json(['type' => $channel->type]);
     }

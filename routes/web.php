@@ -19,6 +19,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ServerController;
 use App\Http\Controllers\UserStatusController;
+use App\Http\Controllers\VoiceController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -55,6 +56,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/servers/{server}/bans', [BanController::class, 'index'])->name('bans.index');
     Route::post('/servers/{server}/bans/{user}', [BanController::class, 'store'])->name('bans.store');
     Route::delete('/servers/{server}/bans/{user}', [BanController::class, 'destroy'])->name('bans.destroy');
+
+    Route::post('/voice/{channel}/signal', [VoiceController::class, 'signal'])->name('voice.signal');
+    Route::post('/voice/{channel}/presence', [VoiceController::class, 'presence'])->name('voice.presence');
 
     Route::post('/servers/{server}/channels', [ChannelController::class, 'store'])->name('channels.store');
     Route::patch('/servers/{server}/channels/reorder', [ChannelController::class, 'reorder'])->name('channels.reorder');

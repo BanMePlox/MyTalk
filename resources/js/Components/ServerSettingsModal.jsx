@@ -604,7 +604,7 @@ function ChannelsTab({ server, roles, canManageChannels }) {
                             onClick={() => setExpanded(isOpen ? null : ch.id)}
                             className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-gray-750 transition-colors text-left"
                         >
-                            <span className="text-gray-500 text-sm">{channelTypes[ch.id] === 'announcement' ? '📢' : '#'}</span>
+                            <span className="text-gray-500 text-sm">{channelTypes[ch.id] === 'announcement' ? '📢' : channelTypes[ch.id] === 'voice' ? '🔊' : '#'}</span>
                             <span className="flex-1 text-sm font-medium text-gray-100">{ch.name}</span>
                             {hasOverrides && (
                                 <span className="text-xs bg-indigo-600/40 text-indigo-300 px-1.5 py-0.5 rounded">
@@ -626,6 +626,7 @@ function ChannelsTab({ server, roles, canManageChannels }) {
                                     >
                                         <option value="text"># Texto</option>
                                         <option value="announcement">📢 Anuncios</option>
+                                        <option value="voice">🔊 Voz</option>
                                     </select>
                                 </div>
                                 {roles.length === 0 && (
