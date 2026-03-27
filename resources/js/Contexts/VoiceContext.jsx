@@ -12,6 +12,7 @@
  *   micVolume             – 0-200
  *   participants          – { [userId]: { id, name, avatar_url } }
  *   userVolumes           – { [userId]: 0-100 }
+ *   speakingUsers         – { [userId]: boolean }
  *   join(channel, authUser)
  *   leave()
  *   toggleMute()
@@ -27,6 +28,8 @@ const ICE_SERVERS = [
     { urls: 'stun:stun1.l.google.com:19302' },
 ];
 
+const SPEAKING_THRESHOLD = 10; // 0-255 average frequency amplitude
+
 const VoiceContext = createContext(null);
 
 export function VoiceProvider({ children }) {
@@ -37,6 +40,7 @@ export function VoiceProvider({ children }) {
     const [micVolume,     setMicVolume]     = useState(100);
     const [participants,  setParticipants]  = useState({});
     const [userVolumes,   setUserVolumes]   = useState({});
+    const [speakingUsers, setSpeakingUsers] = useState({});
 
     // Stable refs — survive re-renders and navigation
     const localStreamRef = useRef(null);
@@ -47,6 +51,74 @@ export function VoiceProvider({ children }) {
     const joinedRef      = useRef(false);
     const authUserRef    = useRef(null);
     const csrfTokenRef   = useRef(document.querySelector('meta[name="csrf-token"]')?.content ?? '');
+
+    // Speaking detection refs
+    const audioCtxRef        = useRef(null);   // shared AudioContext for remote streams
+    const localAnalyserRef   = useRef(null);
+    const remoteAnalysersRef = useRef({});     // { [userId]: AnalyserNode }
+    const remoteGainsRef     = useRef({});     // { [userId]: GainNode } — volume + deafen control
+    const animFrameRef       = useRef(null);
+
+    // Mirrors of state needed inside rAF loop / callbacks without stale closures
+    const mutedRef        = useRef(false);
+    const deafenedRef     = useRef(false);
+    const userVolumesRef  = useRef({});
+    userVolumesRef.current = userVolumes; // always fresh
+
+    // ── Speaking detection loop ───────────────────────────────────────────────
+
+    function startSpeakingLoop() {
+        const data = new Uint8Array(32);
+        const prev = {};
+
+        const tick = () => {
+            const next = {};
+
+            // Local user
+            if (localAnalyserRef.current && authUserRef.current) {
+                localAnalyserRef.current.getByteFrequencyData(data);
+                const avg = data.reduce((a, b) => a + b, 0) / data.length;
+                next[String(authUserRef.current.id)] = !mutedRef.current && avg > SPEAKING_THRESHOLD;
+            }
+
+            // Remote users
+            Object.entries(remoteAnalysersRef.current).forEach(([uid, analyser]) => {
+                analyser.getByteFrequencyData(data);
+                const avg = data.reduce((a, b) => a + b, 0) / data.length;
+                next[String(uid)] = avg > SPEAKING_THRESHOLD;
+            });
+
+            // Only setState when something actually changed (avoids 60fps re-renders)
+            const changed =
+                Object.keys(next).some(k => Boolean(next[k]) !== Boolean(prev[k])) ||
+                Object.keys(prev).some(k => !(k in next));
+
+            if (changed) {
+                Object.keys(prev).forEach(k => delete prev[k]);
+                Object.assign(prev, next);
+                setSpeakingUsers({ ...next });
+            }
+
+            animFrameRef.current = requestAnimationFrame(tick);
+        };
+
+        animFrameRef.current = requestAnimationFrame(tick);
+    }
+
+    function stopSpeakingLoop() {
+        if (animFrameRef.current) {
+            cancelAnimationFrame(animFrameRef.current);
+            animFrameRef.current = null;
+        }
+        localAnalyserRef.current   = null;
+        remoteAnalysersRef.current = {};
+        remoteGainsRef.current     = {};
+        if (audioCtxRef.current) {
+            audioCtxRef.current.close().catch(() => {});
+            audioCtxRef.current = null;
+        }
+        setSpeakingUsers({});
+    }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -75,18 +147,40 @@ export function VoiceProvider({ children }) {
         };
 
         pc.ontrack = ({ streams, track }) => {
+            const stream = streams?.[0] ?? new MediaStream([track]);
+
+            // Keep a muted audio element so the browser keeps the WebRTC track alive.
+            // Actual output is routed through the AudioContext gainNode below.
             let audio = audioElemsRef.current[userId];
             if (!audio) {
                 audio = document.createElement('audio');
-                audio.autoplay = true;
+                audio.muted = true;
                 audio.style.display = 'none';
                 document.body.appendChild(audio);
                 audioElemsRef.current[userId] = audio;
             }
-            const stream = streams?.[0] ?? new MediaStream([track]);
             audio.srcObject = stream;
-            audio.volume = Math.min((userVolumes[userId] ?? 100) / 100, 1);
-            audio.play().catch(err => console.warn('[Voice] Audio play blocked:', err));
+            audio.play().catch(() => {});
+
+            // Use createMediaStreamSource (not createMediaElementSource) — it doesn't take
+            // ownership of the element and works reliably with the shared AudioContext.
+            if (audioCtxRef.current && !remoteAnalysersRef.current[userId]) {
+                const ctx      = audioCtxRef.current;
+                const mediaSrc = ctx.createMediaStreamSource(stream);
+                const gainNode = ctx.createGain();
+                const analyser = ctx.createAnalyser();
+                analyser.fftSize = 64;
+
+                const vol = Math.min((userVolumesRef.current[userId] ?? 100) / 100, 1);
+                gainNode.gain.value = deafenedRef.current ? 0 : vol;
+
+                mediaSrc.connect(gainNode);
+                gainNode.connect(ctx.destination); // real audio output
+                mediaSrc.connect(analyser);        // speaking detection tap
+
+                remoteAnalysersRef.current[userId] = analyser;
+                remoteGainsRef.current[userId]     = gainNode;
+            }
         };
 
         peersRef.current[userId] = pc;
@@ -101,6 +195,8 @@ export function VoiceProvider({ children }) {
             audioElemsRef.current[userId].remove();
             delete audioElemsRef.current[userId];
         }
+        delete remoteAnalysersRef.current[userId];
+        delete remoteGainsRef.current[userId];
     }
 
     async function createOffer(channelId, userId) {
@@ -150,17 +246,28 @@ export function VoiceProvider({ children }) {
         let localStream;
         try {
             const rawStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-            const audioCtx  = new AudioContext();
+            // Create a single shared AudioContext during user gesture so it starts in "running"
+            // state. Peers created later reuse this same context — no suspended-context problem.
+            audioCtxRef.current = new AudioContext();
+            const audioCtx = audioCtxRef.current;
             const source    = audioCtx.createMediaStreamSource(rawStream);
             const gainNode  = audioCtx.createGain();
             gainNode.gain.value = micVolume / 100;
             const dest = audioCtx.createMediaStreamDestination();
+
+            // Local analyser — tap from source (pre-gain) for raw mic level
+            const localAnalyser   = audioCtx.createAnalyser();
+            localAnalyser.fftSize = 64;
+            source.connect(localAnalyser);
+
             source.connect(gainNode);
             gainNode.connect(dest);
-            gainNodeRef.current    = gainNode;
-            localStream            = dest.stream;
-            localStream._rawStream = rawStream;
-            localStreamRef.current = localStream;
+
+            gainNodeRef.current      = gainNode;
+            localAnalyserRef.current = localAnalyser;
+            localStream              = dest.stream;
+            localStream._rawStream   = rawStream;
+            localStreamRef.current   = localStream;
         } catch (e) {
             alert('No se pudo acceder al micrófono: ' + e.message);
             return;
@@ -168,9 +275,13 @@ export function VoiceProvider({ children }) {
 
         authUserRef.current = authUser;
         joinedRef.current   = true;
+        mutedRef.current    = false;
+        deafenedRef.current = false;
         window.axios.defaults.headers.common['X-Voice-Channel-Id'] = channel.id;
         setJoined(true);
         setActiveChannel(channel);
+
+        startSpeakingLoop();
 
         window.axios.post(route('voice.presence', channel.id), { action: 'join' }).catch(console.error);
 
@@ -215,6 +326,8 @@ export function VoiceProvider({ children }) {
         localStreamRef.current = null;
         gainNodeRef.current    = null;
 
+        stopSpeakingLoop();
+
         window.Echo.leave(`presence-voice.${channel.id}`);
         if (authUser) {
             window.Echo.private(`App.Models.User.${authUser.id}`).stopListening('.VoiceSignal');
@@ -238,13 +351,18 @@ export function VoiceProvider({ children }) {
         const track = localStreamRef.current?.getAudioTracks()[0];
         if (track) {
             track.enabled = muted;
+            mutedRef.current = !muted;
             setMuted(m => !m);
         }
     }, [muted]);
 
     const toggleDeafen = useCallback(() => {
         const next = !deafened;
-        Object.values(audioElemsRef.current).forEach(el => { el.muted = next; });
+        deafenedRef.current = next;
+        // Audio elements are always muted; gainNode controls volume and deafen
+        Object.entries(remoteGainsRef.current).forEach(([uid, gainNode]) => {
+            gainNode.gain.value = next ? 0 : Math.min((userVolumesRef.current[uid] ?? 100) / 100, 1);
+        });
         setDeafened(next);
     }, [deafened]);
 
@@ -257,8 +375,14 @@ export function VoiceProvider({ children }) {
     const changeUserVolume = useCallback((userId, val) => {
         const v = Number(val);
         setUserVolumes(prev => ({ ...prev, [userId]: v }));
-        const audio = audioElemsRef.current[userId];
-        if (audio) audio.volume = Math.min(v / 100, 1);
+        // Use GainNode if available (AudioContext routed), otherwise fall back to audio element
+        const gainNode = remoteGainsRef.current[userId];
+        if (gainNode) {
+            if (!deafenedRef.current) gainNode.gain.value = Math.min(v / 100, 1);
+        } else {
+            const audio = audioElemsRef.current[userId];
+            if (audio) audio.volume = Math.min(v / 100, 1);
+        }
     }, []);
 
     // Sync participant leave from external VoicePresenceChanged broadcast
@@ -304,6 +428,7 @@ export function VoiceProvider({ children }) {
         micVolume,
         participants,
         userVolumes,
+        speakingUsers,
         join,
         leave,
         toggleMute,

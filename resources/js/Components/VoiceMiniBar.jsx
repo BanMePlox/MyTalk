@@ -1,7 +1,10 @@
+import { usePage } from '@inertiajs/react';
 import { useVoice } from '@/Contexts/VoiceContext';
 
 export default function VoiceMiniBar() {
-    const { joined, activeChannel, muted, deafened, toggleMute, toggleDeafen, leave } = useVoice();
+    const { joined, activeChannel, muted, deafened, speakingUsers, toggleMute, toggleDeafen, leave } = useVoice();
+    const { auth } = usePage().props;
+    const isSpeaking = speakingUsers[String(auth.user.id)];
 
     if (!joined || !activeChannel) return null;
 
@@ -11,7 +14,14 @@ export default function VoiceMiniBar() {
             <div className="flex items-center gap-1.5 px-1 mb-2">
                 <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
                 <span className="text-xs text-green-400 font-medium truncate flex-1">{activeChannel.name}</span>
-                <span className="text-xs text-gray-500">En llamada</span>
+                {isSpeaking && (
+                    <span className="shrink-0 flex gap-px items-end h-3">
+                        {[2, 3, 2].map((h, i) => (
+                            <span key={i} className="w-px bg-green-400 rounded-full animate-pulse" style={{ height: `${h * 4}px`, animationDelay: `${i * 0.15}s` }} />
+                        ))}
+                    </span>
+                )}
+                {!isSpeaking && <span className="text-xs text-gray-500">En llamada</span>}
             </div>
 
             {/* Controls */}

@@ -2071,11 +2071,20 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                             <div className="ml-6 mb-1 space-y-0.5">
                                                 {participants.map(u => (
                                                     <div key={u.id} className="flex items-center gap-1.5 px-2 py-0.5 rounded text-xs text-gray-400 hover:bg-gray-700 hover:text-gray-200 transition-colors">
-                                                        {u.avatar_url
-                                                            ? <img src={u.avatar_url} alt={u.name} className="w-4 h-4 rounded-full object-cover shrink-0" />
-                                                            : <span className="w-4 h-4 rounded-full bg-indigo-500 flex items-center justify-center text-[9px] font-bold text-white shrink-0">{u.name?.[0]?.toUpperCase()}</span>
-                                                        }
+                                                        <div className={`shrink-0 rounded-full ${voice.speakingUsers[String(u.id)] ? 'ring-1 ring-green-400 ring-offset-1 ring-offset-gray-900' : ''}`}>
+                                                            {u.avatar_url
+                                                                ? <img src={u.avatar_url} alt={u.name} className="w-4 h-4 rounded-full object-cover block" />
+                                                                : <span className="w-4 h-4 rounded-full bg-indigo-500 flex items-center justify-center text-[9px] font-bold text-white">{u.name?.[0]?.toUpperCase()}</span>
+                                                            }
+                                                        </div>
                                                         <span className="truncate">{u.name}</span>
+                                                        {voice.speakingUsers[String(u.id)] && (
+                                                            <span className="ml-auto shrink-0 flex gap-px items-end h-3">
+                                                                {[2, 3, 2].map((h, i) => (
+                                                                    <span key={i} className="w-px bg-green-400 rounded-full animate-pulse" style={{ height: `${h * 4}px`, animationDelay: `${i * 0.15}s` }} />
+                                                                ))}
+                                                            </span>
+                                                        )}
                                                     </div>
                                                 ))}
                                             </div>

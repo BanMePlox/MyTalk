@@ -12,6 +12,7 @@ export default function VoiceChannel({ channel }) {
         micVolume,
         participants,
         userVolumes,
+        speakingUsers,
         join,
         leave,
         toggleMute,
@@ -108,7 +109,7 @@ export default function VoiceChannel({ channel }) {
                         {participantList.map(user => (
                             <div key={user.id} className="px-1 py-1">
                                 <div className="flex items-center gap-3">
-                                    <div className="relative shrink-0">
+                                    <div className={`relative shrink-0 rounded-full transition-shadow duration-150 ${speakingUsers[user.id] ? 'ring-2 ring-green-400 ring-offset-2 ring-offset-gray-800' : ''}`}>
                                         {user.avatar_url ? (
                                             <img src={user.avatar_url} alt={user.name} className="w-8 h-8 rounded-full object-cover" />
                                         ) : (
