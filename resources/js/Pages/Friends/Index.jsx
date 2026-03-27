@@ -225,6 +225,7 @@ export default function Index({ friends: initialFriends, incoming: initialIncomi
                                     <Link
                                         href={srv.first_channel_id ? route('channels.show', srv.first_channel_id) : route('servers.show', srv.id)}
                                         title={srv.name}
+                                        prefetch
                                         className="w-12 h-12 flex items-center justify-center font-bold text-lg transition-all duration-150 rounded-full bg-gray-700 text-gray-300 hover:rounded-2xl hover:bg-indigo-500 hover:text-white overflow-hidden"
                                     >
                                         {srv.icon_url

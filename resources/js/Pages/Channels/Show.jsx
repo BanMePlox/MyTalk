@@ -1855,6 +1855,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                     <Link
                                         href={srv.first_channel_id ? route('channels.show', srv.first_channel_id) : route('servers.show', srv.id)}
                                         title={srv.name}
+                                        prefetch
                                         className={`w-12 h-12 flex items-center justify-center font-bold text-lg transition-all duration-150 shrink-0 overflow-hidden ${
                                             isCurrent
                                                 ? 'rounded-2xl bg-indigo-500 text-white'
