@@ -53,7 +53,7 @@ export default function Index({ friends: initialFriends, incoming: initialIncomi
 
     const statusMenuRef = useRef(null);
 
-    const totalDmUnread = dmConversations.reduce((s, c) => s + (c.unread ?? 0), 0);
+
 
     useEffect(() => {
         function handleClick(e) {
@@ -278,12 +278,6 @@ export default function Index({ friends: initialFriends, incoming: initialIncomi
                     ))}
 
                     <div className="relative flex items-center w-full px-1.5">
-                        <Link
-                            href={route('conversations.index')}
-                            title="Mensajes directos"
-                            prefetch
-                            className="w-12 h-12 flex items-center justify-center text-xl text-indigo-300 bg-gray-700 rounded-full hover:rounded-2xl hover:bg-indigo-500 hover:text-white transition-all duration-150"
-                        >✉</Link>
                     </div>
 
                     <div className="mt-1 w-8 border-t border-gray-700" />

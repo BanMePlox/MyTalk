@@ -1909,18 +1909,6 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                         </div>
                     ))}
 
-                    {/* Botón nueva conversación / ver todas */}
-                    <div className="relative flex items-center w-full px-1.5 group">
-                        <div className="relative">
-                            <Link
-                                href={route('conversations.index')}
-                                title="Mensajes directos"
-                                prefetch
-                                className="w-12 h-12 flex items-center justify-center text-xl text-indigo-300 bg-gray-700 rounded-full hover:rounded-2xl hover:bg-indigo-500 hover:text-white transition-all duration-150"
-                            >✉</Link>
-                        </div>
-                    </div>
-
                     {/* Botón amigos */}
                     <div className="relative flex items-center w-full px-1.5 group">
                         <div className="relative">
@@ -3540,12 +3528,6 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                         )}
                     </div>
                 ))}
-                <Link
-                    href={route('conversations.index')}
-                    prefetch
-                    className="w-10 h-10 flex items-center justify-center text-indigo-300 bg-gray-700 rounded-xl text-lg"
-                    title="Todos los DMs"
-                >✉</Link>
                 <div className="relative">
                     <Link
                         href={route('friends.index')}
