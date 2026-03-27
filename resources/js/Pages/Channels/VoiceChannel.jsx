@@ -21,6 +21,7 @@ export default function VoiceChannel({ channel, externalPresenceEvent }) {
     const audioElemsRef   = useRef({});      // { userId: HTMLAudioElement }
     const echoChannelRef  = useRef(null);
     const joinedRef       = useRef(false);   // stable ref for cleanup
+    const csrfTokenRef    = useRef(document.querySelector('meta[name="csrf-token"]')?.content ?? '');
 
     // ── Mic test ───────────────────────────────────────────────────────────────
     const [testActive, setTestActive]   = useState(false);
@@ -258,7 +259,7 @@ export default function VoiceChannel({ channel, externalPresenceEvent }) {
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+                'X-CSRF-TOKEN': csrfTokenRef.current,
             },
             body: JSON.stringify({ action: 'leave' }),
         }).catch(() => {});
