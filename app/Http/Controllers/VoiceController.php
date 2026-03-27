@@ -14,7 +14,7 @@ class VoiceController extends Controller
     {
         $data = $request->validate([
             'to_user_id' => 'required|integer|exists:users,id',
-            'type'       => 'required|in:offer,answer,ice',
+            'type'       => 'required|in:offer,answer,ice,screen-share-stop,screen-share-start',
             'sdp'        => 'nullable|string',
             'candidate'  => 'nullable|array',
         ]);

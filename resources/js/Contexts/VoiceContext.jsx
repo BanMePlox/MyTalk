@@ -41,6 +41,10 @@ export function VoiceProvider({ children }) {
     const [participants,  setParticipants]  = useState({});
     const [userVolumes,   setUserVolumes]   = useState({});
     const [speakingUsers, setSpeakingUsers] = useState({});
+    const [sharingScreen,     setSharingScreen]     = useState(false);
+    const [remoteScreens,     setRemoteScreens]     = useState({}); // { [userId]: MediaStream }
+    const [systemAudioEnabled, setSystemAudioEnabled] = useState(false);
+    const [hasSystemAudio,    setHasSystemAudio]    = useState(false); // track available to toggle
 
     // Stable refs — survive re-renders and navigation
     const localStreamRef = useRef(null);
@@ -59,11 +63,19 @@ export function VoiceProvider({ children }) {
     const remoteGainsRef     = useRef({});     // { [userId]: GainNode } — volume + deafen control
     const animFrameRef       = useRef(null);
 
+    // Screen sharing
+    const screenStreamRef      = useRef(null);
+    const screenSendersRef     = useRef({}); // { [userId]: RTCRtpSender } — video track
+    const screenAudioTrackRef  = useRef(null);
+    const sysAudioSendersRef   = useRef({}); // { [userId]: RTCRtpSender } — system audio track
+
     // Mirrors of state needed inside rAF loop / callbacks without stale closures
-    const mutedRef        = useRef(false);
-    const deafenedRef     = useRef(false);
-    const userVolumesRef  = useRef({});
-    userVolumesRef.current = userVolumes; // always fresh
+    const mutedRef         = useRef(false);
+    const deafenedRef      = useRef(false);
+    const userVolumesRef   = useRef({});
+    const activeChannelRef = useRef(null);
+    userVolumesRef.current   = userVolumes;   // always fresh
+    activeChannelRef.current = activeChannel; // always fresh
 
     // ── Speaking detection loop ───────────────────────────────────────────────
 
@@ -132,6 +144,23 @@ export function VoiceProvider({ children }) {
         }).catch(console.error);
     }
 
+    // ── Renegotiation ────────────────────────────────────────────────────────
+
+    async function renegotiate(userId) {
+        const pc        = peersRef.current[userId];
+        const channelId = activeChannelRef.current?.id;
+        if (!pc || !channelId) return;
+        try {
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            sendSignal(channelId, userId, { type: 'offer', sdp: encodeSdp(offer.sdp) });
+        } catch (e) {
+            console.warn('[Voice] Renegotiation failed for', userId, e);
+        }
+    }
+
+    // ── Peer management ───────────────────────────────────────────────────────
+
     function createPeer(channelId, userId) {
         if (peersRef.current[userId]) return peersRef.current[userId];
 
@@ -149,37 +178,55 @@ export function VoiceProvider({ children }) {
         pc.ontrack = ({ streams, track }) => {
             const stream = streams?.[0] ?? new MediaStream([track]);
 
-            // Keep a muted audio element so the browser keeps the WebRTC track alive.
-            // Actual output is routed through the AudioContext gainNode below.
-            let audio = audioElemsRef.current[userId];
+            // ── Screen share (video track) ──
+            if (track.kind === 'video') {
+                setRemoteScreens(prev => ({ ...prev, [userId]: stream }));
+                track.addEventListener('ended', () => {
+                    setRemoteScreens(prev => {
+                        const next = { ...prev };
+                        delete next[userId];
+                        return next;
+                    });
+                });
+                return;
+            }
+
+            // ── Audio track ──
+            // First audio track = mic (main). Second = system audio from screen share.
+            const isSysAudio = !!audioElemsRef.current[userId];
+            const audioKey   = isSysAudio ? `${userId}_sys` : userId;
+
+            let audio = audioElemsRef.current[audioKey];
             if (!audio) {
                 audio = document.createElement('audio');
                 audio.muted = true;
                 audio.style.display = 'none';
                 document.body.appendChild(audio);
-                audioElemsRef.current[userId] = audio;
+                audioElemsRef.current[audioKey] = audio;
             }
             audio.srcObject = stream;
             audio.play().catch(() => {});
 
-            // Use createMediaStreamSource (not createMediaElementSource) — it doesn't take
-            // ownership of the element and works reliably with the shared AudioContext.
-            if (audioCtxRef.current && !remoteAnalysersRef.current[userId]) {
+            if (audioCtxRef.current && !remoteGainsRef.current[audioKey]) {
                 const ctx      = audioCtxRef.current;
                 const mediaSrc = ctx.createMediaStreamSource(stream);
                 const gainNode = ctx.createGain();
-                const analyser = ctx.createAnalyser();
-                analyser.fftSize = 64;
 
                 const vol = Math.min((userVolumesRef.current[userId] ?? 100) / 100, 1);
                 gainNode.gain.value = deafenedRef.current ? 0 : vol;
 
                 mediaSrc.connect(gainNode);
-                gainNode.connect(ctx.destination); // real audio output
-                mediaSrc.connect(analyser);        // speaking detection tap
+                gainNode.connect(ctx.destination);
 
-                remoteAnalysersRef.current[userId] = analyser;
-                remoteGainsRef.current[userId]     = gainNode;
+                if (!isSysAudio) {
+                    // Mic audio: add speaking detection analyser
+                    const analyser   = ctx.createAnalyser();
+                    analyser.fftSize = 64;
+                    mediaSrc.connect(analyser);
+                    remoteAnalysersRef.current[userId] = analyser;
+                }
+
+                remoteGainsRef.current[audioKey] = gainNode;
             }
         };
 
@@ -190,17 +237,38 @@ export function VoiceProvider({ children }) {
     function closePeer(userId) {
         peersRef.current[userId]?.close();
         delete peersRef.current[userId];
-        if (audioElemsRef.current[userId]) {
-            audioElemsRef.current[userId].srcObject = null;
-            audioElemsRef.current[userId].remove();
-            delete audioElemsRef.current[userId];
-        }
+        delete screenSendersRef.current[userId];
+        delete sysAudioSendersRef.current[userId];
+        [`${userId}`, `${userId}_sys`].forEach(key => {
+            if (audioElemsRef.current[key]) {
+                audioElemsRef.current[key].srcObject = null;
+                audioElemsRef.current[key].remove();
+                delete audioElemsRef.current[key];
+            }
+            delete remoteGainsRef.current[key];
+        });
         delete remoteAnalysersRef.current[userId];
-        delete remoteGainsRef.current[userId];
+        setRemoteScreens(prev => {
+            if (!(userId in prev)) return prev;
+            const next = { ...prev };
+            delete next[userId];
+            return next;
+        });
     }
 
     async function createOffer(channelId, userId) {
         const pc = createPeer(channelId, userId);
+        // Include screen tracks if already sharing (before creating the offer SDP)
+        if (screenStreamRef.current && !screenSendersRef.current[userId]) {
+            const videoTrack = screenStreamRef.current.getVideoTracks()[0];
+            const audioTrack = screenAudioTrackRef.current;
+            if (videoTrack) {
+                try { screenSendersRef.current[userId] = pc.addTrack(videoTrack, screenStreamRef.current); } catch (e) {}
+            }
+            if (audioTrack) {
+                try { sysAudioSendersRef.current[userId] = pc.addTrack(audioTrack, screenStreamRef.current); } catch (e) {}
+            }
+        }
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
         sendSignal(channelId, userId, { type: 'offer', sdp: encodeSdp(offer.sdp) });
@@ -309,9 +377,46 @@ export function VoiceProvider({ children }) {
         window.Echo.private(`App.Models.User.${authUser.id}`)
             .listen('.VoiceSignal', async ({ type, sdp, candidate, from_user_id, channel_id }) => {
                 if (parseInt(channel_id) !== parseInt(channel.id)) return;
-                if (type === 'offer')  await handleOffer(channel.id, from_user_id, sdp);
+                if (type === 'offer') {
+                    await handleOffer(channel.id, from_user_id, sdp);
+                    // If we're already sharing, add our screen track to the new peer and renegotiate
+                    if (screenStreamRef.current) {
+                        const videoTrack = screenStreamRef.current.getVideoTracks()[0];
+                        const pc = peersRef.current[from_user_id];
+                        if (videoTrack && pc && !screenSendersRef.current[from_user_id]) {
+                            try {
+                                screenSendersRef.current[from_user_id] = pc.addTrack(videoTrack, screenStreamRef.current);
+                                const audioTrack = screenAudioTrackRef.current;
+                                if (audioTrack) {
+                                    sysAudioSendersRef.current[from_user_id] = pc.addTrack(audioTrack, screenStreamRef.current);
+                                }
+                                await renegotiate(from_user_id);
+                            } catch (e) { /* ignore */ }
+                        }
+                    }
+                }
                 if (type === 'answer') await handleAnswer(from_user_id, sdp);
                 if (type === 'ice')    await handleIce(from_user_id, candidate);
+                if (type === 'screen-share-stop') {
+                    setRemoteScreens(prev => {
+                        const next = { ...prev };
+                        delete next[from_user_id];
+                        return next;
+                    });
+                }
+                if (type === 'screen-share-start') {
+                    // replaceTrack was used — ontrack won't fire. Recover track from existing receiver.
+                    const pc = peersRef.current[from_user_id];
+                    if (pc) {
+                        const receiver = pc.getReceivers().find(r => r.track.kind === 'video');
+                        if (receiver) {
+                            setRemoteScreens(prev => ({
+                                ...prev,
+                                [from_user_id]: new MediaStream([receiver.track]),
+                            }));
+                        }
+                    }
+                }
             });
     }, [micVolume]);
 
@@ -319,6 +424,19 @@ export function VoiceProvider({ children }) {
         const channel  = activeChannel;
         const authUser = authUserRef.current;
         if (!joinedRef.current || !channel) return;
+
+        // Stop screen share silently (peers are about to close anyway)
+        if (screenStreamRef.current) {
+            screenStreamRef.current.getTracks().forEach(t => t.stop());
+            screenStreamRef.current     = null;
+            screenAudioTrackRef.current = null;
+            screenSendersRef.current    = {}; // cleared on full leave — new call = fresh peers
+            sysAudioSendersRef.current  = {};
+            setSharingScreen(false);
+            setHasSystemAudio(false);
+            setSystemAudioEnabled(false);
+            setRemoteScreens({});
+        }
 
         Object.keys(peersRef.current).forEach(closePeer);
         localStreamRef.current?._rawStream?.getTracks().forEach(t => t.stop());
@@ -346,6 +464,91 @@ export function VoiceProvider({ children }) {
         // keepalive fetch is registered separately via beforeunload for the browser-close case.
         window.axios.post(route('voice.presence', channel.id), { action: 'leave' }).catch(() => {});
     }, [activeChannel]);
+
+    const stopScreenShare = useCallback(() => {
+        if (!screenStreamRef.current) return;
+        // Null refs BEFORE stopping tracks — prevents re-entry from the 'ended' event listener.
+        const stream = screenStreamRef.current;
+        screenStreamRef.current     = null;
+        screenAudioTrackRef.current = null;
+        stream.getTracks().forEach(t => t.stop());
+
+        // Use replaceTrack(null) instead of removeTrack — keeps the m-section in the SDP so the
+        // sender can be reused on the next share without renegotiation.
+        const channelId = activeChannelRef.current?.id;
+        Object.entries(screenSendersRef.current).forEach(([uid, sender]) => {
+            sender.replaceTrack(null).catch(() => {});
+            if (channelId) sendSignal(channelId, uid, { type: 'screen-share-stop' });
+        });
+        Object.values(sysAudioSendersRef.current).forEach(sender => {
+            sender.replaceTrack(null).catch(() => {});
+        });
+        // Keep senders in refs — reused by replaceTrack on next share.
+        setSharingScreen(false);
+        setHasSystemAudio(false);
+        setSystemAudioEnabled(false);
+    }, []);
+
+    const toggleSystemAudio = useCallback(() => {
+        const track = screenAudioTrackRef.current;
+        if (!track) return;
+        track.enabled = !track.enabled;
+        setSystemAudioEnabled(track.enabled);
+    }, []);
+
+    // Stable ref so startScreenShare can call stopScreenShare without dep issues
+    const stopScreenShareRef = useRef(null);
+    stopScreenShareRef.current = stopScreenShare;
+
+    const startScreenShare = useCallback(async () => {
+        if (!joinedRef.current) return;
+        let stream;
+        try {
+            stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+        } catch (e) {
+            if (e.name !== 'NotAllowedError') console.error('[Voice] getDisplayMedia:', e);
+            return;
+        }
+        screenStreamRef.current = stream;
+        const videoTrack = stream.getVideoTracks()[0];
+        const audioTrack = stream.getAudioTracks()[0] ?? null;
+
+        screenAudioTrackRef.current = audioTrack;
+        setHasSystemAudio(!!audioTrack);
+        setSystemAudioEnabled(!!audioTrack);
+
+        const channelId = activeChannelRef.current?.id;
+
+        await Promise.all(
+            Object.entries(peersRef.current).map(async ([uid, pc]) => {
+                try {
+                    if (screenSendersRef.current[uid]) {
+                        // Reuse existing sender — replaceTrack, no renegotiation needed
+                        await screenSendersRef.current[uid].replaceTrack(videoTrack);
+                        if (sysAudioSendersRef.current[uid]) {
+                            await sysAudioSendersRef.current[uid].replaceTrack(audioTrack ?? null);
+                        }
+                        // Signal remote to re-show the screen (ontrack won't fire again)
+                        if (channelId) sendSignal(channelId, uid, { type: 'screen-share-start' });
+                    } else {
+                        // First share for this peer — addTrack + renegotiate to add m-section
+                        screenSendersRef.current[uid] = pc.addTrack(videoTrack, stream);
+                        if (audioTrack) {
+                            sysAudioSendersRef.current[uid] = pc.addTrack(audioTrack, stream);
+                        }
+                        await renegotiate(uid);
+                        // ontrack fires on remote — no extra signal needed for first share
+                    }
+                } catch (e) {
+                    console.warn('[Voice] Screen share setup failed for', uid, e);
+                }
+            })
+        );
+
+        // Handle the browser's native "Stop sharing" button
+        videoTrack.addEventListener('ended', () => stopScreenShareRef.current?.());
+        setSharingScreen(true);
+    }, []);
 
     const toggleMute = useCallback(() => {
         const track = localStreamRef.current?.getAudioTracks()[0];
@@ -429,12 +632,19 @@ export function VoiceProvider({ children }) {
         participants,
         userVolumes,
         speakingUsers,
+        sharingScreen,
+        remoteScreens,
+        systemAudioEnabled,
+        hasSystemAudio,
         join,
         leave,
         toggleMute,
         toggleDeafen,
         changeMicVolume,
         changeUserVolume,
+        startScreenShare,
+        stopScreenShare,
+        toggleSystemAudio,
         syncExternalPresence,
     };
 

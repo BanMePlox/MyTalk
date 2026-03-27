@@ -64,6 +64,8 @@ Aplicación de chat en tiempo real inspirada en Discord. Construida con **Larave
 - Silenciar micrófono, ensordecerse y control de volumen por usuario
 - **Llamadas persistentes**: navega entre canales de texto sin colgar — la barra de llamada activa en el sidebar mantiene los controles accesibles
 - Sidebar muestra los participantes activos en cada canal de voz en tiempo real
+- **Indicador de quién habla** en tiempo real — anillo verde en avatar + barras animadas en sidebar y barra de llamada
+- **Compartir pantalla** con `getDisplayMedia`; soporte de audio del sistema con toggle; pantalla completa en el receptor; stop/reinicio sin renegociación WebRTC
 - Prueba de micrófono antes de unirse
 - Emojis personalizados del servidor con sintaxis `:nombre:`
 

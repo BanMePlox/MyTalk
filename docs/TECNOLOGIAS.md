@@ -68,10 +68,22 @@ Las llamadas de voz usan una malla P2P completa (full mesh): cada participante e
 2. El destinatario responde con un **answer** SDP.
 3. Ambos intercambian **ICE candidates** hasta que se establece la conexión directa.
 4. Los SDP se codifican en base64 para el transporte.
+5. Tipos de señal admitidos: `offer`, `answer`, `ice`, `screen-share-start`, `screen-share-stop`. Validados en `VoiceController`.
 
 **Gestión de estado** (`VoiceContext` — `resources/js/Contexts/VoiceContext.jsx`):
 
 Toda la lógica WebRTC vive en un React Context montado en la raíz de la app (`app.jsx`). Esto permite que las llamadas persistan mientras el usuario navega entre canales de texto (Inertia soft-navigation no desmonta el contexto). Los componentes consumidores (`VoiceChannel.jsx`, `VoiceMiniBar.jsx`) son puramente de UI.
+
+**Indicador de quién habla**:
+
+Un `AnalyserNode` de Web Audio API muestrea las frecuencias del micrófono local y de cada stream remoto a 60 fps (via `requestAnimationFrame`). Se usa un único `AudioContext` creado durante el gesto del usuario en `join()` para que no quede en estado `suspended`. El audio remoto se enruta con `createMediaStreamSource` (no `createMediaElementSource`) para evitar la transferencia de ownership del elemento. `setSpeakingUsers` solo se llama cuando el estado cambia, evitando re-renders innecesarios.
+
+**Compartir pantalla**:
+
+- `getDisplayMedia({ video: true, audio: true })` captura la pantalla y, opcionalmente, el audio del sistema.
+- Primera compartición: `addTrack` en cada peer + renegociación (añade la sección de vídeo al SDP).
+- Stop y reinicio: `replaceTrack(null)` / `replaceTrack(newTrack)` sin renegociación, reutilizando los senders. Se envían señales `screen-share-stop` / `screen-share-start` para sincronizar la UI remota (ya que `ontrack` no vuelve a dispararse con `replaceTrack`). El audio del sistema se puede silenciar con `track.enabled = false` sin renegociación.
+- El track de vídeo entrante se identifica por `track.kind === 'video'` en `ontrack` y se almacena en `remoteScreens`.
 
 **Presencia en el sidebar**:
 

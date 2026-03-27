@@ -83,9 +83,22 @@ En la pantalla del canal (sin estar en llamada) hay una sección **Probar micró
 |---------|-------------|
 | **Micro** | Silencia o activa tu micrófono. |
 | **Audio** | Ensordece o reactiva el audio de los demás. |
+| **Pantalla** | Comparte tu pantalla con todos los participantes. |
 | **Volumen del micrófono** | Slider de 0 % a 200 % para ajustar el nivel de tu voz. |
 | **Volumen por usuario** | Slider individual bajo el nombre de cada participante (0 %–100 %). |
 | **Salir** | Abandona la llamada. |
+
+### Indicador de quién está hablando
+
+Un anillo verde aparece alrededor del avatar del usuario que está hablando, tanto en la pantalla del canal de voz como en el sidebar y la barra de llamada activa.
+
+### Compartir pantalla
+
+1. Pulsa **Pantalla** durante la llamada.
+2. El navegador mostrará un selector: elige la ventana, pestaña o pantalla completa que quieras compartir.
+3. Si el diálogo ofrece compartir el **audio del sistema**, puedes activarlo. Una vez compartiendo, aparece el banner **Compartiendo pantalla** con un botón **Sistema** para activar o silenciar ese audio sin detener la compartición.
+4. Pulsa **Detener** en el banner o el botón nativo del navegador para dejar de compartir.
+5. Los demás participantes ven la pantalla en la parte superior del canal; pasa el cursor sobre la imagen para ver el botón de **pantalla completa**.
 
 ### Navegar mientras estás en llamada
 
@@ -93,7 +106,7 @@ Puedes moverte a cualquier canal de texto sin salir de la llamada: la conexión 
 
 ### Ver quién está en voz
 
-El sidebar muestra los participantes activos bajo cada canal de voz en tiempo real.
+El sidebar muestra los participantes activos bajo cada canal de voz en tiempo real. Los usuarios que están hablando muestran un indicador de barras animado junto a su nombre.
 
 ---
 

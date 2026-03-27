@@ -2,6 +2,54 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { usePage } from '@inertiajs/react';
 import { useVoice } from '@/Contexts/VoiceContext';
 
+function ScreenVideo({ stream, userName }) {
+    const videoRef     = useRef(null);
+    const containerRef = useRef(null);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
+    useEffect(() => {
+        if (videoRef.current) videoRef.current.srcObject = stream;
+    }, [stream]);
+
+    useEffect(() => {
+        const handler = () => setIsFullscreen(!!document.fullscreenElement);
+        document.addEventListener('fullscreenchange', handler);
+        return () => document.removeEventListener('fullscreenchange', handler);
+    }, []);
+
+    const toggleFullscreen = () => {
+        if (!document.fullscreenElement) {
+            containerRef.current?.requestFullscreen();
+        } else {
+            document.exitFullscreen();
+        }
+    };
+
+    return (
+        <div ref={containerRef} className="relative rounded-xl overflow-hidden bg-black border border-gray-700 group">
+            <video ref={videoRef} autoPlay playsInline className="w-full block" />
+            <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between">
+                <span className="text-xs text-white bg-black/60 px-2 py-0.5 rounded-md">{userName}</span>
+                <button
+                    onClick={toggleFullscreen}
+                    title={isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 hover:bg-black/80 text-white p-1.5 rounded-lg"
+                >
+                    {isFullscreen ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" />
+                        </svg>
+                    ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+                        </svg>
+                    )}
+                </button>
+            </div>
+        </div>
+    );
+}
+
 export default function VoiceChannel({ channel }) {
     const { auth } = usePage().props;
     const {
@@ -13,12 +61,19 @@ export default function VoiceChannel({ channel }) {
         participants,
         userVolumes,
         speakingUsers,
+        sharingScreen,
+        remoteScreens,
+        systemAudioEnabled,
+        hasSystemAudio,
         join,
         leave,
         toggleMute,
         toggleDeafen,
         changeMicVolume,
         changeUserVolume,
+        startScreenShare,
+        stopScreenShare,
+        toggleSystemAudio,
     } = useVoice();
 
     const inThisChannel  = joined && activeChannel?.id === channel.id;
@@ -85,7 +140,7 @@ export default function VoiceChannel({ channel }) {
 
     return (
         <div className="flex-1 flex flex-col items-center justify-center bg-gray-900 p-8">
-            <div className="w-full max-w-sm">
+            <div className={`w-full ${Object.keys(remoteScreens).length > 0 ? 'max-w-2xl' : 'max-w-sm'}`}>
                 {/* Icon + title */}
                 <div className="text-center mb-8">
                     <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-3 border border-gray-700">
@@ -102,6 +157,51 @@ export default function VoiceChannel({ channel }) {
                                 : `${participantList.length} participantes`}
                     </p>
                 </div>
+
+                {/* Remote screen shares */}
+                {inThisChannel && Object.keys(remoteScreens).length > 0 && (
+                    <div className="space-y-2 mb-4">
+                        {Object.entries(remoteScreens).map(([uid, stream]) => (
+                            <ScreenVideo
+                                key={uid}
+                                stream={stream}
+                                userName={participants[uid]?.name ?? 'Usuario'}
+                            />
+                        ))}
+                    </div>
+                )}
+
+                {/* Local sharing indicator */}
+                {inThisChannel && sharingScreen && (
+                    <div className="flex items-center gap-2 bg-indigo-600/20 border border-indigo-500/30 rounded-xl px-3 py-2 mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-indigo-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        <span className="text-sm text-indigo-300 flex-1">Compartiendo pantalla</span>
+                        {hasSystemAudio && (
+                            <button
+                                onClick={toggleSystemAudio}
+                                title={systemAudioEnabled ? 'Silenciar audio del sistema' : 'Activar audio del sistema'}
+                                className={`flex items-center gap-1 text-xs px-2 py-1 rounded-lg transition-colors ${
+                                    systemAudioEnabled
+                                        ? 'bg-indigo-500/30 text-indigo-300 hover:bg-indigo-500/40'
+                                        : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
+                                }`}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    {systemAudioEnabled
+                                        ? <path strokeLinecap="round" strokeLinejoin="round" d="M15.536 8.464a5 5 0 010 7.072M12 6a7 7 0 000 12M9 9a3 3 0 000 6" />
+                                        : <path strokeLinecap="round" strokeLinejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                                    }
+                                </svg>
+                                Sistema
+                            </button>
+                        )}
+                        <button onClick={stopScreenShare} className="text-xs text-red-400 hover:text-red-300 transition-colors">
+                            Detener
+                        </button>
+                    </div>
+                )}
 
                 {/* Participants */}
                 {inThisChannel && participantList.length > 0 && (
@@ -254,6 +354,21 @@ export default function VoiceChannel({ channel }) {
                                         }
                                     </svg>
                                     {deafened ? 'Ensordecido' : 'Audio'}
+                                </button>
+
+                                <button
+                                    onClick={sharingScreen ? stopScreenShare : startScreenShare}
+                                    title={sharingScreen ? 'Dejar de compartir' : 'Compartir pantalla'}
+                                    className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                                        sharingScreen
+                                            ? 'bg-indigo-600/30 border border-indigo-500/40 text-indigo-300 hover:bg-indigo-600/40'
+                                            : 'bg-gray-700 hover:bg-gray-600 text-gray-200 border border-gray-600'
+                                    }`}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                    </svg>
+                                    {sharingScreen ? 'Compartiendo' : 'Pantalla'}
                                 </button>
 
                                 <button
