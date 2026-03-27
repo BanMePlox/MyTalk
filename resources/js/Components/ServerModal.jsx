@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useForm } from '@inertiajs/react';
+import { useForm, router } from '@inertiajs/react';
 
 export default function ServerModal({ onClose }) {
     const [tab, setTab] = useState('create'); // 'create' | 'join'
@@ -20,7 +20,7 @@ export default function ServerModal({ onClose }) {
         e.preventDefault();
         const raw = joinForm.data.invite_code.trim();
         const code = raw.includes('/') ? raw.split('/').pop() : raw;
-        joinForm.transform(() => ({ invite_code: code })).post(route('servers.join'), {
+        router.post(route('servers.join'), { invite_code: code }, {
             onSuccess: () => { joinForm.reset(); onClose(); },
         });
     }
