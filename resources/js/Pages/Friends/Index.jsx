@@ -3,6 +3,7 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import ServerModal from '@/Components/ServerModal';
 import { useTheme } from '@/Contexts/ThemeContext';
+import ProfileModal from '@/Components/ProfileModal';
 
 const STATUS_CONFIG = {
     online: { dot: 'bg-green-500', label: 'En línea' },
@@ -44,6 +45,7 @@ export default function Index({ friends: initialFriends, incoming: initialIncomi
     const [adding, setAdding]       = useState(false);
     const [onlineUsers, setOnlineUsers] = useState({});
     const { dark, toggle: toggleTheme } = useTheme();
+    const [profileModalOpen, setProfileModalOpen] = useState(false);
     const [myStatus, setMyStatus]   = useState(auth.user.status ?? 'online');
     const [statusOpen, setStatusOpen] = useState(false);
     const [mentionBadges, setMentionBadges] = useState(initialBadges?.mentions ?? {});
@@ -293,6 +295,7 @@ export default function Index({ friends: initialFriends, incoming: initialIncomi
                     </div>
                 </nav>
                 {serverModalOpen && <ServerModal onClose={() => setServerModalOpen(false)} />}
+                {profileModalOpen && <ProfileModal onClose={() => setProfileModalOpen(false)} />}
 
                 {/* Sidebar */}
                 <aside className="w-52 bg-gray-900 flex flex-col shrink-0">
@@ -381,9 +384,9 @@ export default function Index({ friends: initialFriends, incoming: initialIncomi
                                     <button onClick={toggleTheme} className="flex items-center gap-3 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors">
                                         {dark ? '☀ Modo claro' : '🌙 Modo oscuro'}
                                     </button>
-                                    <Link href={route('profile.edit')} className="flex items-center gap-3 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors">
+                                    <button onClick={() => { setStatusOpen(false); setProfileModalOpen(true); }} className="flex items-center gap-3 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors">
                                         Mi perfil
-                                    </Link>
+                                    </button>
                                     <Link href={route('logout')} method="post" as="button" className="flex items-center gap-3 w-full px-3 py-2 text-sm text-red-400 hover:bg-gray-700 transition-colors">
                                         Cerrar sesión
                                     </Link>

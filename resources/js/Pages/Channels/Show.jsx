@@ -46,6 +46,7 @@ hljs.registerLanguage('markdown', markdown);
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import ServerSettingsModal from '@/Components/ServerSettingsModal';
 import ServerModal from '@/Components/ServerModal';
+import ProfileModal from '@/Components/ProfileModal';
 import VoiceChannel from '@/Pages/Channels/VoiceChannel';
 import VoiceMiniBar from '@/Components/VoiceMiniBar';
 import { useVoice } from '@/Contexts/VoiceContext';
@@ -832,6 +833,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
     const [serverDropdownOpen, setServerDropdownOpen] = useState(false);
     const [serverSettingsOpen, setServerSettingsOpen] = useState(false);
     const [serverModalOpen, setServerModalOpen] = useState(false);
+    const [profileModalOpen, setProfileModalOpen] = useState(false);
     const [serverBackground, setServerBackground] = useState(channel.server?.background_url ?? null);
     const [newChannelName, setNewChannelName] = useState('');
     const [creatingChannel, setCreatingChannel] = useState(false);
@@ -1947,6 +1949,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                     </div>
                 </nav>
                 {serverModalOpen && <ServerModal onClose={() => setServerModalOpen(false)} />}
+                {profileModalOpen && <ProfileModal onClose={() => setProfileModalOpen(false)} />}
 
                 {/* Sidebar izquierdo: canales — drawer en móvil, siempre visible en desktop */}
                 {mobileSidebar && (
@@ -2304,9 +2307,9 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                     <button onClick={toggleTheme} className="flex items-center gap-3 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors">
                                         {dark ? '☀ Modo claro' : '🌙 Modo oscuro'}
                                     </button>
-                                    <Link href={route('profile.edit')} className="flex items-center gap-3 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors">
+                                    <button onClick={() => { setStatusOpen(false); setProfileModalOpen(true); }} className="flex items-center gap-3 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors">
                                         Mi perfil
-                                    </Link>
+                                    </button>
                                     <Link href={route('logout')} method="post" as="button" className="flex items-center gap-3 w-full px-3 py-2 text-sm text-red-400 hover:bg-gray-700 transition-colors">
                                         Cerrar sesión
                                     </Link>

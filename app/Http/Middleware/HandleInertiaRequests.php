@@ -23,7 +23,7 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $request->user(),
+                'user' => $request->user()?->makeVisible(['email']),
             ],
             'vapidPublicKey' => config('services.vapid.public_key'),
             'badges' => function () {
