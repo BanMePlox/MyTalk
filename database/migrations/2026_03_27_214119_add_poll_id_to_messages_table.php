@@ -12,17 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('messages', function (Blueprint $table) {
-            //
+            $table->foreignId('poll_id')->nullable()->constrained()->nullOnDelete()->after('reply_to_id');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::table('messages', function (Blueprint $table) {
-            //
+            $table->dropForeign(['poll_id']);
+            $table->dropColumn('poll_id');
         });
     }
 };

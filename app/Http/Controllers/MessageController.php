@@ -34,15 +34,38 @@ class MessageController extends Controller
             return Inertia::location(route('friends.index'));
         }
 
-        $messages = $channel->messages()
+        $rawMessages = $channel->messages()
             ->whereNull('thread_id')
-            ->with('user', 'reactions', 'replyTo.user', 'thread')
+            ->with('user', 'reactions', 'replyTo.user', 'thread', 'poll')
             ->latest()
             ->take(50)
             ->get()
             ->reverse()
-            ->values()
-            ->map(fn($m) => array_merge($m->toArray(), ['reactions_grouped' => $m->reactionsGrouped()]));
+            ->values();
+
+        // Collect poll IDs to fetch the current user's votes in one query
+        $pollIds = $rawMessages->pluck('poll_id')->filter()->unique()->values()->all();
+        $myVotes = $pollIds
+            ? \App\Models\PollVote::whereIn('poll_id', $pollIds)->where('user_id', Auth::id())
+                ->pluck('option_index', 'poll_id')->all()
+            : [];
+
+        $messages = $rawMessages->map(function ($m) use ($myVotes) {
+            $data = array_merge($m->toArray(), ['reactions_grouped' => $m->reactionsGrouped()]);
+            if ($m->poll) {
+                $voteCounts = $m->poll->voteCounts();
+                $data['poll'] = [
+                    'id'          => $m->poll->id,
+                    'question'    => $m->poll->question,
+                    'options'     => $m->poll->options,
+                    'vote_counts' => $voteCounts,
+                    'total_votes' => array_sum($voteCounts),
+                    'my_vote'     => $myVotes[$m->poll->id] ?? null,
+                    'ends_at'     => $m->poll->ends_at,
+                ];
+            }
+            return $data;
+        });
 
         $userServers = Auth::user()->servers()->get()->each(function ($server) {
             $server->first_channel_id = $server->channels()->value('id');
@@ -213,14 +236,35 @@ class MessageController extends Controller
         abort_if(!$channel->server, 404);
         $this->authorize('view', $channel->server);
 
-        $query = $channel->messages()->whereNull('thread_id')->with('user', 'reactions', 'replyTo.user', 'thread')->latest();
+        $query = $channel->messages()->whereNull('thread_id')->with('user', 'reactions', 'replyTo.user', 'thread', 'poll')->latest();
 
         if ($request->filled('before')) {
             $query->where('id', '<', $request->integer('before'));
         }
 
-        $messages = $query->take(50)->get()->reverse()->values()
-            ->map(fn($m) => array_merge($m->toArray(), ['reactions_grouped' => $m->reactionsGrouped()]));
+        $rawMore = $query->take(50)->get()->reverse()->values();
+        $pollIds = $rawMore->pluck('poll_id')->filter()->unique()->values()->all();
+        $myVotes = $pollIds
+            ? \App\Models\PollVote::whereIn('poll_id', $pollIds)->where('user_id', Auth::id())
+                ->pluck('option_index', 'poll_id')->all()
+            : [];
+
+        $messages = $rawMore->map(function ($m) use ($myVotes) {
+            $data = array_merge($m->toArray(), ['reactions_grouped' => $m->reactionsGrouped()]);
+            if ($m->poll) {
+                $voteCounts = $m->poll->voteCounts();
+                $data['poll'] = [
+                    'id'          => $m->poll->id,
+                    'question'    => $m->poll->question,
+                    'options'     => $m->poll->options,
+                    'vote_counts' => $voteCounts,
+                    'total_votes' => array_sum($voteCounts),
+                    'my_vote'     => $myVotes[$m->poll->id] ?? null,
+                    'ends_at'     => $m->poll->ends_at,
+                ];
+            }
+            return $data;
+        });
 
         return response()->json($messages);
     }

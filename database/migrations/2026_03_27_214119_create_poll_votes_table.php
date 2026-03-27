@@ -13,7 +13,11 @@ return new class extends Migration
     {
         Schema::create('poll_votes', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('poll_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->unsignedTinyInteger('option_index');
             $table->timestamps();
+            $table->unique(['poll_id', 'user_id']); // one vote per user per poll
         });
     }
 

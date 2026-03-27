@@ -15,7 +15,7 @@ class MessageSent implements ShouldBroadcastNow
 
     public function __construct(public Message $message)
     {
-        $this->message->load('user');
+        $this->message->load('user', 'poll');
     }
 
     public function broadcastOn(): array
@@ -39,6 +39,16 @@ class MessageSent implements ShouldBroadcastNow
                 'id'      => $replyTo->id,
                 'content' => $replyTo->content,
                 'user'    => $replyTo->user ? ['id' => $replyTo->user->id, 'name' => $replyTo->user->name] : null,
+            ] : null,
+            'poll_id' => $this->message->poll_id,
+            'poll'    => $this->message->poll ? [
+                'id'          => $this->message->poll->id,
+                'question'    => $this->message->poll->question,
+                'options'     => $this->message->poll->options,
+                'vote_counts' => [],
+                'total_votes' => 0,
+                'my_vote'     => null,
+                'ends_at'     => $this->message->poll->ends_at,
             ] : null,
             'user' => [
                 'id'           => $this->message->user->id,

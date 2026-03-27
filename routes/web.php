@@ -20,6 +20,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ServerController;
 use App\Http\Controllers\UserStatusController;
 use App\Http\Controllers\VoiceController;
+use App\Http\Controllers\PollController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -100,6 +101,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/messages/{message}/pin',   [MessageController::class, 'pin'])  ->name('messages.pin');
     Route::patch('/messages/{message}/unpin', [MessageController::class, 'unpin'])->name('messages.unpin');
     Route::post('/messages/{message}/reactions', [ReactionController::class, 'toggle'])->name('messages.react');
+    Route::post('/channels/{channel}/polls', [PollController::class, 'store'])->name('polls.store');
+    Route::post('/polls/{poll}/vote', [PollController::class, 'vote'])->name('polls.vote');
 
     Route::get('/channels/{channel}/threads', [ThreadController::class, 'index'])->name('threads.index');
     Route::post('/messages/{message}/thread', [ThreadController::class, 'create'])->name('threads.create');

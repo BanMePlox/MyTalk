@@ -13,6 +13,11 @@ return new class extends Migration
     {
         Schema::create('polls', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('channel_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->string('question', 200);
+            $table->json('options'); // array of option strings
+            $table->timestamp('ends_at')->nullable();
             $table->timestamps();
         });
     }

@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Storage;
 
 class Message extends Model
 {
-    protected $fillable = ['channel_id', 'user_id', 'content', 'attachment', 'attachment_name', 'pinned_at', 'pinned_by', 'reply_to_id', 'thread_id'];
+    protected $fillable = ['channel_id', 'user_id', 'content', 'attachment', 'attachment_name', 'pinned_at', 'pinned_by', 'reply_to_id', 'thread_id', 'poll_id'];
 
     protected $casts = ['pinned_at' => 'datetime'];
 
@@ -39,6 +39,11 @@ class Message extends Model
     public function replyTo(): BelongsTo
     {
         return $this->belongsTo(Message::class, 'reply_to_id')->with('user');
+    }
+
+    public function poll(): BelongsTo
+    {
+        return $this->belongsTo(Poll::class);
     }
 
     public function thread(): \Illuminate\Database\Eloquent\Relations\HasOne

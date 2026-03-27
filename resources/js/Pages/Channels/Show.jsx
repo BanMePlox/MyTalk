@@ -496,6 +496,45 @@ function Avatar({ user, size = 'md' }) {
     );
 }
 
+function PollCard({ poll, messageId, authId, onVote }) {
+    const totalVotes = poll.total_votes ?? 0;
+    return (
+        <div className="mt-2 bg-gray-800/60 border border-gray-700 rounded-xl p-3 max-w-sm">
+            <p className="text-sm font-semibold text-gray-100 mb-2.5">{poll.question}</p>
+            <div className="space-y-2">
+                {poll.options.map((opt, i) => {
+                    const votes = poll.vote_counts?.[i] ?? 0;
+                    const pct = totalVotes > 0 ? Math.round((votes / totalVotes) * 100) : 0;
+                    const isMyVote = poll.my_vote === i;
+                    return (
+                        <button
+                            key={i}
+                            type="button"
+                            onClick={() => onVote(poll.id, i)}
+                            className={`relative w-full text-left rounded-lg overflow-hidden border transition-colors ${
+                                isMyVote
+                                    ? 'border-indigo-500 bg-indigo-600/20'
+                                    : 'border-gray-600 bg-gray-700/40 hover:border-gray-500'
+                            }`}
+                        >
+                            {/* Progress bar */}
+                            <div
+                                className={`absolute inset-0 rounded-lg transition-all duration-500 ${isMyVote ? 'bg-indigo-600/30' : 'bg-gray-600/30'}`}
+                                style={{ width: `${pct}%` }}
+                            />
+                            <div className="relative flex items-center justify-between px-3 py-2">
+                                <span className="text-sm text-gray-200">{opt}</span>
+                                <span className="text-xs text-gray-400 shrink-0 ml-2">{pct}%</span>
+                            </div>
+                        </button>
+                    );
+                })}
+            </div>
+            <p className="text-xs text-gray-500 mt-2">{totalVotes} {totalVotes === 1 ? 'voto' : 'votos'}</p>
+        </div>
+    );
+}
+
 function ContextMenuItem({ onClick, danger, children }) {
     return (
         <button
@@ -765,6 +804,9 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
     const [toasts, setToasts] = useState([]);
 
     const [replyingTo, setReplyingTo] = useState(null); // { id, content, user }
+    const [pollModalOpen, setPollModalOpen] = useState(false);
+    const [pollQuestion, setPollQuestion] = useState('');
+    const [pollOptions, setPollOptions] = useState(['', '']);
     const [nicknameOpen, setNicknameOpen] = useState(false);
     const [nicknameInput, setNicknameInput] = useState('');
     const [serverNameEdit, setServerNameEdit] = useState(false);
@@ -1076,6 +1118,14 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
             }
         });
 
+        echoChannel.listen('.PollVoted', (e) => {
+            setMessages((prev) => prev.map((m) =>
+                m.id === e.message_id
+                    ? { ...m, poll: { ...m.poll, vote_counts: e.vote_counts, total_votes: e.total_votes } }
+                    : m
+            ));
+        });
+
         echoChannel.listenForWhisper('typing', (e) => {
             if (e.id === auth.user.id) return;
 
@@ -1098,6 +1148,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
             echoChannel.stopListening('.MessageReactionUpdated');
             echoChannel.stopListening('.MessagePinToggled');
             echoChannel.stopListening('.ThreadUpdated');
+            echoChannel.stopListening('.PollVoted');
             echoChannel.stopListeningForWhisper('typing');
             Object.values(typingTimeouts.current).forEach(clearTimeout);
         };
@@ -2685,6 +2736,10 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                 );
                                             })()}
                                             {!isTmp && msg.content && !isEditing && <LinkPreviewList content={msg.content} />}
+                                            {msg.poll && <PollCard poll={msg.poll} messageId={msg.id} authId={auth.user.id} onVote={(pollId, optionIndex) => {
+                                                window.axios.post(route('polls.vote', pollId), { option_index: optionIndex })
+                                                    .then(res => setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, poll: { ...m.poll, vote_counts: res.data.vote_counts, total_votes: res.data.total_votes, my_vote: res.data.my_vote } } : m)));
+                                            }} />}
                                         </div>
                                     ) : (
                                         <>
@@ -2795,6 +2850,10 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                                 </a>
                                                             );
                                                         })()}
+                                                        {msg.poll && <PollCard poll={msg.poll} messageId={msg.id} authId={auth.user.id} onVote={(pollId, optionIndex) => {
+                                                            window.axios.post(route('polls.vote', pollId), { option_index: optionIndex })
+                                                                .then(res => setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, poll: { ...m.poll, vote_counts: res.data.vote_counts, total_votes: res.data.total_votes, my_vote: res.data.my_vote } } : m)));
+                                                        }} />}
                                                     </>
                                                 )}
                                             </div>
@@ -3048,6 +3107,16 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                </svg>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => { setPollModalOpen(true); setPollQuestion(''); setPollOptions(['', '']); }}
+                                className="text-gray-400 hover:text-gray-200 transition-colors shrink-0"
+                                title="Crear encuesta"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                                 </svg>
                             </button>
                             <textarea
@@ -3457,6 +3526,89 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
             </nav>
 
             {/* Modal de búsqueda global (Ctrl+K) */}
+            {/* Modal de creación de encuesta */}
+            {pollModalOpen && (
+                <div
+                    className="fixed inset-0 z-[300] flex items-center justify-center px-4"
+                    style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
+                    onMouseDown={(e) => { if (e.target === e.currentTarget) setPollModalOpen(false); }}
+                >
+                    <div className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-md">
+                        <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-indigo-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                            <p className="font-semibold text-gray-200 flex-1">Nueva encuesta</p>
+                            <button onClick={() => setPollModalOpen(false)} className="text-gray-500 hover:text-gray-300 text-lg leading-none">&times;</button>
+                        </div>
+                        <div className="p-4 space-y-3">
+                            <div>
+                                <label className="block text-xs text-gray-400 mb-1">Pregunta</label>
+                                <input
+                                    autoFocus
+                                    type="text"
+                                    maxLength={200}
+                                    value={pollQuestion}
+                                    onChange={(e) => setPollQuestion(e.target.value)}
+                                    placeholder="¿Qué quieres preguntar?"
+                                    className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-indigo-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs text-gray-400 mb-1">Opciones</label>
+                                <div className="space-y-2">
+                                    {pollOptions.map((opt, i) => (
+                                        <div key={i} className="flex gap-2 items-center">
+                                            <input
+                                                type="text"
+                                                maxLength={80}
+                                                value={opt}
+                                                onChange={(e) => setPollOptions(prev => prev.map((o, j) => j === i ? e.target.value : o))}
+                                                placeholder={`Opción ${i + 1}`}
+                                                className="flex-1 bg-gray-800 border border-gray-600 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-500 outline-none focus:border-indigo-500"
+                                            />
+                                            {pollOptions.length > 2 && (
+                                                <button type="button" onClick={() => setPollOptions(prev => prev.filter((_, j) => j !== i))} className="text-gray-500 hover:text-red-400 text-sm">✕</button>
+                                            )}
+                                        </div>
+                                    ))}
+                                    {pollOptions.length < 6 && (
+                                        <button type="button" onClick={() => setPollOptions(prev => [...prev, ''])} className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
+                                            + Añadir opción
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="flex justify-end gap-2 pt-1">
+                                <button type="button" onClick={() => setPollModalOpen(false)} className="px-3 py-1.5 text-sm text-gray-400 hover:text-white transition-colors">
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={async () => {
+                                        const opts = pollOptions.filter(o => o.trim());
+                                        if (!pollQuestion.trim() || opts.length < 2) return;
+                                        try {
+                                            const res = await window.axios.post(route('polls.store', channel.id), {
+                                                question: pollQuestion.trim(),
+                                                options: opts,
+                                            });
+                                            setMessages(prev => [...prev, res.data]);
+                                            setPollModalOpen(false);
+                                            setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 0);
+                                        } catch { /* ignore */ }
+                                    }}
+                                    disabled={!pollQuestion.trim() || pollOptions.filter(o => o.trim()).length < 2}
+                                    className="px-4 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg disabled:opacity-50 transition-colors"
+                                >
+                                    Publicar encuesta
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {globalSearchOpen && (
                 <div
                     className="fixed inset-0 z-[300] flex items-start justify-center pt-24 px-4"
