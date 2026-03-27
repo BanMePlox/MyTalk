@@ -862,6 +862,15 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
     // Members local state for real-time profile updates
     const [members, setMembers] = useState(channel.server?.members ?? []);
     const [serverEmojis, setServerEmojis] = useState(initialServerEmojis);
+
+    // Sync server-derived state when navigating to a different channel/server
+    useEffect(() => {
+        setServerName(channel.server?.name ?? '');
+        setServerBackground(channel.server?.background_url ?? null);
+        setServerChannels(channel.server?.channels ?? []);
+        setServerCategories(channel.server?.categories ?? []);
+        setMembers(channel.server?.members ?? []);
+    }, [channel.id]);
     // Channel-level mention badges { channelId: count } — inicializados desde backend
     const [channelMentionBadges, setChannelMentionBadges] = useState(
         () => Object.fromEntries(Object.entries(initialBadges?.channelMentions ?? {}).map(([k, v]) => [parseInt(k), v]))

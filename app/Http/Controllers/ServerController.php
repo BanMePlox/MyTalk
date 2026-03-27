@@ -35,9 +35,9 @@ class ServerController extends Controller
         ]);
 
         $server->members()->attach(Auth::id(), ['role' => 'owner']);
-        $server->channels()->create(['name' => 'general']);
+        $channel = $server->channels()->create(['name' => 'general']);
 
-        return redirect()->route('servers.show', $server);
+        return redirect()->route('channels.show', $channel);
     }
 
     public function updateName(Request $request, Server $server)
@@ -171,7 +171,10 @@ class ServerController extends Controller
             $server->members()->attach(Auth::id(), ['role' => 'member']);
         }
 
-        return redirect()->route('servers.show', $server);
+        $channel = $server->channels()->first();
+        return $channel
+            ? redirect()->route('channels.show', $channel)
+            : redirect()->route('friends.index');
     }
 
     public function acceptInvite(string $code)
@@ -188,6 +191,6 @@ class ServerController extends Controller
 
         return $channel
             ? redirect()->route('channels.show', $channel)
-            : redirect()->route('servers.show', $server);
+            : redirect()->route('friends.index');
     }
 }
