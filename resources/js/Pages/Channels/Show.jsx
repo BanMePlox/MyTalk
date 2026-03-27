@@ -1886,6 +1886,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                 <Link
                                     href={route('conversations.show', conv.id)}
                                     title={conv.type === 'group' ? (conv.name ?? 'Grupo') : conv.user?.name}
+                                    prefetch
                                     className={`w-12 h-12 flex items-center justify-center font-bold text-sm bg-gray-700 hover:bg-indigo-500 text-white transition-all duration-150 overflow-hidden ${conv.type === 'group' ? 'rounded-2xl' : 'rounded-full hover:rounded-2xl'}`}
                                 >
                                     {conv.type === 'group' ? (
@@ -1914,6 +1915,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                             <Link
                                 href={route('conversations.index')}
                                 title="Mensajes directos"
+                                prefetch
                                 className="w-12 h-12 flex items-center justify-center text-xl text-indigo-300 bg-gray-700 rounded-full hover:rounded-2xl hover:bg-indigo-500 hover:text-white transition-all duration-150"
                             >✉</Link>
                         </div>
@@ -1925,6 +1927,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                             <Link
                                 href={route('friends.index')}
                                 title="Amigos"
+                                prefetch
                                 className="w-12 h-12 flex items-center justify-center text-xl text-indigo-300 bg-gray-700 rounded-full hover:rounded-2xl hover:bg-indigo-500 hover:text-white transition-all duration-150"
                             >👥</Link>
                             {pendingFriendRequests > 0 && (
@@ -2165,6 +2168,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                     >
                                         <Link
                                             href={route('channels.show', ch.id)}
+                                            prefetch
                                             className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm ${
                                                 ch.id === channel.id
                                                     ? 'bg-gray-700 text-white'
@@ -3491,6 +3495,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                         <div key={srv.id} className="relative">
                             <Link
                                 href={srv.first_channel_id ? route('channels.show', srv.first_channel_id) : route('servers.show', srv.id)}
+                                prefetch
                                 className={`w-10 h-10 flex items-center justify-center font-bold text-sm rounded-xl transition-all overflow-hidden ${
                                     isCurrent ? 'bg-indigo-500 text-white' : 'bg-gray-700 text-gray-300'
                                 }`}
@@ -3514,6 +3519,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                         <Link
                             href={route('conversations.show', conv.id)}
                             title={conv.type === 'group' ? (conv.name ?? 'Grupo') : conv.user?.name}
+                            prefetch
                             className="w-10 h-10 rounded-xl overflow-hidden bg-gray-700 flex items-center justify-center"
                         >
                             {conv.type === 'group' ? (
@@ -3536,12 +3542,14 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                 ))}
                 <Link
                     href={route('conversations.index')}
+                    prefetch
                     className="w-10 h-10 flex items-center justify-center text-indigo-300 bg-gray-700 rounded-xl text-lg"
                     title="Todos los DMs"
                 >✉</Link>
                 <div className="relative">
                     <Link
                         href={route('friends.index')}
+                        prefetch
                         className="w-10 h-10 flex items-center justify-center text-indigo-300 bg-gray-700 rounded-xl text-lg"
                         title="Amigos"
                     >👥</Link>

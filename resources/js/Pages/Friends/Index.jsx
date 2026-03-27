@@ -251,6 +251,7 @@ export default function Index({ friends: initialFriends, incoming: initialIncomi
                                 <Link
                                     href={route('conversations.show', conv.id)}
                                     title={convDisplayName(conv)}
+                                    prefetch
                                     className={`w-12 h-12 flex items-center justify-center font-bold text-sm transition-all duration-150 overflow-hidden ${conv.type === 'group' ? 'rounded-2xl' : 'rounded-full hover:rounded-2xl'} bg-gray-700 text-white`}
                                 >
                                     {conv.type === 'group' ? (
@@ -280,6 +281,7 @@ export default function Index({ friends: initialFriends, incoming: initialIncomi
                         <Link
                             href={route('conversations.index')}
                             title="Mensajes directos"
+                            prefetch
                             className="w-12 h-12 flex items-center justify-center text-xl text-indigo-300 bg-gray-700 rounded-full hover:rounded-2xl hover:bg-indigo-500 hover:text-white transition-all duration-150"
                         >✉</Link>
                     </div>
@@ -306,6 +308,7 @@ export default function Index({ friends: initialFriends, incoming: initialIncomi
                     <nav className="flex-1 overflow-y-auto p-2 space-y-0.5">
                         <Link
                             href={route('friends.index')}
+                            prefetch
                             className="flex items-center gap-2 px-2 py-1.5 rounded text-sm bg-gray-700 text-white"
                         >
                             <span className="text-base">👥</span>
@@ -323,6 +326,7 @@ export default function Index({ friends: initialFriends, incoming: initialIncomi
                                 <Link
                                     key={conv.id}
                                     href={route('conversations.show', conv.id)}
+                                    prefetch
                                     className="flex items-center gap-2 px-2 py-1.5 rounded text-sm text-gray-400 hover:bg-gray-700 hover:text-white"
                                 >
                                     <div className="shrink-0">
