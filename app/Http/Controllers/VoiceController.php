@@ -19,11 +19,9 @@ class VoiceController extends Controller
             'candidate'  => 'nullable|array',
         ]);
 
-        // Verify sender is a member of the server
-        abort_unless(
-            $channel->server->members()->where('user_id', $request->user()->id)->exists(),
-            403
-        );
+        $user = $request->user();
+        abort_unless($channel->server->members()->where('user_id', $user->id)->exists(), 403);
+        abort_unless($channel->canUserView($user), 403);
 
         broadcast(new VoiceSignal((int) $data['to_user_id'], [
             'type'         => $data['type'],
@@ -42,12 +40,10 @@ class VoiceController extends Controller
             'action' => 'required|in:join,leave',
         ]);
 
-        abort_unless(
-            $channel->server->members()->where('user_id', $request->user()->id)->exists(),
-            403
-        );
+        $user = $request->user();
+        abort_unless($channel->server->members()->where('user_id', $user->id)->exists(), 403);
+        abort_unless($channel->canUserView($user), 403);
 
-        $user       = $request->user();
         $cacheKey   = "voice_participants_{$channel->id}";
         $userEntry  = ['id' => $user->id, 'name' => $user->name, 'avatar_url' => $user->avatar_url];
 

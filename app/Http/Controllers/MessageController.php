@@ -238,7 +238,7 @@ class MessageController extends Controller
 
         $data = $request->validate([
             'content'      => 'nullable|string|max:2000',
-            'attachment'   => 'nullable|file|max:20480',
+            'attachment'   => 'nullable|file|max:20480|mimes:jpg,jpeg,png,gif,webp,svg,mp4,mov,webm,mp3,ogg,wav,m4a,pdf,txt,md,csv,zip,7z,tar,gz,doc,docx,xls,xlsx,ppt,pptx',
             'reply_to_id'  => 'nullable|integer|exists:messages,id',
         ]);
 
