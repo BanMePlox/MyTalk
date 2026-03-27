@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import ServerModal from '@/Components/ServerModal';
+import { useTheme } from '@/Contexts/ThemeContext';
 
 const STATUS_CONFIG = {
     online: { dot: 'bg-green-500', label: 'En línea' },
@@ -42,6 +43,7 @@ export default function Index({ friends: initialFriends, incoming: initialIncomi
     const [addMsg, setAddMsg]       = useState(null); // { type: 'success'|'error', text }
     const [adding, setAdding]       = useState(false);
     const [onlineUsers, setOnlineUsers] = useState({});
+    const { dark, toggle: toggleTheme } = useTheme();
     const [myStatus, setMyStatus]   = useState(auth.user.status ?? 'online');
     const [statusOpen, setStatusOpen] = useState(false);
     const [mentionBadges, setMentionBadges] = useState(initialBadges?.mentions ?? {});
@@ -208,7 +210,7 @@ export default function Index({ friends: initialFriends, incoming: initialIncomi
         <AuthenticatedLayout>
             <Head title="Amigos" />
 
-            <div className="flex h-[calc(100vh-3.5rem)] bg-gray-800 text-gray-100">
+            <div className="flex h-screen bg-gray-800 text-gray-100">
 
                 {/* Rail de servidores */}
                 <nav className="w-[72px] bg-gray-950 flex flex-col items-center py-3 gap-1 shrink-0 overflow-y-auto">
@@ -375,6 +377,17 @@ export default function Index({ friends: initialFriends, incoming: initialIncomi
                                         {myStatus === key && <span className="ml-auto text-indigo-400">✓</span>}
                                     </button>
                                 ))}
+                                <div className="border-t border-gray-700 mt-1 pt-1">
+                                    <button onClick={toggleTheme} className="flex items-center gap-3 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors">
+                                        {dark ? '☀ Modo claro' : '🌙 Modo oscuro'}
+                                    </button>
+                                    <Link href={route('profile.edit')} className="flex items-center gap-3 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors">
+                                        Mi perfil
+                                    </Link>
+                                    <Link href={route('logout')} method="post" as="button" className="flex items-center gap-3 w-full px-3 py-2 text-sm text-red-400 hover:bg-gray-700 transition-colors">
+                                        Cerrar sesión
+                                    </Link>
+                                </div>
                             </div>
                         )}
                     </div>

@@ -760,7 +760,7 @@ function ProfilePopover({ member, status, anchorX, anchorY, onClose, authId }) {
 export default function Show({ channel, messages: initialMessages, pinnedMessages: initialPinnedMessages = [], userServers = [], visibleChannelIds = null, canManageMessages = false, canManageRoles = false, canManageChannels = false, canKickMembers = false, canBanMembers = false, canSendMessages = true, isOwner = false, serverEmojis: initialServerEmojis = [], initialVoiceParticipants = {} }) {
     const { auth, badges: initialBadges, vapidPublicKey } = usePage().props;
     const voice = useVoice();
-    const { compact, toggleCompact } = useTheme();
+    const { dark, toggle: toggleTheme, compact, toggleCompact } = useTheme();
     const syncPresenceRef = useRef(null);
     syncPresenceRef.current = voice.syncExternalPresence;
 
@@ -1837,7 +1837,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
         <AuthenticatedLayout>
             <Head title={`#${channel.name}`} />
 
-            <div className="flex h-[calc(100vh-3.5rem)] bg-gray-800 text-gray-100">
+            <div className="flex h-screen bg-gray-800 text-gray-100">
 
                 {/* Rail de servidores — lateral en desktop, oculto en móvil */}
                 <nav className="hidden sm:flex w-[72px] bg-gray-950 flex-col items-center py-3 gap-1 shrink-0 overflow-y-auto">
@@ -2300,6 +2300,17 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                         {myStatus === key && <span className="ml-auto text-indigo-400">✓</span>}
                                     </button>
                                 ))}
+                                <div className="border-t border-gray-700 mt-1 pt-1">
+                                    <button onClick={toggleTheme} className="flex items-center gap-3 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors">
+                                        {dark ? '☀ Modo claro' : '🌙 Modo oscuro'}
+                                    </button>
+                                    <Link href={route('profile.edit')} className="flex items-center gap-3 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors">
+                                        Mi perfil
+                                    </Link>
+                                    <Link href={route('logout')} method="post" as="button" className="flex items-center gap-3 w-full px-3 py-2 text-sm text-red-400 hover:bg-gray-700 transition-colors">
+                                        Cerrar sesión
+                                    </Link>
+                                </div>
                             </div>
                         )}
                     </div>

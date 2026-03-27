@@ -361,7 +361,7 @@ export default function Show({ conversation, other, members: initialMembers = nu
         <AuthenticatedLayout>
             <Head title={isGroup ? convName : `@ ${convName}`} />
 
-            <div className="flex h-[calc(100vh-3.5rem)] bg-gray-800 text-gray-100">
+            <div className="flex h-screen bg-gray-800 text-gray-100">
 
                 {/* Rail de servidores */}
                 <nav className="w-[72px] bg-gray-950 flex flex-col items-center py-3 gap-1 shrink-0 overflow-y-auto">
