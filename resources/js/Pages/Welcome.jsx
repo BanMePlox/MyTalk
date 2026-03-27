@@ -14,7 +14,7 @@ export default function Welcome({ auth }) {
                     </div>
                     <div className="flex items-center gap-3">
                         {auth?.user ? (
-                            <Link href={route('servers.index')} className="bg-indigo-500 hover:bg-indigo-600 px-4 py-2 rounded-lg text-sm font-medium transition">
+                            <Link href={route('friends.index')} className="bg-indigo-500 hover:bg-indigo-600 px-4 py-2 rounded-lg text-sm font-medium transition">
                                 Ir a la app
                             </Link>
                         ) : (
@@ -44,7 +44,7 @@ export default function Welcome({ auth }) {
                     </p>
                     <div className="flex gap-4">
                         {auth?.user ? (
-                            <Link href={route('servers.index')} className="bg-indigo-500 hover:bg-indigo-600 px-6 py-3 rounded-lg font-medium text-base transition shadow-lg shadow-indigo-500/30">
+                            <Link href={route('friends.index')} className="bg-indigo-500 hover:bg-indigo-600 px-6 py-3 rounded-lg font-medium text-base transition shadow-lg shadow-indigo-500/30">
                                 Abrir MyTalk
                             </Link>
                         ) : (

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import ServerModal from '@/Components/ServerModal';
 
 const STATUS_CONFIG = {
     online: { dot: 'bg-green-500', label: 'En línea' },
@@ -32,6 +33,7 @@ function Avatar({ user, size = 'md' }) {
 
 export default function Index({ friends: initialFriends, incoming: initialIncoming, outgoing: initialOutgoing, userServers = [] }) {
     const { auth, badges: initialBadges } = usePage().props;
+    const [serverModalOpen, setServerModalOpen] = useState(false);
     const [tab, setTab]             = useState('online');
     const [friends, setFriends]     = useState(initialFriends ?? []);
     const [incoming, setIncoming]   = useState(initialIncoming ?? []);
@@ -280,13 +282,15 @@ export default function Index({ friends: initialFriends, incoming: initialIncomi
                     <div className="mt-1 w-8 border-t border-gray-700" />
 
                     <div className="relative flex items-center w-full px-1.5">
-                        <Link
-                            href={route('servers.index')}
-                            title="Servidores"
+                        <button
+                            type="button"
+                            onClick={() => setServerModalOpen(true)}
+                            title="Añadir servidor"
                             className="w-12 h-12 flex items-center justify-center font-bold text-2xl text-green-400 bg-gray-700 rounded-full hover:rounded-2xl hover:bg-green-500 hover:text-white transition-all duration-150"
-                        >+</Link>
+                        >+</button>
                     </div>
                 </nav>
+                {serverModalOpen && <ServerModal onClose={() => setServerModalOpen(false)} />}
 
                 {/* Sidebar */}
                 <aside className="w-52 bg-gray-900 flex flex-col shrink-0">

@@ -45,6 +45,7 @@ hljs.registerLanguage('go', go);
 hljs.registerLanguage('markdown', markdown);
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import ServerSettingsModal from '@/Components/ServerSettingsModal';
+import ServerModal from '@/Components/ServerModal';
 import VoiceChannel from '@/Pages/Channels/VoiceChannel';
 import VoiceMiniBar from '@/Components/VoiceMiniBar';
 import { useVoice } from '@/Contexts/VoiceContext';
@@ -830,6 +831,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
     const [contextMenu, setContextMenu] = useState(null); // { type, x, y, msg?, member? }
     const [serverDropdownOpen, setServerDropdownOpen] = useState(false);
     const [serverSettingsOpen, setServerSettingsOpen] = useState(false);
+    const [serverModalOpen, setServerModalOpen] = useState(false);
     const [serverBackground, setServerBackground] = useState(channel.server?.background_url ?? null);
     const [newChannelName, setNewChannelName] = useState('');
     const [creatingChannel, setCreatingChannel] = useState(false);
@@ -1925,15 +1927,17 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
 
                     {/* Botón añadir servidor */}
                     <div className="relative flex items-center w-full px-1.5 group">
-                        <Link
-                            href={route('servers.index')}
-                            title="Servidores"
+                        <button
+                            type="button"
+                            onClick={() => setServerModalOpen(true)}
+                            title="Añadir servidor"
                             className="w-12 h-12 flex items-center justify-center font-bold text-2xl text-green-400 bg-gray-700 rounded-full hover:rounded-2xl hover:bg-green-500 hover:text-white transition-all duration-150"
                         >
                             +
-                        </Link>
+                        </button>
                     </div>
                 </nav>
+                {serverModalOpen && <ServerModal onClose={() => setServerModalOpen(false)} />}
 
                 {/* Sidebar izquierdo: canales — drawer en móvil, siempre visible en desktop */}
                 {mobileSidebar && (

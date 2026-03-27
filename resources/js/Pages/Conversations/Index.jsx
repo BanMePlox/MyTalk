@@ -1,7 +1,10 @@
 import { Head, Link } from '@inertiajs/react';
+import { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import ServerModal from '@/Components/ServerModal';
 
 export default function Index({ userServers = [] }) {
+    const [serverModalOpen, setServerModalOpen] = useState(false);
     return (
         <AuthenticatedLayout>
             <Head title="Mensajes directos" />
@@ -38,15 +41,15 @@ export default function Index({ userServers = [] }) {
                     </div>
 
                     <div className="relative flex items-center w-full px-1.5 group">
-                        <Link
-                            href={route('servers.index')}
-                            title="Servidores"
+                        <button
+                            type="button"
+                            onClick={() => setServerModalOpen(true)}
+                            title="Añadir servidor"
                             className="w-12 h-12 flex items-center justify-center font-bold text-2xl text-green-400 bg-gray-700 rounded-full hover:rounded-2xl hover:bg-green-500 hover:text-white transition-all duration-150"
-                        >
-                            +
-                        </Link>
+                        >+</button>
                     </div>
                 </nav>
+                {serverModalOpen && <ServerModal onClose={() => setServerModalOpen(false)} />}
 
                 {/* Contenido vacío */}
                 <div className="flex-1 flex items-center justify-center flex-col gap-3 text-gray-500">

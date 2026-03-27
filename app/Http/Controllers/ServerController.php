@@ -12,13 +12,9 @@ use Inertia\Response;
 
 class ServerController extends Controller
 {
-    public function index(): Response
+    public function index()
     {
-        $servers = Auth::user()->servers()->with('channels')->get();
-
-        return Inertia::render('Servers/Index', [
-            'servers' => $servers,
-        ]);
+        return redirect()->route('friends.index');
     }
 
     public function store(Request $request)
@@ -152,7 +148,7 @@ class ServerController extends Controller
 
         $server->members()->detach(Auth::id());
 
-        return redirect()->route('servers.index');
+        return redirect()->route('friends.index');
     }
 
     public function destroy(Server $server)
@@ -160,7 +156,7 @@ class ServerController extends Controller
         $this->authorize('delete', $server);
         $server->delete();
 
-        return redirect()->route('servers.index');
+        return redirect()->route('friends.index');
     }
 
     public function join(Request $request)
