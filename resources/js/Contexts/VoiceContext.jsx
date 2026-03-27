@@ -41,10 +41,11 @@ export function VoiceProvider({ children }) {
     const [participants,  setParticipants]  = useState({});
     const [userVolumes,   setUserVolumes]   = useState({});
     const [speakingUsers, setSpeakingUsers] = useState({});
-    const [sharingScreen,     setSharingScreen]     = useState(false);
-    const [remoteScreens,     setRemoteScreens]     = useState({}); // { [userId]: MediaStream }
+    const [sharingScreen,      setSharingScreen]      = useState(false);
+    const [localScreenStream,  setLocalScreenStream]  = useState(null); // own screen preview
+    const [remoteScreens,      setRemoteScreens]      = useState({}); // { [userId]: MediaStream }
     const [systemAudioEnabled, setSystemAudioEnabled] = useState(false);
-    const [hasSystemAudio,    setHasSystemAudio]    = useState(false); // track available to toggle
+    const [hasSystemAudio,     setHasSystemAudio]     = useState(false); // track available to toggle
 
     // Stable refs — survive re-renders and navigation
     const localStreamRef = useRef(null);
@@ -433,6 +434,7 @@ export function VoiceProvider({ children }) {
             screenSendersRef.current    = {}; // cleared on full leave — new call = fresh peers
             sysAudioSendersRef.current  = {};
             setSharingScreen(false);
+            setLocalScreenStream(null);
             setHasSystemAudio(false);
             setSystemAudioEnabled(false);
             setRemoteScreens({});
@@ -485,6 +487,7 @@ export function VoiceProvider({ children }) {
         });
         // Keep senders in refs — reused by replaceTrack on next share.
         setSharingScreen(false);
+        setLocalScreenStream(null);
         setHasSystemAudio(false);
         setSystemAudioEnabled(false);
     }, []);
@@ -514,6 +517,7 @@ export function VoiceProvider({ children }) {
         const audioTrack = stream.getAudioTracks()[0] ?? null;
 
         screenAudioTrackRef.current = audioTrack;
+        setLocalScreenStream(stream);
         setHasSystemAudio(!!audioTrack);
         setSystemAudioEnabled(!!audioTrack);
 
@@ -633,6 +637,7 @@ export function VoiceProvider({ children }) {
         userVolumes,
         speakingUsers,
         sharingScreen,
+        localScreenStream,
         remoteScreens,
         systemAudioEnabled,
         hasSystemAudio,

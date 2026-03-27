@@ -62,6 +62,7 @@ export default function VoiceChannel({ channel }) {
         userVolumes,
         speakingUsers,
         sharingScreen,
+        localScreenStream,
         remoteScreens,
         systemAudioEnabled,
         hasSystemAudio,
@@ -157,6 +158,13 @@ export default function VoiceChannel({ channel }) {
                                 : `${participantList.length} participantes`}
                     </p>
                 </div>
+
+                {/* Local screen preview */}
+                {inThisChannel && localScreenStream && (
+                    <div className="mb-2">
+                        <ScreenVideo stream={localScreenStream} userName="Tú (vista previa)" />
+                    </div>
+                )}
 
                 {/* Remote screen shares */}
                 {inThisChannel && Object.keys(remoteScreens).length > 0 && (
