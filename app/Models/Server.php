@@ -11,13 +11,18 @@ use Illuminate\Support\Str;
 
 class Server extends Model
 {
-    protected $fillable = ['owner_id', 'name', 'icon', 'invite_code'];
+    protected $fillable = ['owner_id', 'name', 'icon', 'background', 'invite_code'];
 
-    protected $appends = ['icon_url'];
+    protected $appends = ['icon_url', 'background_url'];
 
     public function getIconUrlAttribute(): ?string
     {
         return $this->icon ? Storage::disk('public')->url($this->icon) : null;
+    }
+
+    public function getBackgroundUrlAttribute(): ?string
+    {
+        return $this->background ? Storage::disk('public')->url($this->background) : null;
     }
 
     protected static function booted(): void

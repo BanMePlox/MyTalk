@@ -26,6 +26,10 @@ class PushNotificationService
      */
     public function sendToUser(int $userId, string $title, string $body, string $url = '/', ?string $icon = null): void
     {
+        // Skip push notifications for users in Do Not Disturb mode
+        $user = \App\Models\User::find($userId);
+        if ($user?->status === 'dnd') return;
+
         $subscriptions = PushSubscription::where('user_id', $userId)->get();
         if ($subscriptions->isEmpty()) return;
 

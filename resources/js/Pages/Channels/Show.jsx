@@ -48,6 +48,7 @@ import ServerSettingsModal from '@/Components/ServerSettingsModal';
 import VoiceChannel from '@/Pages/Channels/VoiceChannel';
 import VoiceMiniBar from '@/Components/VoiceMiniBar';
 import { useVoice } from '@/Contexts/VoiceContext';
+import { useTheme } from '@/Contexts/ThemeContext';
 
 const STATUS_CONFIG = {
     online: { dot: 'bg-green-500', label: 'En línea' },
@@ -719,8 +720,18 @@ function ProfilePopover({ member, status, anchorX, anchorY, onClose, authId }) {
 export default function Show({ channel, messages: initialMessages, pinnedMessages: initialPinnedMessages = [], userServers = [], visibleChannelIds = null, canManageMessages = false, canManageRoles = false, canManageChannels = false, canKickMembers = false, canBanMembers = false, canSendMessages = true, isOwner = false, serverEmojis: initialServerEmojis = [], initialVoiceParticipants = {} }) {
     const { auth, badges: initialBadges, vapidPublicKey } = usePage().props;
     const voice = useVoice();
+    const { compact, toggleCompact } = useTheme();
     const syncPresenceRef = useRef(null);
     syncPresenceRef.current = voice.syncExternalPresence;
+
+    // Users currently sharing their screen — derived from VoiceContext client state.
+    // Extension point: when voice is extracted to a microservice, replace this with a
+    // server-broadcast event (e.g. ScreenShareChanged on presence-server.{id}) so that
+    // users outside the call also see the indicator.
+    const screenSharerIds = new Set([
+        ...Object.keys(voice.remoteScreens),
+        ...(voice.sharingScreen ? [String(auth.user.id)] : []),
+    ]);
     const [messages, setMessages] = useState(initialMessages);
     const [content, setContent] = useState('');
     const [sending, setSending] = useState(false);
@@ -777,6 +788,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
     const [contextMenu, setContextMenu] = useState(null); // { type, x, y, msg?, member? }
     const [serverDropdownOpen, setServerDropdownOpen] = useState(false);
     const [serverSettingsOpen, setServerSettingsOpen] = useState(false);
+    const [serverBackground, setServerBackground] = useState(channel.server?.background_url ?? null);
     const [newChannelName, setNewChannelName] = useState('');
     const [creatingChannel, setCreatingChannel] = useState(false);
     const [inviteCopied, setInviteCopied] = useState(false);
@@ -1949,6 +1961,43 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                     </label>
                                 )}
 
+                                {/* Cambiar fondo */}
+                                {isOwner && (
+                                    <>
+                                        <label className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-200 hover:bg-gray-700 transition-colors cursor-pointer">
+                                            <span>🌄</span> Cambiar fondo del chat
+                                            <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                                                const file = e.target.files[0];
+                                                if (!file) return;
+                                                const fd = new FormData();
+                                                fd.append('background', file);
+                                                try {
+                                                    const res = await window.axios.post(route('servers.background', channel.server.id), fd, {
+                                                        headers: { 'Content-Type': 'multipart/form-data' },
+                                                    });
+                                                    setServerBackground(res.data.background_url);
+                                                } catch { /* ignore */ }
+                                                setServerDropdownOpen(false);
+                                                e.target.value = '';
+                                            }} />
+                                        </label>
+                                        {serverBackground && (
+                                            <button
+                                                onClick={async () => {
+                                                    try {
+                                                        await window.axios.delete(route('servers.background.remove', channel.server.id));
+                                                        setServerBackground(null);
+                                                    } catch { /* ignore */ }
+                                                    setServerDropdownOpen(false);
+                                                }}
+                                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-gray-700 transition-colors"
+                                            >
+                                                <span>🗑️</span> Quitar fondo del chat
+                                            </button>
+                                        )}
+                                    </>
+                                )}
+
                                 {/* Ajustes del servidor */}
                                 {(canManageRoles || canKickMembers || isOwner) && (
                                     <button
@@ -2078,13 +2127,20 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                             }
                                                         </div>
                                                         <span className="truncate">{u.name}</span>
-                                                        {voice.speakingUsers[String(u.id)] && (
-                                                            <span className="ml-auto shrink-0 flex gap-px items-end h-3">
-                                                                {[2, 3, 2].map((h, i) => (
-                                                                    <span key={i} className="w-px bg-green-400 rounded-full animate-pulse" style={{ height: `${h * 4}px`, animationDelay: `${i * 0.15}s` }} />
-                                                                ))}
-                                                            </span>
-                                                        )}
+                                                        <span className="ml-auto shrink-0 flex items-center gap-1">
+                                                            {screenSharerIds.has(String(u.id)) && (
+                                                                <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                                                </svg>
+                                                            )}
+                                                            {voice.speakingUsers[String(u.id)] && (
+                                                                <span className="shrink-0 flex gap-px items-end h-3">
+                                                                    {[2, 3, 2].map((h, i) => (
+                                                                        <span key={i} className="w-px bg-green-400 rounded-full animate-pulse" style={{ height: `${h * 4}px`, animationDelay: `${i * 0.15}s` }} />
+                                                                    ))}
+                                                                </span>
+                                                            )}
+                                                        </span>
                                                     </div>
                                                 ))}
                                             </div>
@@ -2186,7 +2242,18 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                 </aside>
 
                 {/* Área principal: mensajes */}
-                <div className="flex-1 flex flex-col overflow-hidden pb-[3.5rem] sm:pb-0 relative" style={{ position: 'relative' }}>
+                <div
+                    className="flex-1 flex flex-col overflow-hidden pb-[3.5rem] sm:pb-0 relative"
+                    style={{
+                        position: 'relative',
+                        ...(serverBackground ? {
+                            backgroundImage: `url(${serverBackground})`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                            backgroundAttachment: 'local',
+                        } : {}),
+                    }}
+                >
                     <header className="px-4 py-3 border-b border-gray-700 font-semibold shrink-0 flex items-center gap-3">
                         <button
                             type="button"
@@ -2246,6 +2313,16 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h13M3 8h9m-9 4h6" />
+                            </svg>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={toggleCompact}
+                            className={`text-gray-400 hover:text-white transition-colors ${compact ? 'text-white' : ''}`}
+                            title={compact ? 'Vista normal' : 'Modo compacto'}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                             </svg>
                         </button>
                     </header>
@@ -2520,7 +2597,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                             const isTmp = String(msg.id).startsWith('tmp-');
                             const isEditing = editingId === msg.id;
                             const prevMsg = messages[index - 1];
-                            const isGrouped = !!(prevMsg
+                            const isGrouped = !compact && !!(prevMsg
                                 && prevMsg.user?.id === msg.user?.id
                                 && !msg.reply_to
                                 && !msg.pinned_at
@@ -2533,72 +2610,29 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                             return (
                                 <div
                                     key={msg.id}
-                                    className={`group flex gap-3 px-2 rounded-lg hover:bg-gray-700/40 relative ${msg.pinned_at ? 'border-l-2 border-yellow-500/50' : ''} ${isGrouped ? 'py-0' : 'py-0.5 mt-2'}`}
+                                    className={`group flex gap-3 px-2 rounded-lg hover:bg-gray-700/40 relative ${msg.pinned_at ? 'border-l-2 border-yellow-500/50' : ''} ${compact ? 'py-px' : isGrouped ? 'py-0' : 'py-0.5 mt-2'}`}
                                     onContextMenu={(e) => !isTmp && openContextMenu('message', e, msg, memberWithRoles)}
                                 >
-                                    {isGrouped ? (
-                                        <div className="w-9 shrink-0 flex items-center justify-end">
-                                            <span
-                                                className="text-[10px] text-gray-600 group-hover:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity leading-none select-none"
-                                                title={new Date(msg.created_at).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' })}
-                                            >
-                                                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                            </span>
-                                        </div>
-                                    ) : (
-                                        <button
-                                            type="button"
-                                            onClick={openPopover}
-                                            onContextMenu={(e) => { e.stopPropagation(); member && openContextMenu('user', e, msg, memberWithRoles); }}
-                                            className="shrink-0 self-start mt-0.5 hover:opacity-80 transition-opacity"
-                                        >
-                                            <Avatar user={msg.user} />
-                                        </button>
-                                    )}
-                                    <div className="flex-1 min-w-0">
-                                        {!isGrouped && (
-                                        <div className="flex items-baseline gap-2">
-                                            <button
-                                                type="button"
-                                                onClick={openPopover}
-                                                onContextMenu={(e) => { e.stopPropagation(); member && openContextMenu('user', e, msg, memberWithRoles); }}
-                                                className="font-semibold hover:underline leading-none"
-                                                style={primaryColor ? { color: primaryColor } : { color: 'white' }}
-                                            >
-                                                {displayName}
-                                            </button>
-                                            <span
-                                                className="text-xs text-gray-500"
-                                                title={new Date(msg.created_at).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' })}
-                                            >
-                                                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                            </span>
-                                        </div>
-                                        )}
-                                        {msg.reply_to && (
-                                            <div className="flex items-center gap-1.5 mb-0.5 text-xs text-gray-400 border-l-2 border-gray-500 pl-2 mt-0.5">
-                                                <span className="font-semibold text-gray-300 shrink-0">{msg.reply_to.user?.name}</span>
-                                                <span className="truncate max-w-[300px]">{msg.reply_to.content || '📎 adjunto'}</span>
-                                            </div>
-                                        )}
-                                        {isEditing ? (
-                                            <div className="mt-1">
-                                                <input
-                                                    autoFocus
-                                                    value={editContent}
-                                                    onChange={(e) => setEditContent(e.target.value)}
-                                                    onKeyDown={(e) => {
-                                                        if (e.key === 'Enter') submitEdit(msg);
-                                                        if (e.key === 'Escape') cancelEdit();
-                                                    }}
-                                                    className="w-full bg-gray-600 text-sm text-white rounded px-2 py-1 outline-none border border-indigo-500"
-                                                />
-                                                <p className="text-xs text-gray-500 mt-0.5">Enter para guardar · Esc para cancelar</p>
-                                            </div>
-                                        ) : (
-                                            <>
-                                                {msg.content && (
-                                                    <div className={`text-sm ${isTmp ? 'text-gray-500' : 'text-gray-300'}`}>
+                                    {compact ? (
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-baseline gap-1.5 flex-wrap">
+                                                <span
+                                                    className="text-[10px] text-gray-600 group-hover:text-gray-500 shrink-0 select-none font-mono"
+                                                    title={new Date(msg.created_at).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' })}
+                                                >
+                                                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={openPopover}
+                                                    onContextMenu={(e) => { e.stopPropagation(); member && openContextMenu('user', e, msg, memberWithRoles); }}
+                                                    className="text-xs font-semibold hover:underline shrink-0 leading-none"
+                                                    style={primaryColor ? { color: primaryColor } : { color: 'white' }}
+                                                >
+                                                    {displayName}
+                                                </button>
+                                                {!isEditing && msg.content && (
+                                                    <span className={`text-sm ${isTmp ? 'text-gray-500' : 'text-gray-300'}`}>
                                                         {renderContent(msg.content, members, auth.user.name, members.find(m => m.id === auth.user.id)?.nickname ?? '', serverEmojis)}
                                                         {!isTmp && msg.updated_at && msg.updated_at !== msg.created_at && (
                                                             <button
@@ -2606,46 +2640,166 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                                 className="text-xs text-gray-500 hover:text-gray-300 ml-1.5 underline-offset-2 hover:underline"
                                                             >(editado)</button>
                                                         )}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {msg.reply_to && (
+                                                <div className="flex items-center gap-1.5 mb-0.5 text-xs text-gray-400 border-l-2 border-gray-500 pl-2 mt-0.5">
+                                                    <span className="font-semibold text-gray-300 shrink-0">{msg.reply_to.user?.name}</span>
+                                                    <span className="truncate max-w-[300px]">{msg.reply_to.content || '📎 adjunto'}</span>
+                                                </div>
+                                            )}
+                                            {isEditing && (
+                                                <div className="mt-1">
+                                                    <input
+                                                        autoFocus
+                                                        value={editContent}
+                                                        onChange={(e) => setEditContent(e.target.value)}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter') submitEdit(msg);
+                                                            if (e.key === 'Escape') cancelEdit();
+                                                        }}
+                                                        className="w-full bg-gray-600 text-sm text-white rounded px-2 py-1 outline-none border border-indigo-500"
+                                                    />
+                                                    <p className="text-xs text-gray-500 mt-0.5">Enter para guardar · Esc para cancelar</p>
+                                                </div>
+                                            )}
+                                            {!isEditing && msg.attachment_url && (() => {
+                                                const isImage = /\.(png|jpe?g|gif|webp|bmp|svg)(\?|$)/i.test(msg.attachment_url);
+                                                const isVideo = /\.(mp4|webm|ogg|mov|mkv)(\?|$)/i.test(msg.attachment_url);
+                                                const isAudio = /\.(mp3|wav|webm|ogg|m4a|aac|opus)(\?|$)/i.test(msg.attachment_url) && !isVideo;
+                                                return isAudio ? (
+                                                    <audio src={msg.attachment_url} controls preload="metadata" className="mt-1 w-64 h-10 rounded-lg" />
+                                                ) : isImage ? (
+                                                    <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer" className="block mt-1">
+                                                        <img src={msg.attachment_url} alt="adjunto" className="max-w-xs max-h-64 rounded-lg object-cover border border-gray-700 hover:opacity-90 transition-opacity" />
+                                                    </a>
+                                                ) : isVideo ? (
+                                                    <video src={msg.attachment_url} controls preload="metadata" className="mt-1 max-w-sm max-h-64 rounded-lg border border-gray-700 bg-black" />
+                                                ) : (
+                                                    <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer" download={msg.attachment_name ?? true} className="mt-1 inline-flex items-center gap-2 bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-indigo-300 hover:text-indigo-200 hover:border-indigo-500 transition-colors">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                                        <span className="truncate max-w-[240px]">{msg.attachment_name ?? 'Archivo adjunto'}</span>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                                    </a>
+                                                );
+                                            })()}
+                                            {!isTmp && msg.content && !isEditing && <LinkPreviewList content={msg.content} />}
+                                        </div>
+                                    ) : (
+                                        <>
+                                            {isGrouped ? (
+                                                <div className="w-9 shrink-0 flex items-center justify-end">
+                                                    <span
+                                                        className="text-[10px] text-gray-600 group-hover:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity leading-none select-none"
+                                                        title={new Date(msg.created_at).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' })}
+                                                    >
+                                                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <button
+                                                    type="button"
+                                                    onClick={openPopover}
+                                                    onContextMenu={(e) => { e.stopPropagation(); member && openContextMenu('user', e, msg, memberWithRoles); }}
+                                                    className="shrink-0 self-start mt-0.5 hover:opacity-80 transition-opacity"
+                                                >
+                                                    <Avatar user={msg.user} />
+                                                </button>
+                                            )}
+                                            <div className="flex-1 min-w-0">
+                                                {!isGrouped && (
+                                                <div className="flex items-baseline gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={openPopover}
+                                                        onContextMenu={(e) => { e.stopPropagation(); member && openContextMenu('user', e, msg, memberWithRoles); }}
+                                                        className="font-semibold hover:underline leading-none"
+                                                        style={primaryColor ? { color: primaryColor } : { color: 'white' }}
+                                                    >
+                                                        {displayName}
+                                                    </button>
+                                                    <span
+                                                        className="text-xs text-gray-500"
+                                                        title={new Date(msg.created_at).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' })}
+                                                    >
+                                                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    </span>
+                                                </div>
+                                                )}
+                                                {msg.reply_to && (
+                                                    <div className="flex items-center gap-1.5 mb-0.5 text-xs text-gray-400 border-l-2 border-gray-500 pl-2 mt-0.5">
+                                                        <span className="font-semibold text-gray-300 shrink-0">{msg.reply_to.user?.name}</span>
+                                                        <span className="truncate max-w-[300px]">{msg.reply_to.content || '📎 adjunto'}</span>
                                                     </div>
                                                 )}
-                                                {!isTmp && msg.content && <LinkPreviewList content={msg.content} />}
-                                                {msg.attachment_url && (() => {
-                                                    const isImage = /\.(png|jpe?g|gif|webp|bmp|svg)(\?|$)/i.test(msg.attachment_url);
-                                                    const isVideo = /\.(mp4|webm|ogg|mov|mkv)(\?|$)/i.test(msg.attachment_url);
-                                                    const isAudio = /\.(mp3|wav|webm|ogg|m4a|aac|opus)(\?|$)/i.test(msg.attachment_url) && !isVideo;
-                                                    return isAudio ? (
-                                                        <audio
-                                                            src={msg.attachment_url}
-                                                            controls
-                                                            preload="metadata"
-                                                            className="mt-1 w-64 h-10 rounded-lg"
+                                                {isEditing ? (
+                                                    <div className="mt-1">
+                                                        <input
+                                                            autoFocus
+                                                            value={editContent}
+                                                            onChange={(e) => setEditContent(e.target.value)}
+                                                            onKeyDown={(e) => {
+                                                                if (e.key === 'Enter') submitEdit(msg);
+                                                                if (e.key === 'Escape') cancelEdit();
+                                                            }}
+                                                            className="w-full bg-gray-600 text-sm text-white rounded px-2 py-1 outline-none border border-indigo-500"
                                                         />
-                                                    ) : isImage ? (
-                                                        <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer" className="block mt-1">
-                                                            <img src={msg.attachment_url} alt="adjunto" className="max-w-xs max-h-64 rounded-lg object-cover border border-gray-700 hover:opacity-90 transition-opacity" />
-                                                        </a>
-                                                    ) : isVideo ? (
-                                                        <video
-                                                            src={msg.attachment_url}
-                                                            controls
-                                                            preload="metadata"
-                                                            className="mt-1 max-w-sm max-h-64 rounded-lg border border-gray-700 bg-black"
-                                                        />
-                                                    ) : (
-                                                        <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer" download={msg.attachment_name ?? true} className="mt-1 inline-flex items-center gap-2 bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-indigo-300 hover:text-indigo-200 hover:border-indigo-500 transition-colors">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                            </svg>
-                                                            <span className="truncate max-w-[240px]">{msg.attachment_name ?? 'Archivo adjunto'}</span>
-                                                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                                            </svg>
-                                                        </a>
-                                                    );
-                                                })()}
-                                            </>
-                                        )}
-                                    </div>
+                                                        <p className="text-xs text-gray-500 mt-0.5">Enter para guardar · Esc para cancelar</p>
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        {msg.content && (
+                                                            <div className={`text-sm ${isTmp ? 'text-gray-500' : 'text-gray-300'}`}>
+                                                                {renderContent(msg.content, members, auth.user.name, members.find(m => m.id === auth.user.id)?.nickname ?? '', serverEmojis)}
+                                                                {!isTmp && msg.updated_at && msg.updated_at !== msg.created_at && (
+                                                                    <button
+                                                                        onClick={() => openEditHistory(msg.id)}
+                                                                        className="text-xs text-gray-500 hover:text-gray-300 ml-1.5 underline-offset-2 hover:underline"
+                                                                    >(editado)</button>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                        {!isTmp && msg.content && <LinkPreviewList content={msg.content} />}
+                                                        {msg.attachment_url && (() => {
+                                                            const isImage = /\.(png|jpe?g|gif|webp|bmp|svg)(\?|$)/i.test(msg.attachment_url);
+                                                            const isVideo = /\.(mp4|webm|ogg|mov|mkv)(\?|$)/i.test(msg.attachment_url);
+                                                            const isAudio = /\.(mp3|wav|webm|ogg|m4a|aac|opus)(\?|$)/i.test(msg.attachment_url) && !isVideo;
+                                                            return isAudio ? (
+                                                                <audio
+                                                                    src={msg.attachment_url}
+                                                                    controls
+                                                                    preload="metadata"
+                                                                    className="mt-1 w-64 h-10 rounded-lg"
+                                                                />
+                                                            ) : isImage ? (
+                                                                <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer" className="block mt-1">
+                                                                    <img src={msg.attachment_url} alt="adjunto" className="max-w-xs max-h-64 rounded-lg object-cover border border-gray-700 hover:opacity-90 transition-opacity" />
+                                                                </a>
+                                                            ) : isVideo ? (
+                                                                <video
+                                                                    src={msg.attachment_url}
+                                                                    controls
+                                                                    preload="metadata"
+                                                                    className="mt-1 max-w-sm max-h-64 rounded-lg border border-gray-700 bg-black"
+                                                                />
+                                                            ) : (
+                                                                <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer" download={msg.attachment_name ?? true} className="mt-1 inline-flex items-center gap-2 bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-indigo-300 hover:text-indigo-200 hover:border-indigo-500 transition-colors">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                                    </svg>
+                                                                    <span className="truncate max-w-[240px]">{msg.attachment_name ?? 'Archivo adjunto'}</span>
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                                                    </svg>
+                                                                </a>
+                                                            );
+                                                        })()}
+                                                    </>
+                                                )}
+                                            </div>
+                                        </>
+                                    )}
                                     {!isTmp && !isEditing && (
                                         <div className="absolute right-2 top-0 -translate-y-1/2 hidden group-hover:flex items-center gap-1 bg-gray-800 border border-gray-700 rounded-lg px-1 py-0.5 shadow-lg z-10">
                                             <button

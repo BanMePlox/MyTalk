@@ -71,6 +71,33 @@ class ServerController extends Controller
         return response()->json(['icon_url' => $server->icon_url]);
     }
 
+    public function updateBackground(Request $request, Server $server)
+    {
+        $this->authorize('delete', $server); // solo el owner
+
+        $request->validate(['background' => 'required|image|max:5120']);
+
+        if ($server->background) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($server->background);
+        }
+
+        $server->update(['background' => $request->file('background')->store('server-backgrounds', 'public')]);
+
+        return response()->json(['background_url' => $server->background_url]);
+    }
+
+    public function removeBackground(Server $server)
+    {
+        $this->authorize('delete', $server);
+
+        if ($server->background) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($server->background);
+            $server->update(['background' => null]);
+        }
+
+        return response()->json(['background_url' => null]);
+    }
+
     public function show(Server $server): Response
     {
         $this->authorize('view', $server);

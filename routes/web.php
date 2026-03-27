@@ -42,6 +42,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/servers/{server}/leave', [ServerController::class, 'leave'])->name('servers.leave');
     Route::delete('/servers/{server}', [ServerController::class, 'destroy'])->name('servers.destroy');
     Route::post('/servers/{server}/icon', [ServerController::class, 'updateIcon'])->name('servers.icon');
+    Route::post('/servers/{server}/background', [ServerController::class, 'updateBackground'])->name('servers.background');
+    Route::delete('/servers/{server}/background', [ServerController::class, 'removeBackground'])->name('servers.background.remove');
     Route::patch('/servers/{server}/name', [ServerController::class, 'updateName'])->name('servers.name');
     Route::patch('/servers/{server}/nickname', [NicknameController::class, 'update'])->name('servers.nickname');
 
