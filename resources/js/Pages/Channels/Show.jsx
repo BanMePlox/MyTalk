@@ -2023,7 +2023,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                 const fd = new FormData();
                                                 fd.append('background', file);
                                                 try {
-                                                    const res = await window.axios.post(route('servers.background', channel.server.id), fd, {
+                                                    const res = await window.axios.post(`/servers/${channel.server.id}/background`, fd, {
                                                         headers: { 'Content-Type': 'multipart/form-data' },
                                                     });
                                                     setServerBackground(res.data.background_url);
@@ -2036,7 +2036,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                             <button
                                                 onClick={async () => {
                                                     try {
-                                                        await window.axios.delete(route('servers.background.remove', channel.server.id));
+                                                        await window.axios.delete(`/servers/${channel.server.id}/background`);
                                                         setServerBackground(null);
                                                     } catch { /* ignore */ }
                                                     setServerDropdownOpen(false);
@@ -2737,7 +2737,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                             })()}
                                             {!isTmp && msg.content && !isEditing && <LinkPreviewList content={msg.content} />}
                                             {msg.poll && <PollCard poll={msg.poll} messageId={msg.id} authId={auth.user.id} onVote={(pollId, optionIndex) => {
-                                                window.axios.post(route('polls.vote', pollId), { option_index: optionIndex })
+                                                window.axios.post(`/polls/${pollId}/vote`, { option_index: optionIndex })
                                                     .then(res => setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, poll: { ...m.poll, vote_counts: res.data.vote_counts, total_votes: res.data.total_votes, my_vote: res.data.my_vote } } : m)));
                                             }} />}
                                         </div>
@@ -2851,7 +2851,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                             );
                                                         })()}
                                                         {msg.poll && <PollCard poll={msg.poll} messageId={msg.id} authId={auth.user.id} onVote={(pollId, optionIndex) => {
-                                                            window.axios.post(route('polls.vote', pollId), { option_index: optionIndex })
+                                                            window.axios.post(`/polls/${pollId}/vote`, { option_index: optionIndex })
                                                                 .then(res => setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, poll: { ...m.poll, vote_counts: res.data.vote_counts, total_votes: res.data.total_votes, my_vote: res.data.my_vote } } : m)));
                                                         }} />}
                                                     </>
@@ -3589,7 +3589,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                         const opts = pollOptions.filter(o => o.trim());
                                         if (!pollQuestion.trim() || opts.length < 2) return;
                                         try {
-                                            const res = await window.axios.post(route('polls.store', channel.id), {
+                                            const res = await window.axios.post(`/channels/${channel.id}/polls`, {
                                                 question: pollQuestion.trim(),
                                                 options: opts,
                                             });
