@@ -3596,7 +3596,10 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                             setMessages(prev => [...prev, res.data]);
                                             setPollModalOpen(false);
                                             setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 0);
-                                        } catch { /* ignore */ }
+                                        } catch (err) {
+                                            console.error('Poll error:', err.response?.status, err.response?.data);
+                                            alert('Error al crear la encuesta: ' + (err.response?.data?.message ?? err.message));
+                                        }
                                     }}
                                     disabled={!pollQuestion.trim() || pollOptions.filter(o => o.trim()).length < 2}
                                     className="px-4 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg disabled:opacity-50 transition-colors"
