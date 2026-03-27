@@ -50,10 +50,34 @@ MyTalk usa broadcasting basado en canales privados de Reverb. Todos los canales 
 | `channel.{id}` | Privado | Mensajes, ediciones, borrados, reacciones, pins, actualizaciones de hilos |
 | `thread.{id}` | Privado | Mensajes nuevos en un hilo concreto |
 | `conversation.{id}` | Privado | Mensajes directos (1:1 y grupo) |
-| `App.Models.User.{id}` | Privado | Menciones, DMs, solicitudes de amistad, expulsiones |
-| `presence-server.{id}` | Presencia | Estado online/ausente/dnd de los miembros de un servidor |
+| `App.Models.User.{id}` | Privado | Menciones, DMs, solicitudes de amistad, expulsiones, señalización WebRTC |
+| `presence-server.{id}` | Presencia | Estado online/ausente/dnd + eventos `VoicePresenceChanged` para el sidebar de voz |
+| `presence-voice.{id}` | Presencia | Participantes activos en un canal de voz concreto (join/leave/here para WebRTC) |
 
 Los **whispers** (cliente a cliente, sin pasar por el servidor) se usan para el indicador "X está escribiendo...".
+
+---
+
+## Arquitectura de voz (WebRTC)
+
+Las llamadas de voz usan una malla P2P completa (full mesh): cada participante establece una conexión directa `RTCPeerConnection` con cada uno de los demás.
+
+**Señalización** (intercambio de SDP e ICE candidates):
+
+1. Al unirse, el nuevo participante envía un **offer** SDP a cada usuario ya presente (vía `POST /voice/{channel}/signal`, que hace broadcast del evento `VoiceSignal` en el canal privado del destinatario).
+2. El destinatario responde con un **answer** SDP.
+3. Ambos intercambian **ICE candidates** hasta que se establece la conexión directa.
+4. Los SDP se codifican en base64 para el transporte.
+
+**Gestión de estado** (`VoiceContext` — `resources/js/Contexts/VoiceContext.jsx`):
+
+Toda la lógica WebRTC vive en un React Context montado en la raíz de la app (`app.jsx`). Esto permite que las llamadas persistan mientras el usuario navega entre canales de texto (Inertia soft-navigation no desmonta el contexto). Los componentes consumidores (`VoiceChannel.jsx`, `VoiceMiniBar.jsx`) son puramente de UI.
+
+**Presencia en el sidebar**:
+
+`VoiceController::presence()` actualiza una entrada en Laravel Cache (`voice_participants_{channelId}`) y emite `VoicePresenceChanged` en `presence-server.{serverId}`. `Show.jsx` escucha el evento y actualiza el estado local del sidebar. Al cargar la página, `MessageController` devuelve `initialVoiceParticipants` desde la caché; si el usuario no está en llamada (ausencia del header `X-Voice-Channel-Id`), limpia su presencia zombie antes de devolver los datos.
+
+**Servidores STUN** usados para descubrimiento de IP pública: `stun.l.google.com:19302`.
 
 ---
 

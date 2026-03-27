@@ -188,8 +188,11 @@ autorestart=true
 | `bans`                   | Usuarios baneados de un servidor                         |
 | `unread_mentions`        | Contador de menciones no leídas por canal                |
 | `push_subscriptions`     | Suscripciones Web Push por usuario                       |
+| `server_emojis`          | Emojis personalizados por servidor (nombre + ruta imagen) |
 | `jobs`                   | Cola de trabajos para broadcasting                       |
 | `sessions`               | Sesiones de usuario                                      |
+
+> **Caché de voz:** los participantes activos en canales de voz se almacenan en Laravel Cache con la clave `voice_participants_{channelId}` (TTL 8 horas). No hay tabla dedicada; si se resetea la caché, el sidebar de voz mostrará vacío hasta que los usuarios vuelvan a unirse.
 
 ### Comandos de migración
 

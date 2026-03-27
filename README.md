@@ -12,7 +12,7 @@ Aplicación de chat en tiempo real inspirada en Discord. Construida con **Larave
 
 ### Servidores y canales
 - Crear servidores y unirse mediante enlace de invitación
-- Canales de **texto** y de **anuncios** (solo admins pueden publicar)
+- Canales de **texto**, **anuncios** (solo admins pueden publicar) y **voz**
 - **Categorías** para organizar canales
 - **Permisos por rol y canal** (ver / escribir) — lógica compatible con Discord
 - Reordenamiento de canales por **drag & drop**
@@ -58,6 +58,14 @@ Aplicación de chat en tiempo real inspirada en Discord. Construida con **Larave
 - Sistema de **solicitudes de amistad**
 
 ![Mensajes directos](storage/readme.img/Amigos%20+%20DM.png)
+
+### Canales de voz
+- Llamadas de audio P2P en tiempo real via **WebRTC** (malla full mesh)
+- Silenciar micrófono, ensordecerse y control de volumen por usuario
+- **Llamadas persistentes**: navega entre canales de texto sin colgar — la barra de llamada activa en el sidebar mantiene los controles accesibles
+- Sidebar muestra los participantes activos en cada canal de voz en tiempo real
+- Prueba de micrófono antes de unirse
+- Emojis personalizados del servidor con sintaxis `:nombre:`
 
 ### Roles y moderación
 - Roles personalizados por servidor con color

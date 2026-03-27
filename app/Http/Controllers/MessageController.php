@@ -142,14 +142,17 @@ class MessageController extends Controller
             ->map(fn($e) => ['id' => $e->id, 'name' => $e->name, 'url' => $e->url]);
 
         // Load current voice participants from cache for all voice channels in the server.
-        // On page load the user can never be in a call, so clean up any zombie presence
-        // they left behind (e.g. if the leave fetch failed) and broadcast the leave event.
+        // If the client sends X-Voice-Channel-Id they are still in an active call (Inertia
+        // navigation while in voice) — skip zombie cleanup to avoid ejecting them from the
+        // sidebar. Without the header they just loaded the page fresh, so any presence entry
+        // they left behind is a zombie (e.g. browser crash) and should be cleaned up.
+        $activeVoiceChannelId = request()->header('X-Voice-Channel-Id');
         $voiceParticipants = [];
         foreach ($channel->server->channels->where('type', 'voice') as $vc) {
             $cacheKey     = "voice_participants_{$vc->id}";
             $participants = Cache::get($cacheKey, []);
 
-            if (isset($participants[$authUser->id])) {
+            if (!$activeVoiceChannelId && isset($participants[$authUser->id])) {
                 unset($participants[$authUser->id]);
                 Cache::put($cacheKey, $participants, now()->addHours(8));
                 broadcast(new \App\Events\VoicePresenceChanged(

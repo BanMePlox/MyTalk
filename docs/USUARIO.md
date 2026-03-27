@@ -45,6 +45,7 @@ El menú desplegable (nombre del servidor en la cabecera del sidebar) permite:
 |------|-------------|
 | `#` Texto | Canal normal; cualquier miembro con permiso puede escribir. |
 | `📢` Anuncios | Solo el propietario y los administradores pueden publicar; el resto solo lee. |
+| `🎙` Voz | Canal de audio en tiempo real con WebRTC. |
 
 ### Navegar entre canales
 
@@ -61,6 +62,38 @@ Si tienes permiso de gestión de canales, arrastra cualquier canal a la posició
 ### Permisos por canal
 
 Los canales pueden tener permisos específicos por rol que sobreescriben los permisos globales del servidor. Un canal sin permisos definidos es visible para todos. Si un canal tiene permisos explícitos de "ver", solo los roles con permiso explícito pueden verlo.
+
+---
+
+## Canales de voz
+
+Los canales de voz permiten hablar en tiempo real con otros miembros del servidor.
+
+### Unirse a un canal de voz
+
+Haz clic en cualquier canal con icono 🎙 en el sidebar. Se abrirá la pantalla del canal con un botón **Unirse al canal de voz**. Al pulsarlo, el navegador pedirá permiso para acceder al micrófono.
+
+### Probar el micrófono antes de entrar
+
+En la pantalla del canal (sin estar en llamada) hay una sección **Probar micrófono y altavoces**. Pulsa **🎙 Iniciar test** para escucharte a ti mismo a través de los altavoces. Pulsa **⏹ Parar test** para detenerlo.
+
+### Controles durante la llamada
+
+| Control | Descripción |
+|---------|-------------|
+| **Micro** | Silencia o activa tu micrófono. |
+| **Audio** | Ensordece o reactiva el audio de los demás. |
+| **Volumen del micrófono** | Slider de 0 % a 200 % para ajustar el nivel de tu voz. |
+| **Volumen por usuario** | Slider individual bajo el nombre de cada participante (0 %–100 %). |
+| **Salir** | Abandona la llamada. |
+
+### Navegar mientras estás en llamada
+
+Puedes moverte a cualquier canal de texto sin salir de la llamada: la conexión de voz se mantiene activa en segundo plano. En la parte inferior del sidebar aparece la **barra de llamada activa** con el nombre del canal y accesos rápidos a silenciar, ensordecerte y salir.
+
+### Ver quién está en voz
+
+El sidebar muestra los participantes activos bajo cada canal de voz en tiempo real.
 
 ---
 

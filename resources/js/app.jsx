@@ -5,6 +5,7 @@ import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 import { ThemeProvider } from './Contexts/ThemeContext';
+import { VoiceProvider } from './Contexts/VoiceContext';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -18,7 +19,7 @@ createInertiaApp({
     setup({ el, App, props }) {
         const root = createRoot(el);
 
-        root.render(<ThemeProvider><App {...props} /></ThemeProvider>);
+        root.render(<ThemeProvider><VoiceProvider><App {...props} /></VoiceProvider></ThemeProvider>);
     },
     progress: {
         color: '#4B5563',

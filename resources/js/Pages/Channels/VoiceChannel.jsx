@@ -1,49 +1,47 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { usePage } from '@inertiajs/react';
+import { useVoice } from '@/Contexts/VoiceContext';
 
-const ICE_SERVERS = [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-];
-
-export default function VoiceChannel({ channel, externalPresenceEvent }) {
+export default function VoiceChannel({ channel }) {
     const { auth } = usePage().props;
-    const [participants, setParticipants] = useState({});
-    const [joined, setJoined]             = useState(false);
-    const [muted, setMuted]               = useState(false);
-    const [deafened, setDeafened]         = useState(false);
-    const [micVolume, setMicVolume]       = useState(100);  // 0-200
-    const [userVolumes, setUserVolumes]   = useState({});   // { userId: 0-200 }
+    const {
+        activeChannel,
+        joined,
+        muted,
+        deafened,
+        micVolume,
+        participants,
+        userVolumes,
+        join,
+        leave,
+        toggleMute,
+        toggleDeafen,
+        changeMicVolume,
+        changeUserVolume,
+    } = useVoice();
 
-    const localStreamRef  = useRef(null);
-    const gainNodeRef     = useRef(null);  // GainNode for mic volume
-    const peersRef        = useRef({});      // { userId: RTCPeerConnection }
-    const audioElemsRef   = useRef({});      // { userId: HTMLAudioElement }
-    const echoChannelRef  = useRef(null);
-    const joinedRef       = useRef(false);   // stable ref for cleanup
-    const csrfTokenRef    = useRef(document.querySelector('meta[name="csrf-token"]')?.content ?? '');
+    const inThisChannel  = joined && activeChannel?.id === channel.id;
+    const inOtherChannel = joined && activeChannel?.id !== channel.id;
 
     // ── Mic test ───────────────────────────────────────────────────────────────
-    const [testActive, setTestActive]   = useState(false);
-    const [micLevel, setMicLevel]       = useState(0);   // 0-100
-    const testStreamRef   = useRef(null);
-    const testAudioRef    = useRef(null);  // HTMLAudioElement for playback
-    const analyserRef     = useRef(null);
-    const animFrameRef    = useRef(null);
+    const [testActive, setTestActive] = useState(false);
+    const [micLevel, setMicLevel]     = useState(0);
+    const testStreamRef  = useRef(null);
+    const testAudioRef   = useRef(null);
+    const analyserRef    = useRef(null);
+    const animFrameRef   = useRef(null);
 
     const startMicTest = useCallback(async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
             testStreamRef.current = stream;
 
-            // Playback through speakers (echo test)
             const audio = new Audio();
             audio.srcObject = stream;
             audio.volume = 1;
             audio.play().catch(() => {});
             testAudioRef.current = audio;
 
-            // Level meter via AnalyserNode
             const ctx      = new AudioContext();
             const source   = ctx.createMediaStreamSource(stream);
             const analyser = ctx.createAnalyser();
@@ -78,243 +76,7 @@ export default function VoiceChannel({ channel, externalPresenceEvent }) {
         setMicLevel(0);
     }, []);
 
-    // Stop test on unmount
     useEffect(() => () => stopMicTest(), []);
-
-    // ── Helpers ────────────────────────────────────────────────────────────────
-
-    function sendSignal(toUserId, data) {
-        window.axios.post(route('voice.signal', channel.id), {
-            to_user_id: toUserId,
-            ...data,
-        }).catch(console.error);
-    }
-
-    function createPeer(userId) {
-        if (peersRef.current[userId]) return peersRef.current[userId];
-
-        const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
-        pc._icePending = []; // queue candidates until remote desc is set
-
-        localStreamRef.current?.getTracks().forEach(track =>
-            pc.addTrack(track, localStreamRef.current)
-        );
-
-        pc.onicecandidate = ({ candidate }) => {
-            if (candidate) sendSignal(userId, { type: 'ice', candidate: candidate.toJSON() });
-        };
-
-        pc.ontrack = ({ streams, track }) => {
-            let audio = audioElemsRef.current[userId];
-            if (!audio) {
-                audio = document.createElement('audio');
-                audio.autoplay = true;
-                audio.style.display = 'none';
-                document.body.appendChild(audio);
-                audioElemsRef.current[userId] = audio;
-            }
-            const stream = streams?.[0] ?? new MediaStream([track]);
-            audio.srcObject = stream;
-            audio.play().catch(err => console.warn('[Voice] Audio play blocked:', err));
-        };
-
-        peersRef.current[userId] = pc;
-        return pc;
-    }
-
-    function closePeer(userId) {
-        peersRef.current[userId]?.close();
-        delete peersRef.current[userId];
-        if (audioElemsRef.current[userId]) {
-            audioElemsRef.current[userId].srcObject = null;
-            audioElemsRef.current[userId].remove();
-            delete audioElemsRef.current[userId];
-        }
-    }
-
-    async function createOffer(userId) {
-        const pc = createPeer(userId);
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-        sendSignal(userId, { type: 'offer', sdp: encodeSdp(offer.sdp) });
-    }
-
-    const encodeSdp = (sdp) => btoa(unescape(encodeURIComponent(sdp)));
-    const decodeSdp = (b64) => decodeURIComponent(escape(atob(b64)));
-
-    async function handleOffer(fromUserId, sdp) {
-        const pc = createPeer(fromUserId);
-        await pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: decodeSdp(sdp) }));
-        // Flush queued ICE candidates
-        for (const c of pc._icePending) {
-            try { await pc.addIceCandidate(c); } catch {}
-        }
-        pc._icePending = [];
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-        sendSignal(fromUserId, { type: 'answer', sdp: encodeSdp(answer.sdp) });
-    }
-
-    async function handleAnswer(fromUserId, sdp) {
-        const pc = peersRef.current[fromUserId];
-        if (!pc) return;
-        await pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: decodeSdp(sdp) }));
-        // Flush queued ICE candidates
-        for (const c of pc._icePending) {
-            try { await pc.addIceCandidate(c); } catch {}
-        }
-        pc._icePending = [];
-    }
-
-    async function handleIce(fromUserId, candidate) {
-        const pc = peersRef.current[fromUserId];
-        if (!pc || !candidate) return;
-        if (pc.remoteDescription) {
-            try { await pc.addIceCandidate(candidate); } catch {}
-        } else {
-            pc._icePending.push(candidate);
-        }
-    }
-
-    // ── Join / Leave ───────────────────────────────────────────────────────────
-
-    async function join() {
-        try {
-            const rawStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-
-            // Route mic through a GainNode so we can control volume
-            const audioCtx  = new AudioContext();
-            const source    = audioCtx.createMediaStreamSource(rawStream);
-            const gainNode  = audioCtx.createGain();
-            gainNode.gain.value = micVolume / 100;
-            const dest      = audioCtx.createMediaStreamDestination();
-            source.connect(gainNode);
-            gainNode.connect(dest);
-
-            gainNodeRef.current    = gainNode;
-            localStreamRef.current = dest.stream;
-            // Keep raw stream to stop tracks on leave
-            localStreamRef.current._rawStream = rawStream;
-        } catch (e) {
-            alert('No se pudo acceder al micrófono: ' + e.message);
-            return;
-        }
-
-        joinedRef.current = true;
-        setJoined(true);
-
-        window.axios.post(route('voice.presence', channel.id), { action: 'join' }).catch(console.error);
-
-        echoChannelRef.current = window.Echo.join(`presence-voice.${channel.id}`)
-            .here(users => {
-                const map = {};
-                users.forEach(u => { map[u.id] = u; });
-                setParticipants(map);
-                // Send offer to every user already in the channel
-                users.forEach(u => {
-                    if (u.id !== auth.user.id) createOffer(u.id);
-                });
-            })
-            .joining(user => {
-                setParticipants(prev => ({ ...prev, [user.id]: user }));
-                // The joining user will send us an offer; we just wait
-            })
-            .leaving(user => {
-                setParticipants(prev => {
-                    const next = { ...prev };
-                    delete next[user.id];
-                    return next;
-                });
-                closePeer(user.id);
-            });
-
-        // VoiceSignal is broadcast on the user's private channel, not the presence channel
-        window.Echo.private(`App.Models.User.${auth.user.id}`)
-            .listen('.VoiceSignal', async ({ type, sdp, candidate, from_user_id, channel_id }) => {
-                if (parseInt(channel_id) !== parseInt(channel.id)) return; // ignore signals for other voice channels
-                if (type === 'offer')  await handleOffer(from_user_id, sdp);
-                if (type === 'answer') await handleAnswer(from_user_id, sdp);
-                if (type === 'ice')    await handleIce(from_user_id, candidate);
-            });
-    }
-
-    function leave() {
-        Object.keys(peersRef.current).forEach(closePeer);
-        localStreamRef.current?._rawStream?.getTracks().forEach(t => t.stop());
-        localStreamRef.current?.getTracks().forEach(t => t.stop());
-        localStreamRef.current = null;
-        gainNodeRef.current = null;
-        window.Echo.leave(`presence-voice.${channel.id}`);
-        window.Echo.private(`App.Models.User.${auth.user.id}`).stopListening('.VoiceSignal');
-        echoChannelRef.current = null;
-        joinedRef.current = false;
-        setJoined(false);
-        setMuted(false);
-        setDeafened(false);
-        setParticipants({});
-        // keepalive ensures the request completes even if the page navigates away
-        fetch(route('voice.presence', channel.id), {
-            method: 'POST',
-            keepalive: true,
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': csrfTokenRef.current,
-            },
-            body: JSON.stringify({ action: 'leave' }),
-        }).catch(() => {});
-    }
-
-    function toggleMute() {
-        const track = localStreamRef.current?.getAudioTracks()[0];
-        if (track) {
-            track.enabled = muted;
-            setMuted(m => !m);
-        }
-    }
-
-    function toggleDeafen() {
-        const next = !deafened;
-        // Mute/unmute all remote audio elements
-        Object.values(audioElemsRef.current).forEach(el => { el.muted = next; });
-        setDeafened(next);
-    }
-
-    function changeMicVolume(val) {
-        const v = Number(val);
-        setMicVolume(v);
-        if (gainNodeRef.current) gainNodeRef.current.gain.value = v / 100;
-    }
-
-    function changeUserVolume(userId, val) {
-        const v = Number(val);
-        setUserVolumes(prev => ({ ...prev, [userId]: v }));
-        const audio = audioElemsRef.current[userId];
-        if (audio) audio.volume = Math.min(v / 100, 1); // HTMLAudioElement.volume max is 1
-    }
-
-    // Cleanup on unmount or channel navigation
-    useEffect(() => {
-        return () => { if (joinedRef.current) leave(); };
-    }, [channel.id]);
-
-    // Sync participants from external VoicePresenceChanged events (broadcast via presence-server)
-    // This acts as a fallback in case Echo's presence .leaving() doesn't fire in time
-    useEffect(() => {
-        if (!externalPresenceEvent || !joined) return;
-        if (parseInt(externalPresenceEvent.channel_id) !== parseInt(channel.id)) return;
-        const { action, user } = externalPresenceEvent;
-        if (action === 'leave') {
-            setParticipants(prev => {
-                const next = { ...prev };
-                delete next[user.id];
-                return next;
-            });
-            closePeer(user.id);
-        } else if (action === 'join') {
-            setParticipants(prev => ({ ...prev, [user.id]: user }));
-        }
-    }, [externalPresenceEvent]);
 
     // ── UI ─────────────────────────────────────────────────────────────────────
 
@@ -332,7 +94,7 @@ export default function VoiceChannel({ channel, externalPresenceEvent }) {
                     </div>
                     <h2 className="text-white font-bold text-xl">{channel.name}</h2>
                     <p className="text-gray-500 text-sm mt-1">
-                        {!joined
+                        {!inThisChannel
                             ? 'Únete para participar en la llamada'
                             : participantList.length === 1
                                 ? 'Solo tú en el canal'
@@ -341,7 +103,7 @@ export default function VoiceChannel({ channel, externalPresenceEvent }) {
                 </div>
 
                 {/* Participants */}
-                {joined && participantList.length > 0 && (
+                {inThisChannel && participantList.length > 0 && (
                     <div className="bg-gray-800 rounded-xl p-3 mb-6 space-y-2 border border-gray-700">
                         {participantList.map(user => (
                             <div key={user.id} className="px-1 py-1">
@@ -375,7 +137,7 @@ export default function VoiceChannel({ channel, externalPresenceEvent }) {
                                     )}
                                 </div>
 
-                                {/* Per-user volume slider (only for remote users) */}
+                                {/* Per-user volume slider */}
                                 {user.id !== auth.user.id && (
                                     <div className="flex items-center gap-2 mt-1.5 pl-11">
                                         <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-gray-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -398,12 +160,11 @@ export default function VoiceChannel({ channel, externalPresenceEvent }) {
                     </div>
                 )}
 
-                {/* Mic test */}
-                {!joined && (
+                {/* Mic test — only shown when not in any call */}
+                {!inThisChannel && !inOtherChannel && (
                     <div className="bg-gray-800 rounded-xl p-4 mb-5 border border-gray-700">
                         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Probar micrófono y altavoces</p>
 
-                        {/* Level bar */}
                         <div className="w-full bg-gray-700 rounded-full h-2 mb-3 overflow-hidden">
                             <div
                                 className="h-2 rounded-full transition-all duration-75"
@@ -436,7 +197,7 @@ export default function VoiceChannel({ channel, externalPresenceEvent }) {
 
                 {/* Controls */}
                 <div className="flex flex-col gap-3 w-full">
-                    {joined ? (
+                    {inThisChannel ? (
                         <>
                             {/* Mic volume slider */}
                             <div className="bg-gray-800 rounded-xl px-4 py-3 border border-gray-700">
@@ -505,10 +266,22 @@ export default function VoiceChannel({ channel, externalPresenceEvent }) {
                                 </button>
                             </div>
                         </>
+                    ) : inOtherChannel ? (
+                        <div className="text-center">
+                            <p className="text-sm text-gray-400 mb-3">
+                                Ya estás en <span className="text-indigo-300 font-medium">{activeChannel.name}</span>
+                            </p>
+                            <button
+                                onClick={leave}
+                                className="text-sm text-red-400 hover:text-red-300 transition-colors underline"
+                            >
+                                Salir de esa llamada
+                            </button>
+                        </div>
                     ) : (
                         <div className="flex justify-center">
                             <button
-                                onClick={join}
+                                onClick={() => join(channel, auth.user)}
                                 className="flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition-colors"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

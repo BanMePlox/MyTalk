@@ -46,6 +46,8 @@ hljs.registerLanguage('markdown', markdown);
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import ServerSettingsModal from '@/Components/ServerSettingsModal';
 import VoiceChannel from '@/Pages/Channels/VoiceChannel';
+import VoiceMiniBar from '@/Components/VoiceMiniBar';
+import { useVoice } from '@/Contexts/VoiceContext';
 
 const STATUS_CONFIG = {
     online: { dot: 'bg-green-500', label: 'En línea' },
@@ -716,6 +718,9 @@ function ProfilePopover({ member, status, anchorX, anchorY, onClose, authId }) {
 
 export default function Show({ channel, messages: initialMessages, pinnedMessages: initialPinnedMessages = [], userServers = [], visibleChannelIds = null, canManageMessages = false, canManageRoles = false, canManageChannels = false, canKickMembers = false, canBanMembers = false, canSendMessages = true, isOwner = false, serverEmojis: initialServerEmojis = [], initialVoiceParticipants = {} }) {
     const { auth, badges: initialBadges, vapidPublicKey } = usePage().props;
+    const voice = useVoice();
+    const syncPresenceRef = useRef(null);
+    syncPresenceRef.current = voice.syncExternalPresence;
     const [messages, setMessages] = useState(initialMessages);
     const [content, setContent] = useState('');
     const [sending, setSending] = useState(false);
@@ -794,8 +799,6 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
     const [serverCategories, setServerCategories] = useState(channel.server?.categories ?? []);
     // Voice channel participants: { [channelId]: [{ id, name, avatar_url }] }
     const [voiceParticipants, setVoiceParticipants] = useState(initialVoiceParticipants);
-    // Last VoicePresenceChanged event — passed to VoiceChannel so it can sync its own state
-    const [lastVoicePresenceEvent, setLastVoicePresenceEvent] = useState(null);
     // Local optimistic map of member roles: userId → role[]
     const [memberRolesMap, setMemberRolesMap] = useState(() =>
         Object.fromEntries((channel.server?.members ?? []).map(m => [m.id, m.server_roles ?? []]))
@@ -1005,7 +1008,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                             [e.channel_id]: (prev[e.channel_id] ?? []).filter(u => u.id !== e.user.id),
                         }));
                     }
-                    setLastVoicePresenceEvent(e);
+                    syncPresenceRef.current(e);
                 });
         });
 
@@ -2105,6 +2108,8 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                         })()}
                     </nav>
 
+                    <VoiceMiniBar />
+
                     {/* Usuario actual + selector de estado */}
                     <div className="p-3 border-t border-gray-700 relative" ref={statusMenuRef}>
                         {channel.server && (
@@ -2484,7 +2489,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                         </div>
                     )}
 
-                    {channel.type === 'voice' ? <VoiceChannel channel={channel} externalPresenceEvent={lastVoicePresenceEvent} /> : null}
+                    {channel.type === 'voice' ? <VoiceChannel channel={channel} /> : null}
 
                     <div ref={containerRef} className={`flex-1 overflow-y-auto p-4 space-y-3 ${channel.type === 'voice' ? 'hidden' : ''}`}>
                         {hasMore && (
