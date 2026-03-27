@@ -18,6 +18,9 @@ export default function ServerModal({ onClose }) {
 
     function submitJoin(e) {
         e.preventDefault();
+        const raw = joinForm.data.invite_code.trim();
+        const code = raw.includes('/') ? raw.split('/').pop() : raw;
+        joinForm.setData('invite_code', code);
         joinForm.post(route('servers.join'), {
             onSuccess: () => { joinForm.reset(); onClose(); },
         });
