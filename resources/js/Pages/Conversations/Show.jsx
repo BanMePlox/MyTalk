@@ -203,8 +203,11 @@ export default function Show({ conversation, other, members: initialMembers = nu
     }
 
     async function submitEdit(msg) {
-        if (!editContent.trim() || editContent.trim() === msg.content) { cancelEdit(); return; }
-        const updated = editContent.trim();
+        const trimmed = editContent.trim();
+        const original = msg.content ?? '';
+        if (!msg.attachment_url && (!trimmed || trimmed === original)) { cancelEdit(); return; }
+        if (msg.attachment_url && trimmed === original) { cancelEdit(); return; }
+        const updated = trimmed;
         const now = new Date().toISOString();
         setMessages((prev) => prev.map((m) => m.id === msg.id ? { ...m, content: updated, updated_at: now } : m));
         cancelEdit();
@@ -642,7 +645,7 @@ export default function Show({ conversation, other, members: initialMembers = nu
                                             )}
                                         </div>
                                         {!isTmp && !isEditing && isOwn && (
-                                            <div className="absolute right-2 top-0 -translate-y-1/2 hidden group-hover:flex items-center gap-1 bg-gray-800 border border-gray-700 rounded-lg px-1 py-0.5 shadow-lg z-10">
+                                            <div className="absolute right-2 top-1 hidden group-hover:flex items-center gap-1 bg-gray-800 border border-gray-700 rounded-lg px-1 py-0.5 shadow-lg z-10">
                                                 <button type="button" onClick={() => startEdit(msg)}
                                                     className="text-gray-400 hover:text-white px-1.5 py-0.5 rounded text-xs"
                                                     title="Editar">✏️</button>

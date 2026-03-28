@@ -122,7 +122,7 @@ function CodeBlock({ lang, code }) {
     );
 }
 
-function renderContent(text, members = [], selfName = '', selfNickname = '', customEmojis = []) {
+function renderContent(text, members = [], selfName = '', selfNickname = '', customEmojis = [], userEmojiMap = {}) {
     // Build mention pattern if there are members
     const displayNames = members.length
         ? [...members]
@@ -148,8 +148,8 @@ function renderContent(text, members = [], selfName = '', selfNickname = '', cus
     const emojiMap = Object.fromEntries(customEmojis.map(e => [e.name, e.url]));
 
     function renderMarkdown(str, baseKey) {
-        // Process **bold**, *italic*, ~~strikethrough~~, URLs, and :emojiname: in a plain string
-        const MD_RE = /\*\*(.+?)\*\*|\*(.+?)\*|~~(.+?)~~|(https?:\/\/[^\s<>"']+)|:([a-z0-9_]+):/g;
+        // Process **bold**, *italic*, ~~strikethrough~~, URLs, :emojiname:, and ue:{id} in a plain string
+        const MD_RE = /\*\*(.+?)\*\*|\*(.+?)\*|~~(.+?)~~|(https?:\/\/[^\s<>"']+)|:([a-z0-9_]+):|ue:(\d+)/g;
         const parts = [];
         let last = 0, m, k = 0;
         while ((m = MD_RE.exec(str)) !== null) {
@@ -171,6 +171,11 @@ function renderContent(text, members = [], selfName = '', selfNickname = '', cus
                 parts.push(
                     <img key={`${baseKey}-e${k++}`} src={emojiMap[m[5]]} alt={`:${m[5]}:`}
                         className="inline h-10 w-10 align-middle object-contain" title={`:${m[5]}:`} />
+                );
+            else if (m[6] !== undefined && userEmojiMap[m[6]])
+                parts.push(
+                    <img key={`${baseKey}-ue${k++}`} src={userEmojiMap[m[6]]} alt={`ue:${m[6]}`}
+                        className="inline h-10 w-10 align-middle object-contain" />
                 );
             else
                 parts.push(m[0]);
@@ -823,7 +828,7 @@ function ProfilePopover({ member, status, anchorX, anchorY, onClose, authId }) {
     );
 }
 
-export default function Show({ channel, messages: initialMessages, pinnedMessages: initialPinnedMessages = [], userServers = [], userFolders = [], visibleChannelIds = null, canManageMessages = false, canManageRoles = false, canManageChannels = false, canKickMembers = false, canBanMembers = false, canSendMessages = true, isOwner = false, serverEmojis: initialServerEmojis = [], initialVoiceParticipants = {} }) {
+export default function Show({ channel, messages: initialMessages, pinnedMessages: initialPinnedMessages = [], userServers = [], userFolders = [], visibleChannelIds = null, canManageMessages = false, canManageRoles = false, canManageChannels = false, canKickMembers = false, canBanMembers = false, canSendMessages = true, isOwner = false, serverEmojis: initialServerEmojis = [], memberUserEmojis = [], initialVoiceParticipants = {} }) {
     const { auth, badges: initialBadges, vapidPublicKey } = usePage().props;
     const voice = useVoice();
     const { dark, toggle: toggleTheme, compact, toggleCompact } = useTheme();
@@ -929,6 +934,15 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
     // Members local state for real-time profile updates
     const [members, setMembers] = useState(channel.server?.members ?? []);
     const [serverEmojis, setServerEmojis] = useState(initialServerEmojis);
+    const [userEmojis, setUserEmojis] = useState(auth.userEmojis ?? []);
+
+    function handleUserEmojisChange(emojis) {
+        setUserEmojis(emojis);
+        setUserEmojiMap(prev => ({ ...prev, ...Object.fromEntries(emojis.map(e => [String(e.id), e.url])) }));
+    }
+    const [userEmojiMap, setUserEmojiMap] = useState(() =>
+        Object.fromEntries(memberUserEmojis.map(e => [String(e.id), e.url]))
+    );
 
     // Sync server-derived state when navigating to a different channel/server
     useEffect(() => {
@@ -948,6 +962,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
     const [editHistoryLoading, setEditHistoryLoading] = useState(false);
     const [syntaxHelpOpen, setSyntaxHelpOpen] = useState(false);
     const [emojiInsertOpen, setEmojiInsertOpen] = useState(false);
+    const [emojiInsertTab, setEmojiInsertTab] = useState('server');
     const [isAtBottom, setIsAtBottom] = useState(true);
     const [newMsgCount, setNewMsgCount] = useState(0);
 
@@ -1152,6 +1167,13 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
         const echoChannel = window.Echo.private(`channel.${channel.id}`);
 
         echoChannel.listen('MessageSent', (e) => {
+            if (e.user_emojis?.length) {
+                setUserEmojiMap(prev => {
+                    const next = { ...prev };
+                    e.user_emojis.forEach(ue => { next[String(ue.id)] = ue.url; });
+                    return next;
+                });
+            }
             setMessages((prev) => [...prev, e]);
             setIsAtBottom(prev => {
                 if (prev) {
@@ -1541,6 +1563,18 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
         }, 0);
     }
 
+    function insertUserEmoji(id) {
+        const cursor = inputRef.current?.selectionStart ?? content.length;
+        const tag = `ue:${id} `;
+        setContent(prev => prev.slice(0, cursor) + tag + prev.slice(cursor));
+        setEmojiInsertOpen(false);
+        setTimeout(() => {
+            const pos = cursor + tag.length;
+            inputRef.current?.setSelectionRange(pos, pos);
+            inputRef.current?.focus();
+        }, 0);
+    }
+
     function selectMention(member) {
         const before = content.slice(0, mentionStart);
         const after = content.slice(inputRef.current?.selectionStart ?? content.length);
@@ -1916,7 +1950,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                     onAddServer={() => setServerModalOpen(true)}
                 />
                 {serverModalOpen && <ServerModal onClose={() => setServerModalOpen(false)} />}
-                {profileModalOpen && <ProfileModal onClose={() => setProfileModalOpen(false)} />}
+                {profileModalOpen && <ProfileModal onClose={() => setProfileModalOpen(false)} onUserEmojisChange={handleUserEmojisChange} />}
 
                 {/* Sidebar izquierdo: canales — drawer en móvil, siempre visible en desktop */}
                 {mobileSidebar && (
@@ -2522,7 +2556,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                     </span>
                                                 </div>
                                                 <div className="text-sm text-gray-300">
-                                                    {renderContent(threadData.starter_message.content || '', members, auth.user.name, members.find((m) => m.id === auth.user.id)?.nickname ?? '', serverEmojis)}
+                                                    {renderContent(threadData.starter_message.content || '', members, auth.user.name, members.find((m) => m.id === auth.user.id)?.nickname ?? '', [...serverEmojis, ...userEmojis], userEmojiMap)}
                                                 </div>
                                             </div>
                                         )}
@@ -2551,7 +2585,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                             </span>
                                                         </div>
                                                         <div className="text-sm text-gray-300 break-words">
-                                                            {renderContent(msg.content || '', members, auth.user.name, members.find((m) => m.id === auth.user.id)?.nickname ?? '', serverEmojis)}
+                                                            {renderContent(msg.content || '', members, auth.user.name, members.find((m) => m.id === auth.user.id)?.nickname ?? '', [...serverEmojis, ...userEmojis], userEmojiMap)}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -2679,7 +2713,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                 </button>
                                                 {!isEditing && msg.content && (
                                                     <span className={`text-sm ${isTmp ? 'text-gray-500' : 'text-gray-300'}`}>
-                                                        {renderContent(msg.content, members, auth.user.name, members.find(m => m.id === auth.user.id)?.nickname ?? '', serverEmojis)}
+                                                        {renderContent(msg.content, members, auth.user.name, members.find(m => m.id === auth.user.id)?.nickname ?? '', [...serverEmojis, ...userEmojis], userEmojiMap)}
                                                         {!isTmp && msg.updated_at && msg.updated_at !== msg.created_at && (
                                                             <button
                                                                 onClick={() => openEditHistory(msg.id)}
@@ -2801,7 +2835,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                     <>
                                                         {msg.content && (
                                                             <div className={`text-sm ${isTmp ? 'text-gray-500' : 'text-gray-300'}`}>
-                                                                {renderContent(msg.content, members, auth.user.name, members.find(m => m.id === auth.user.id)?.nickname ?? '', serverEmojis)}
+                                                                {renderContent(msg.content, members, auth.user.name, members.find(m => m.id === auth.user.id)?.nickname ?? '', [...serverEmojis, ...userEmojis], userEmojiMap)}
                                                                 {!isTmp && msg.updated_at && msg.updated_at !== msg.created_at && (
                                                                     <button
                                                                         onClick={() => openEditHistory(msg.id)}
@@ -2904,6 +2938,21 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                                 ))}
                                                             </div>
                                                         )}
+                                                        {userEmojis.length > 0 && (
+                                                            <div className="flex flex-wrap gap-1 mt-1.5 pt-1.5 border-t border-gray-700 max-w-[200px]">
+                                                                {userEmojis.map((e) => (
+                                                                    <button
+                                                                        key={e.id}
+                                                                        type="button"
+                                                                        onMouseDown={(ev) => { ev.preventDefault(); toggleReaction(msg, `ue:${e.id}`); }}
+                                                                        className="hover:scale-125 transition-transform"
+                                                                        title={`:${e.name}:`}
+                                                                    >
+                                                                        <img src={e.url} alt={e.name} className="w-9 h-9 object-contain" />
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 )}
                                             </div>
@@ -2963,8 +3012,13 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                         <div className="flex flex-wrap gap-1 mt-1">
                                             {msg.reactions_grouped.map((r) => {
                                                 const reacted = r.user_ids.includes(auth.user.id);
-                                                const customMatch = r.emoji.match(/^:([a-z0-9_]+):$/);
-                                                const customUrl = customMatch ? serverEmojis.find(e => e.name === customMatch[1])?.url : null;
+                                                const serverMatch = r.emoji.match(/^:([a-z0-9_]+):$/);
+                                                const userMatch = r.emoji.match(/^ue:(\d+)$/);
+                                                const emojiUrl = serverMatch
+                                                    ? serverEmojis.find(e => e.name === serverMatch[1])?.url
+                                                    : userMatch
+                                                        ? userEmojiMap[userMatch[1]]
+                                                        : null;
                                                 return (
                                                     <button
                                                         key={r.emoji}
@@ -2976,8 +3030,8 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                                 : 'bg-gray-700 border-gray-600 text-gray-300 hover:border-indigo-500'
                                                         }`}
                                                     >
-                                                        {customUrl
-                                                            ? <img src={customUrl} alt={r.emoji} className="w-5 h-5 object-contain" />
+                                                        {emojiUrl
+                                                            ? <img src={emojiUrl} alt={r.emoji} className="w-5 h-5 object-contain" />
                                                             : <span>{r.emoji}</span>
                                                         }
                                                         <span>{r.count}</span>
@@ -3124,28 +3178,64 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                 className="flex-1 bg-transparent text-sm text-white placeholder-gray-400 outline-none resize-none leading-5 max-h-40 self-center"
                                 style={{ overflowY: 'hidden' }}
                             />
-                            {serverEmojis.length > 0 && (
+                            {(serverEmojis.length > 0 || userEmojis.length > 0) && (
                                 <div className="relative">
                                     <button
                                         type="button"
                                         onClick={() => setEmojiInsertOpen(o => !o)}
                                         className="text-gray-500 hover:text-yellow-300 transition-colors shrink-0 text-base leading-none"
-                                        title="Emojis del servidor"
+                                        title="Emojis"
                                     >😀</button>
                                     {emojiInsertOpen && (
-                                        <div className="absolute bottom-full right-0 mb-2 bg-gray-800 border border-gray-700 rounded-lg p-3 shadow-xl z-30 grid grid-cols-4 gap-2 w-64">
-                                            {serverEmojis.map(e => (
-                                                <button
-                                                    key={e.id}
-                                                    type="button"
-                                                    onMouseDown={(ev) => { ev.preventDefault(); insertEmoji(e.name); }}
-                                                    className="flex flex-col items-center gap-1 p-1.5 rounded hover:bg-gray-700 transition-colors"
-                                                    title={`:${e.name}:`}
-                                                >
-                                                    <img src={e.url} alt={e.name} className="w-10 h-10 object-contain" />
-                                                    <span className="text-[10px] text-gray-400 truncate w-full text-center">{e.name}</span>
-                                                </button>
-                                            ))}
+                                        <div className="absolute bottom-full right-0 mb-2 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-30 w-64">
+                                            {/* Tabs */}
+                                            <div className="flex border-b border-gray-700 px-2 pt-1">
+                                                {[['server', 'Servidor'], ['personal', 'Personal']].map(([key, label]) => (
+                                                    <button
+                                                        key={key}
+                                                        type="button"
+                                                        onMouseDown={(ev) => { ev.preventDefault(); setEmojiInsertTab(key); }}
+                                                        className={`px-3 py-1.5 text-xs font-medium border-b-2 transition-colors mr-1 ${
+                                                            emojiInsertTab === key
+                                                                ? 'border-indigo-500 text-white'
+                                                                : 'border-transparent text-gray-400 hover:text-gray-200'
+                                                        }`}
+                                                    >{label}</button>
+                                                ))}
+                                            </div>
+                                            {/* Grid */}
+                                            <div className="p-2 grid grid-cols-4 gap-1 max-h-48 overflow-y-auto">
+                                                {emojiInsertTab === 'server' && serverEmojis.map(e => (
+                                                    <button
+                                                        key={e.id}
+                                                        type="button"
+                                                        onMouseDown={(ev) => { ev.preventDefault(); insertEmoji(e.name); }}
+                                                        className="flex flex-col items-center gap-1 p-1.5 rounded hover:bg-gray-700 transition-colors"
+                                                        title={`:${e.name}:`}
+                                                    >
+                                                        <img src={e.url} alt={e.name} className="w-10 h-10 object-contain" />
+                                                        <span className="text-[10px] text-gray-400 truncate w-full text-center">{e.name}</span>
+                                                    </button>
+                                                ))}
+                                                {emojiInsertTab === 'personal' && userEmojis.map(e => (
+                                                    <button
+                                                        key={e.id}
+                                                        type="button"
+                                                        onMouseDown={(ev) => { ev.preventDefault(); insertUserEmoji(e.id); }}
+                                                        className="flex flex-col items-center gap-1 p-1.5 rounded hover:bg-gray-700 transition-colors"
+                                                        title={`:${e.name}:`}
+                                                    >
+                                                        <img src={e.url} alt={e.name} className="w-10 h-10 object-contain" />
+                                                        <span className="text-[10px] text-gray-400 truncate w-full text-center">{e.name}</span>
+                                                    </button>
+                                                ))}
+                                                {emojiInsertTab === 'server' && serverEmojis.length === 0 && (
+                                                    <p className="col-span-4 text-center text-xs text-gray-500 py-4">Sin emojis de servidor</p>
+                                                )}
+                                                {emojiInsertTab === 'personal' && userEmojis.length === 0 && (
+                                                    <p className="col-span-4 text-center text-xs text-gray-500 py-4">Sin emojis personales</p>
+                                                )}
+                                            </div>
                                         </div>
                                     )}
                                 </div>

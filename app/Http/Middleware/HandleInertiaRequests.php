@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\Conversation;
 use App\Models\Friendship;
+use App\Models\UserEmoji;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -22,9 +23,16 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
-            'auth' => [
-                'user' => $request->user()?->makeVisible(['email']),
-            ],
+            'auth' => function () use ($request) {
+                if (!$request->user()) return ['user' => null];
+                $emojis = UserEmoji::where('user_id', $request->user()->id)
+                    ->get(['id', 'name', 'image_path'])
+                    ->map(fn($e) => ['id' => $e->id, 'name' => $e->name, 'url' => $e->url]);
+                return [
+                    'user'       => $request->user()->makeVisible(['email']),
+                    'userEmojis' => $emojis,
+                ];
+            },
             'vapidPublicKey' => config('services.vapid.public_key'),
             'badges' => function () {
                 if (!Auth::check()) return null;

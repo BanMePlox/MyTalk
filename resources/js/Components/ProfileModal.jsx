@@ -191,7 +191,110 @@ function PasswordTab() {
     );
 }
 
-export default function ProfileModal({ onClose }) {
+function EmojiTab({ onUserEmojisChange }) {
+    const fileInput = useRef();
+    const [emojis, setEmojis] = useState(usePage().props.auth.userEmojis ?? []);
+
+    function updateEmojis(newEmojis) {
+        setEmojis(newEmojis);
+        onUserEmojisChange?.(newEmojis);
+    }
+    const [name, setName] = useState('');
+    const [file, setFile] = useState(null);
+    const [preview, setPreview] = useState(null);
+    const [error, setError] = useState('');
+    const [uploading, setUploading] = useState(false);
+
+    function onFileChange(e) {
+        const f = e.target.files[0];
+        if (!f) return;
+        setFile(f);
+        setPreview(URL.createObjectURL(f));
+        setError('');
+    }
+
+    async function upload(e) {
+        e.preventDefault();
+        if (!file || !name.trim()) { setError('Nombre e imagen requeridos.'); return; }
+        setUploading(true);
+        setError('');
+        try {
+            const form = new FormData();
+            form.append('name', name.trim());
+            form.append('image', file);
+            const res = await window.axios.post('/user-emojis', form);
+            updateEmojis([...emojis, res.data]);
+            setName('');
+            setFile(null);
+            setPreview(null);
+            fileInput.current.value = '';
+        } catch (err) {
+            setError(err.response?.data?.message ?? 'Error al subir el emoji.');
+        } finally {
+            setUploading(false);
+        }
+    }
+
+    async function remove(id) {
+        await window.axios.delete(`/user-emojis/${id}`);
+        updateEmojis(emojis.filter(e => e.id !== id));
+    }
+
+    return (
+        <div className="space-y-5">
+            <p className="text-xs text-gray-400">Hasta 4 emojis personales. Úsalos como reacciones en cualquier servidor.</p>
+
+            {/* Lista de emojis actuales */}
+            <div className="flex flex-wrap gap-3">
+                {emojis.map(e => (
+                    <div key={e.id} className="relative group">
+                        <img src={e.url} alt={e.name} title={`:${e.name}:`}
+                            className="w-12 h-12 rounded-lg object-contain bg-gray-900 p-1" />
+                        <p className="text-[10px] text-gray-500 text-center truncate w-12">{e.name}</p>
+                        <button
+                            onClick={() => remove(e.id)}
+                            className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 hover:bg-red-400 text-white rounded-full text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                        >×</button>
+                    </div>
+                ))}
+                {emojis.length === 0 && (
+                    <p className="text-sm text-gray-500">Sin emojis todavía.</p>
+                )}
+            </div>
+
+            {/* Formulario de subida */}
+            {emojis.length < 4 && (
+                <form onSubmit={upload} className="space-y-3 border-t border-gray-700 pt-4">
+                    <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">Añadir emoji</p>
+                    <div className="flex items-center gap-3">
+                        <button type="button" onClick={() => fileInput.current.click()}
+                            className="w-12 h-12 rounded-lg bg-gray-900 border border-dashed border-gray-600 hover:border-indigo-500 flex items-center justify-center shrink-0 overflow-hidden transition-colors">
+                            {preview
+                                ? <img src={preview} alt="" className="w-full h-full object-contain" />
+                                : <span className="text-gray-500 text-xl">+</span>
+                            }
+                        </button>
+                        <input ref={fileInput} type="file" accept="image/*" className="hidden" onChange={onFileChange} />
+                        <Input
+                            placeholder="nombre (a-z, 0-9, _)"
+                            value={name}
+                            onChange={e => { setName(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')); setError(''); }}
+                            maxLength={32}
+                            className="flex-1"
+                        />
+                        <button type="submit" disabled={uploading || !file || !name.trim()}
+                            className="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white text-sm rounded-md transition-colors shrink-0">
+                            {uploading ? '...' : 'Subir'}
+                        </button>
+                    </div>
+                    {error && <p className="text-red-400 text-xs">{error}</p>}
+                </form>
+            )}
+        </div>
+    );
+}
+
+export default function ProfileModal({ onClose, onUserEmojisChange }) {
     const [tab, setTab] = useState('profile');
 
     return (
@@ -213,7 +316,7 @@ export default function ProfileModal({ onClose }) {
 
                 {/* Tabs */}
                 <div className="flex border-b border-gray-700 px-6">
-                    {[['profile', 'Perfil'], ['password', 'Contraseña']].map(([key, label]) => (
+                    {[['profile', 'Perfil'], ['password', 'Contraseña'], ['emojis', 'Emojis']].map(([key, label]) => (
                         <button
                             key={key}
                             onClick={() => setTab(key)}
@@ -230,7 +333,9 @@ export default function ProfileModal({ onClose }) {
 
                 {/* Content */}
                 <div className="px-6 py-5 overflow-y-auto max-h-[70vh]">
-                    {tab === 'profile' ? <ProfileTab onClose={onClose} /> : <PasswordTab />}
+                    {tab === 'profile' && <ProfileTab onClose={onClose} />}
+                    {tab === 'password' && <PasswordTab />}
+                    {tab === 'emojis' && <EmojiTab onUserEmojisChange={onUserEmojisChange} />}
                 </div>
             </div>
         </div>

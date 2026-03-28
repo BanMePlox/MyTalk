@@ -10,6 +10,7 @@ use App\Events\MessageUpdated;
 use App\Models\Channel;
 use App\Models\Message;
 use App\Models\MessageEdit;
+use App\Models\UserEmoji;
 use App\Services\PushNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -166,6 +167,11 @@ class MessageController extends Controller
             ->get(['id', 'name', 'image_path'])
             ->map(fn($e) => ['id' => $e->id, 'name' => $e->name, 'url' => $e->url]);
 
+        $memberIds = $channel->server->members()->pluck('user_id');
+        $memberUserEmojis = UserEmoji::whereIn('user_id', $memberIds)
+            ->get(['id', 'name', 'image_path'])
+            ->map(fn($e) => ['id' => $e->id, 'name' => $e->name, 'url' => $e->url]);
+
         // Load current voice participants from cache for all voice channels in the server.
         // If the client sends X-Voice-Channel-Id they are still in an active call (Inertia
         // navigation while in voice) — skip zombie cleanup to avoid ejecting them from the
@@ -209,6 +215,7 @@ class MessageController extends Controller
             'canSendMessages'    => $channel->canUserSend($authUser),
             'isOwner'            => $channel->server->owner_id === Auth::id(),
             'serverEmojis'       => $serverEmojis,
+            'memberUserEmojis'   => $memberUserEmojis,
             'initialVoiceParticipants' => $voiceParticipants,
         ]);
     }

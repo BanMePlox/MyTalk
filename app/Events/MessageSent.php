@@ -3,6 +3,7 @@
 namespace App\Events;
 
 use App\Models\Message;
+use App\Models\UserEmoji;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
@@ -28,6 +29,17 @@ class MessageSent implements ShouldBroadcastNow
     public function broadcastWith(): array
     {
         $replyTo = $this->message->replyTo;
+
+        // Resolve any ue:{id} user emoji references in the message content
+        $userEmojis = [];
+        if (preg_match_all('/ue:(\d+)/', $this->message->content ?? '', $matches)) {
+            $ids = array_unique($matches[1]);
+            $userEmojis = UserEmoji::whereIn('id', $ids)
+                ->get(['id', 'image_path'])
+                ->map(fn($e) => ['id' => $e->id, 'url' => $e->url])
+                ->values()
+                ->all();
+        }
 
         return [
             'id'              => $this->message->id,
@@ -56,6 +68,7 @@ class MessageSent implements ShouldBroadcastNow
                 'avatar_url'   => $this->message->user->avatar_url,
                 'banner_color' => $this->message->user->banner_color,
             ],
+            'user_emojis' => $userEmojis,
         ];
     }
 }
