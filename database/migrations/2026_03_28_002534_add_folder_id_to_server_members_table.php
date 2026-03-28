@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('server_members', function (Blueprint $table) {
-            $table->foreignId('folder_id')->nullable()->constrained('server_folders')->nullOnDelete()->after('role');
-        });
+        if (!Schema::hasColumn('server_members', 'folder_id')) {
+            Schema::table('server_members', function (Blueprint $table) {
+                $table->foreignId('folder_id')->nullable()->constrained('server_folders')->nullOnDelete()->after('role');
+            });
+        }
     }
 
     public function down(): void
