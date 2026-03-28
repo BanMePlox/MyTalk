@@ -4,6 +4,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import ServerModal from '@/Components/ServerModal';
 import { useTheme } from '@/Contexts/ThemeContext';
 import ProfileModal from '@/Components/ProfileModal';
+import ServerRail from '@/Components/ServerRail';
 
 const STATUS_CONFIG = {
     online: { dot: 'bg-green-500', label: 'En línea' },
@@ -33,7 +34,7 @@ function Avatar({ user, size = 'md' }) {
     );
 }
 
-export default function Index({ friends: initialFriends, incoming: initialIncoming, outgoing: initialOutgoing, userServers = [] }) {
+export default function Index({ friends: initialFriends, incoming: initialIncoming, outgoing: initialOutgoing, userServers = [], userFolders = [] }) {
     const { auth, badges: initialBadges } = usePage().props;
     const [serverModalOpen, setServerModalOpen] = useState(false);
     const [tab, setTab]             = useState('online');
@@ -214,83 +215,14 @@ export default function Index({ friends: initialFriends, incoming: initialIncomi
 
             <div className="flex h-screen bg-gray-800 text-gray-100">
 
-                {/* Rail de servidores */}
-                <nav className="w-[72px] bg-gray-950 flex flex-col items-center py-3 gap-1 shrink-0 overflow-y-auto">
-                    {userServers.map((srv) => {
-                        const badge = mentionBadges[srv.id] ?? 0;
-                        return (
-                            <div key={srv.id} className="flex items-center w-full px-1.5 group">
-                                <span className="absolute left-0 w-1 rounded-r-full bg-white transition-all h-0 group-hover:h-5" />
-                                <div className="relative">
-                                    <Link
-                                        href={srv.first_channel_id ? route('channels.show', srv.first_channel_id) : route('servers.show', srv.id)}
-                                        title={srv.name}
-                                        prefetch
-                                        className="w-12 h-12 flex items-center justify-center font-bold text-lg transition-all duration-150 rounded-full bg-gray-700 text-gray-300 hover:rounded-2xl hover:bg-indigo-500 hover:text-white overflow-hidden"
-                                    >
-                                        {srv.icon_url
-                                            ? <img src={srv.icon_url} alt={srv.name} className="w-full h-full object-cover" />
-                                            : srv.name[0].toUpperCase()
-                                        }
-                                    </Link>
-                                    {badge > 0 && (
-                                        <span className="absolute -bottom-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 ring-2 ring-gray-950 pointer-events-none">
-                                            {badge > 99 ? '99+' : badge}
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
-                        );
-                    })}
-                    <div className="mt-1 w-8 border-t border-gray-700" />
-
-                    {/* DMs con unread */}
-                    {dmConversations.filter((c) => c.unread > 0).map((conv) => (
-                        <div key={conv.id} className="flex items-center w-full px-1.5 group">
-                            <div className="relative">
-                                <Link
-                                    href={route('conversations.show', conv.id)}
-                                    title={convDisplayName(conv)}
-                                    prefetch
-                                    className={`w-12 h-12 flex items-center justify-center font-bold text-sm transition-all duration-150 overflow-hidden ${conv.type === 'group' ? 'rounded-2xl' : 'rounded-full hover:rounded-2xl'} bg-gray-700 text-white`}
-                                >
-                                    {conv.type === 'group' ? (
-                                        <span className="w-full h-full flex items-center justify-center text-lg font-bold text-white rounded-2xl"
-                                            style={{ backgroundColor: conv.icon_color ?? '#6366f1' }}>
-                                            {(conv.name ?? '#')[0].toUpperCase()}
-                                        </span>
-                                    ) : (
-                                        conv.user?.avatar_url
-                                            ? <img src={conv.user.avatar_url} alt={conv.user.name} className="w-full h-full object-cover" />
-                                            : <span className="w-full h-full flex items-center justify-center text-lg font-bold text-white"
-                                                style={{ backgroundColor: conv.user?.banner_color ?? '#6366f1' }}>
-                                                {conv.user?.name?.[0]?.toUpperCase()}
-                                              </span>
-                                    )}
-                                </Link>
-                                {conv.unread > 0 && (
-                                    <span className="absolute -bottom-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 ring-2 ring-gray-950 pointer-events-none">
-                                        {conv.unread > 99 ? '99+' : conv.unread}
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-                    ))}
-
-                    <div className="relative flex items-center w-full px-1.5">
-                    </div>
-
-                    <div className="mt-1 w-8 border-t border-gray-700" />
-
-                    <div className="relative flex items-center w-full px-1.5">
-                        <button
-                            type="button"
-                            onClick={() => setServerModalOpen(true)}
-                            title="Añadir servidor"
-                            className="w-12 h-12 flex items-center justify-center font-bold text-2xl text-green-400 bg-gray-700 rounded-full hover:rounded-2xl hover:bg-green-500 hover:text-white transition-all duration-150"
-                        >+</button>
-                    </div>
-                </nav>
+                <ServerRail
+                    userServers={userServers}
+                    userFolders={userFolders}
+                    mentionBadges={mentionBadges}
+                    dmConversations={dmConversations}
+                    pendingFriendRequests={incoming.length}
+                    onAddServer={() => setServerModalOpen(true)}
+                />
                 {serverModalOpen && <ServerModal onClose={() => setServerModalOpen(false)} />}
                 {profileModalOpen && <ProfileModal onClose={() => setProfileModalOpen(false)} />}
 

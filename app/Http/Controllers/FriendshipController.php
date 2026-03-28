@@ -53,13 +53,16 @@ class FriendshipController extends Controller
 
         $userServers = $user->servers()->get()->each(function ($server) {
             $server->first_channel_id = $server->channels()->value('id');
+            $server->folder_id = $server->pivot->folder_id;
         });
+        $userFolders = \App\Models\ServerFolder::where('user_id', Auth::id())->get();
 
         return Inertia::render('Friends/Index', [
-            'friends'  => $friends->values(),
-            'incoming' => $incoming->values(),
-            'outgoing' => $outgoing->values(),
+            'friends'     => $friends->values(),
+            'incoming'    => $incoming->values(),
+            'outgoing'    => $outgoing->values(),
             'userServers' => $userServers,
+            'userFolders' => $userFolders,
         ]);
     }
 

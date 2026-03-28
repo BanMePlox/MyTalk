@@ -69,7 +69,9 @@ class MessageController extends Controller
 
         $userServers = Auth::user()->servers()->get()->each(function ($server) {
             $server->first_channel_id = $server->channels()->value('id');
+            $server->folder_id = $server->pivot->folder_id;
         });
+        $userFolders = \App\Models\ServerFolder::where('user_id', Auth::id())->get();
 
         // Resetear menciones no leídas de este canal
         DB::table('unread_mentions')
@@ -197,6 +199,7 @@ class MessageController extends Controller
             'messages'           => $messages,
             'pinnedMessages'     => $pinnedMessages,
             'userServers'        => $userServers,
+            'userFolders'        => $userFolders,
             'visibleChannelIds'  => $visibleChannelIds,
             'canManageMessages'  => $authUser->can('manageMessages', $channel->server),
             'canManageRoles'     => $authUser->can('manageRoles', $channel->server),

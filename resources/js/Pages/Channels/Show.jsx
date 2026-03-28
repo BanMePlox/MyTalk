@@ -47,6 +47,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import ServerSettingsModal from '@/Components/ServerSettingsModal';
 import ServerModal from '@/Components/ServerModal';
 import ProfileModal from '@/Components/ProfileModal';
+import ServerRail from '@/Components/ServerRail';
 import VoiceChannel from '@/Pages/Channels/VoiceChannel';
 import VoiceMiniBar from '@/Components/VoiceMiniBar';
 import { useVoice } from '@/Contexts/VoiceContext';
@@ -415,10 +416,38 @@ function YouTubeEmbed({ url }) {
     );
 }
 
+const IMAGE_EXT_RE = /\.(jpe?g|png|gif|webp|avif|svg)(\?.*)?$/i;
+const TWITTER_RE = /https?:\/\/(www\.)?(twitter\.com|x\.com)\/(\w+)\/status\/(\d+)/i;
+
+function TwitterCard({ url }) {
+    const m = url.match(TWITTER_RE);
+    if (!m) return null;
+    const username = m[3];
+    return (
+        <a href={url} target="_blank" rel="noopener noreferrer"
+            className="mt-2 flex items-center gap-3 max-w-sm bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 hover:border-gray-500 transition-colors">
+            <svg className="w-5 h-5 text-white shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.253 5.622 5.911-5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>
+            <div className="min-w-0">
+                <p className="text-xs text-gray-400">@{username} en X</p>
+                <p className="text-sm text-gray-200 truncate">Ver tuit</p>
+            </div>
+            <svg className="w-4 h-4 text-gray-500 ml-auto shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+        </a>
+    );
+}
+
 function LinkPreviewCard({ url }) {
     const [data, setData] = useState(undefined); // undefined=loading, null=no preview
 
+    const isDirectImage = IMAGE_EXT_RE.test(url.split('?')[0]);
+    const isTwitter = TWITTER_RE.test(url);
+
     useEffect(() => {
+        if (isDirectImage || isTwitter) return;
         let cancelled = false;
         window.axios.get(route('link.preview'), { params: { url } })
             .then(res => { if (!cancelled) setData(res.data); })
@@ -426,8 +455,44 @@ function LinkPreviewCard({ url }) {
         return () => { cancelled = true; };
     }, [url]);
 
+    if (isTwitter) return <TwitterCard url={url} />;
+
+    if (isDirectImage) {
+        return (
+            <a href={url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block">
+                <img
+                    src={url}
+                    alt=""
+                    className="max-w-sm max-h-64 rounded-lg border border-gray-700 object-contain"
+                    onError={(e) => { e.target.parentElement.style.display = 'none'; }}
+                />
+            </a>
+        );
+    }
+
     if (data === undefined) return null; // silently load
     if (!data) return null;
+
+    if (data.type === 'tweet' && data.html) {
+        return (
+            <div
+                className="mt-2 max-w-sm [&_.twitter-tweet]:!m-0"
+                ref={(el) => {
+                    if (!el) return;
+                    if (window.twttr?.widgets) {
+                        window.twttr.widgets.load(el);
+                    } else if (!document.getElementById('twitter-wjs')) {
+                        const s = document.createElement('script');
+                        s.id = 'twitter-wjs';
+                        s.src = 'https://platform.twitter.com/widgets.js';
+                        s.onload = () => window.twttr?.widgets?.load(el);
+                        document.body.appendChild(s);
+                    }
+                }}
+                dangerouslySetInnerHTML={{ __html: data.html }}
+            />
+        );
+    }
 
     const domain = (() => { try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return url; } })();
 
@@ -758,7 +823,7 @@ function ProfilePopover({ member, status, anchorX, anchorY, onClose, authId }) {
     );
 }
 
-export default function Show({ channel, messages: initialMessages, pinnedMessages: initialPinnedMessages = [], userServers = [], visibleChannelIds = null, canManageMessages = false, canManageRoles = false, canManageChannels = false, canKickMembers = false, canBanMembers = false, canSendMessages = true, isOwner = false, serverEmojis: initialServerEmojis = [], initialVoiceParticipants = {} }) {
+export default function Show({ channel, messages: initialMessages, pinnedMessages: initialPinnedMessages = [], userServers = [], userFolders = [], visibleChannelIds = null, canManageMessages = false, canManageRoles = false, canManageChannels = false, canKickMembers = false, canBanMembers = false, canSendMessages = true, isOwner = false, serverEmojis: initialServerEmojis = [], initialVoiceParticipants = {} }) {
     const { auth, badges: initialBadges, vapidPublicKey } = usePage().props;
     const voice = useVoice();
     const { dark, toggle: toggleTheme, compact, toggleCompact } = useTheme();
@@ -1841,105 +1906,15 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
 
             <div className="flex h-screen bg-gray-800 text-gray-100">
 
-                {/* Rail de servidores — lateral en desktop, oculto en móvil */}
-                <nav className="hidden sm:flex w-[72px] bg-gray-950 flex-col items-center py-3 gap-1 shrink-0 overflow-y-auto">
-                    {userServers.map((srv) => {
-                        const isCurrent = srv.id === channel.server_id;
-                        const badge = !isCurrent && mentionBadges[srv.id] ? mentionBadges[srv.id] : 0;
-                        return (
-                            <div key={srv.id} className="flex items-center w-full px-1.5 group">
-                                <span className={`absolute left-0 w-1 rounded-r-full bg-white transition-all ${
-                                    isCurrent ? 'h-8' : 'h-0 group-hover:h-5'
-                                }`} />
-                                <div className="relative">
-                                    <Link
-                                        href={srv.first_channel_id ? route('channels.show', srv.first_channel_id) : route('servers.show', srv.id)}
-                                        title={srv.name}
-                                        prefetch
-                                        className={`w-12 h-12 flex items-center justify-center font-bold text-lg transition-all duration-150 shrink-0 overflow-hidden ${
-                                            isCurrent
-                                                ? 'rounded-2xl bg-indigo-500 text-white'
-                                                : 'rounded-full bg-gray-700 text-gray-300 hover:rounded-2xl hover:bg-indigo-500 hover:text-white'
-                                        }`}
-                                    >
-                                        {srv.icon_url
-                                            ? <img src={srv.icon_url} alt={srv.name} className="w-full h-full object-cover" />
-                                            : srv.name[0].toUpperCase()
-                                        }
-                                    </Link>
-                                    {badge > 0 && (
-                                        <span className="absolute -bottom-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 ring-2 ring-gray-950 pointer-events-none">
-                                            {badge > 99 ? '99+' : badge}
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
-                        );
-                    })}
-
-                    <div className="mt-1 w-8 border-t border-gray-700" />
-
-                    {/* Conversaciones DM — solo las que tienen mensajes sin leer */}
-                    {dmConversations.filter((c) => c.unread > 0).map((conv) => (
-                        <div key={conv.id} className="flex items-center w-full px-1.5 group">
-                            <div className="relative">
-                                <Link
-                                    href={route('conversations.show', conv.id)}
-                                    title={conv.type === 'group' ? (conv.name ?? 'Grupo') : conv.user?.name}
-                                    prefetch
-                                    className={`w-12 h-12 flex items-center justify-center font-bold text-sm bg-gray-700 hover:bg-indigo-500 text-white transition-all duration-150 overflow-hidden ${conv.type === 'group' ? 'rounded-2xl' : 'rounded-full hover:rounded-2xl'}`}
-                                >
-                                    {conv.type === 'group' ? (
-                                        <span style={{ backgroundColor: conv.icon_color ?? '#6366f1' }} className="w-full h-full flex items-center justify-center text-lg font-bold">
-                                            {(conv.name ?? '#')[0].toUpperCase()}
-                                        </span>
-                                    ) : conv.user?.avatar_url
-                                        ? <img src={conv.user.avatar_url} alt={conv.user.name} className="w-full h-full object-cover" />
-                                        : <span style={{ backgroundColor: conv.user?.banner_color ?? '#6366f1' }} className="w-full h-full flex items-center justify-center text-lg font-bold">
-                                            {conv.user?.name?.[0]?.toUpperCase()}
-                                          </span>
-                                    }
-                                </Link>
-                                {conv.unread > 0 && (
-                                    <span className="absolute -bottom-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 ring-2 ring-gray-950 pointer-events-none">
-                                        {conv.unread > 99 ? '99+' : conv.unread}
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-                    ))}
-
-                    {/* Botón amigos */}
-                    <div className="relative flex items-center w-full px-1.5 group">
-                        <div className="relative">
-                            <Link
-                                href={route('friends.index')}
-                                title="Amigos"
-                                prefetch
-                                className="w-12 h-12 flex items-center justify-center text-xl text-indigo-300 bg-gray-700 rounded-full hover:rounded-2xl hover:bg-indigo-500 hover:text-white transition-all duration-150"
-                            >👥</Link>
-                            {pendingFriendRequests > 0 && (
-                                <span className="absolute -bottom-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 ring-2 ring-gray-950 pointer-events-none">
-                                    {pendingFriendRequests > 9 ? '9+' : pendingFriendRequests}
-                                </span>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="mt-1 w-8 border-t border-gray-700" />
-
-                    {/* Botón añadir servidor */}
-                    <div className="relative flex items-center w-full px-1.5 group">
-                        <button
-                            type="button"
-                            onClick={() => setServerModalOpen(true)}
-                            title="Añadir servidor"
-                            className="w-12 h-12 flex items-center justify-center font-bold text-2xl text-green-400 bg-gray-700 rounded-full hover:rounded-2xl hover:bg-green-500 hover:text-white transition-all duration-150"
-                        >
-                            +
-                        </button>
-                    </div>
-                </nav>
+                <ServerRail
+                    userServers={userServers}
+                    userFolders={userFolders}
+                    mentionBadges={mentionBadges}
+                    dmConversations={dmConversations}
+                    pendingFriendRequests={pendingFriendRequests}
+                    currentServerId={channel.server_id}
+                    onAddServer={() => setServerModalOpen(true)}
+                />
                 {serverModalOpen && <ServerModal onClose={() => setServerModalOpen(false)} />}
                 {profileModalOpen && <ProfileModal onClose={() => setProfileModalOpen(false)} />}
 

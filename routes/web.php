@@ -21,6 +21,7 @@ use App\Http\Controllers\ServerController;
 use App\Http\Controllers\UserStatusController;
 use App\Http\Controllers\VoiceController;
 use App\Http\Controllers\PollController;
+use App\Http\Controllers\ServerFolderController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -116,6 +117,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post('/push/subscribe', [PushSubscriptionController::class, 'store'])->name('push.subscribe');
     Route::post('/push/unsubscribe', [PushSubscriptionController::class, 'destroy'])->name('push.unsubscribe');
+
+    Route::post('/server-folders', [ServerFolderController::class, 'store'])->name('server-folders.store');
+    Route::patch('/server-folders/{serverFolder}', [ServerFolderController::class, 'update'])->name('server-folders.update');
+    Route::delete('/server-folders/{serverFolder}', [ServerFolderController::class, 'destroy'])->name('server-folders.destroy');
+    Route::post('/server-folders/{serverFolder}/add', [ServerFolderController::class, 'addServer'])->name('server-folders.add');
+    Route::post('/server-folders/{serverFolder}/remove', [ServerFolderController::class, 'removeServer'])->name('server-folders.remove');
 
     Route::get('/servers/{server}/emojis', [\App\Http\Controllers\ServerEmojiController::class, 'index'])->name('server.emojis.index');
     Route::post('/servers/{server}/emojis', [\App\Http\Controllers\ServerEmojiController::class, 'store'])->name('server.emojis.store');

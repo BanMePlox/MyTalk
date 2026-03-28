@@ -26,9 +26,11 @@ class ConversationController extends Controller
 
         $userServers = Auth::user()->servers()->get()->each(function ($server) {
             $server->first_channel_id = $server->channels()->value('id');
+            $server->folder_id = $server->pivot->folder_id;
         });
+        $userFolders = \App\Models\ServerFolder::where('user_id', Auth::id())->get();
 
-        return Inertia::render('Conversations/Index', ['userServers' => $userServers]);
+        return Inertia::render('Conversations/Index', ['userServers' => $userServers, 'userFolders' => $userFolders]);
     }
 
     public function open(User $user)
@@ -66,7 +68,9 @@ class ConversationController extends Controller
 
         $userServers = Auth::user()->servers()->get()->each(function ($server) {
             $server->first_channel_id = $server->channels()->value('id');
+            $server->folder_id = $server->pivot->folder_id;
         });
+        $userFolders = \App\Models\ServerFolder::where('user_id', Auth::id())->get();
 
         $latestId = $conversation->messages()->max('id');
         if ($latestId) {
@@ -104,6 +108,7 @@ class ConversationController extends Controller
             'friendsToAdd' => $friendsToAdd,
             'messages'     => $messages,
             'userServers'  => $userServers,
+            'userFolders'  => $userFolders,
         ]);
     }
 
