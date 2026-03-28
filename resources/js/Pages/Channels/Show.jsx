@@ -922,6 +922,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
     const globalSearchTimeout = useRef(null);
     // Categorías: estado de colapso { categoryId: bool }
     const [collapsedCategories, setCollapsedCategories] = useState({});
+    const [visibleIds, setVisibleIds] = useState(visibleChannelIds);
     // Canales con category_id actualizable sin recarga
     const [serverChannels, setServerChannels] = useState(channel.server?.channels ?? []);
     const [serverCategories, setServerCategories] = useState(channel.server?.categories ?? []);
@@ -951,6 +952,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
         setServerChannels(channel.server?.channels ?? []);
         setServerCategories(channel.server?.categories ?? []);
         setMembers(channel.server?.members ?? []);
+        setVisibleIds(visibleChannelIds);
     }, [channel.id]);
     // Channel-level mention badges { channelId: count } — inicializados desde backend
     const [channelMentionBadges, setChannelMentionBadges] = useState(
@@ -1741,10 +1743,11 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
         if (!newChannelName.trim()) return;
         setCreatingChannel(true);
         try {
-            await window.axios.post(route('channels.store', channel.server.id), { name: newChannelName });
+            const res = await window.axios.post(route('channels.store', channel.server.id), { name: newChannelName });
+            setServerChannels(prev => [...prev, res.data]);
+            setVisibleIds(prev => prev ? [...prev, res.data.id] : prev);
             setNewChannelName('');
             setServerDropdownOpen(false);
-            router.reload({ only: ['channel'] });
         } catch { /* ignore */ } finally {
             setCreatingChannel(false);
         }
@@ -2142,7 +2145,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
 
                     <nav className="flex-1 overflow-y-auto p-2 space-y-1">
                         {(() => {
-                            const visibleSet = visibleChannelIds ? new Set(visibleChannelIds) : null;
+                            const visibleSet = visibleIds ? new Set(visibleIds) : null;
                             const allChannels = visibleSet
                                 ? serverChannels.filter(ch => visibleSet.has(ch.id))
                                 : serverChannels;
@@ -3540,71 +3543,78 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                 </div>
             )}
             {/* Barra de navegación inferior — solo móvil */}
-            <nav className="sm:hidden fixed bottom-0 inset-x-0 bg-gray-950 border-t border-gray-800 flex items-center justify-around px-2 py-2 z-30">
-                {userServers.slice(0, 3).map((srv) => {
-                    const isCurrent = srv.id === channel.server_id;
-                    const badge = !isCurrent && mentionBadges[srv.id] ? mentionBadges[srv.id] : 0;
-                    return (
-                        <div key={srv.id} className="relative">
+            <nav className="sm:hidden fixed bottom-0 inset-x-0 bg-gray-950 border-t border-gray-800 flex items-center z-30" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+                {/* Servidores: scroll horizontal */}
+                <div className="flex-1 flex items-center gap-2 overflow-x-auto px-2 py-2 no-scrollbar">
+                    {userServers.map((srv) => {
+                        const isCurrent = srv.id === channel.server_id;
+                        const badge = !isCurrent && mentionBadges[srv.id] ? mentionBadges[srv.id] : 0;
+                        return (
+                            <div key={srv.id} className="relative shrink-0">
+                                <Link
+                                    href={srv.first_channel_id ? route('channels.show', srv.first_channel_id) : route('servers.show', srv.id)}
+                                    prefetch
+                                    className={`w-10 h-10 flex items-center justify-center font-bold text-sm rounded-xl transition-all overflow-hidden ${
+                                        isCurrent ? 'bg-indigo-500 text-white' : 'bg-gray-700 text-gray-300'
+                                    }`}
+                                >
+                                    {srv.icon_url
+                                        ? <img src={srv.icon_url} alt={srv.name} className="w-full h-full object-cover" />
+                                        : srv.name[0].toUpperCase()
+                                    }
+                                </Link>
+                                {badge > 0 && (
+                                    <span className="absolute -top-1 -right-1 min-w-[1rem] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 pointer-events-none">
+                                        {badge > 99 ? '99+' : badge}
+                                    </span>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+                {/* Separador */}
+                <div className="w-px h-8 bg-gray-800 shrink-0" />
+                {/* DMs con unread primero, máx 2 en móvil */}
+                <div className="flex items-center gap-2 px-2 py-2 shrink-0">
+                    {[...dmConversations].sort((a, b) => (b.unread ?? 0) - (a.unread ?? 0)).slice(0, 2).map((conv) => (
+                        <div key={conv.id} className="relative">
                             <Link
-                                href={srv.first_channel_id ? route('channels.show', srv.first_channel_id) : route('servers.show', srv.id)}
+                                href={route('conversations.show', conv.id)}
+                                title={conv.type === 'group' ? (conv.name ?? 'Grupo') : conv.user?.name}
                                 prefetch
-                                className={`w-10 h-10 flex items-center justify-center font-bold text-sm rounded-xl transition-all overflow-hidden ${
-                                    isCurrent ? 'bg-indigo-500 text-white' : 'bg-gray-700 text-gray-300'
-                                }`}
+                                className="w-10 h-10 rounded-xl overflow-hidden bg-gray-700 flex items-center justify-center"
                             >
-                                {srv.icon_url
-                                    ? <img src={srv.icon_url} alt={srv.name} className="w-full h-full object-cover" />
-                                    : srv.name[0].toUpperCase()
+                                {conv.type === 'group' ? (
+                                    <span className="w-full h-full flex items-center justify-center text-sm font-bold text-white" style={{ backgroundColor: conv.icon_color ?? '#6366f1' }}>
+                                        {(conv.name ?? '#')[0].toUpperCase()}
+                                    </span>
+                                ) : conv.user?.avatar_url
+                                    ? <img src={conv.user.avatar_url} alt={conv.user.name} className="w-full h-full object-cover" />
+                                    : <span className="w-full h-full flex items-center justify-center text-sm font-bold text-white" style={{ backgroundColor: conv.user?.banner_color ?? '#6366f1' }}>
+                                        {conv.user?.name?.[0]?.toUpperCase()}
+                                    </span>
                                 }
                             </Link>
-                            {badge > 0 && (
+                            {conv.unread > 0 && (
                                 <span className="absolute -top-1 -right-1 min-w-[1rem] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 pointer-events-none">
-                                    {badge > 99 ? '99+' : badge}
+                                    {conv.unread > 99 ? '99+' : conv.unread}
                                 </span>
                             )}
                         </div>
-                    );
-                })}
-                {/* DMs con unread primero, máx 2 en móvil */}
-                {[...dmConversations].sort((a, b) => (b.unread ?? 0) - (a.unread ?? 0)).slice(0, 2).map((conv) => (
-                    <div key={conv.id} className="relative">
+                    ))}
+                    <div className="relative">
                         <Link
-                            href={route('conversations.show', conv.id)}
-                            title={conv.type === 'group' ? (conv.name ?? 'Grupo') : conv.user?.name}
+                            href={route('friends.index')}
                             prefetch
-                            className="w-10 h-10 rounded-xl overflow-hidden bg-gray-700 flex items-center justify-center"
-                        >
-                            {conv.type === 'group' ? (
-                                <span className="w-full h-full flex items-center justify-center text-sm font-bold text-white" style={{ backgroundColor: conv.icon_color ?? '#6366f1' }}>
-                                    {(conv.name ?? '#')[0].toUpperCase()}
-                                </span>
-                            ) : conv.user?.avatar_url
-                                ? <img src={conv.user.avatar_url} alt={conv.user.name} className="w-full h-full object-cover" />
-                                : <span className="w-full h-full flex items-center justify-center text-sm font-bold text-white" style={{ backgroundColor: conv.user?.banner_color ?? '#6366f1' }}>
-                                    {conv.user?.name?.[0]?.toUpperCase()}
-                                </span>
-                            }
-                        </Link>
-                        {conv.unread > 0 && (
+                            className="w-10 h-10 flex items-center justify-center text-indigo-300 bg-gray-700 rounded-xl text-lg"
+                            title="Amigos"
+                        >👥</Link>
+                        {pendingFriendRequests > 0 && (
                             <span className="absolute -top-1 -right-1 min-w-[1rem] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 pointer-events-none">
-                                {conv.unread > 99 ? '99+' : conv.unread}
+                                {pendingFriendRequests > 9 ? '9+' : pendingFriendRequests}
                             </span>
                         )}
                     </div>
-                ))}
-                <div className="relative">
-                    <Link
-                        href={route('friends.index')}
-                        prefetch
-                        className="w-10 h-10 flex items-center justify-center text-indigo-300 bg-gray-700 rounded-xl text-lg"
-                        title="Amigos"
-                    >👥</Link>
-                    {pendingFriendRequests > 0 && (
-                        <span className="absolute -top-1 -right-1 min-w-[1rem] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 pointer-events-none">
-                            {pendingFriendRequests > 9 ? '9+' : pendingFriendRequests}
-                        </span>
-                    )}
                 </div>
             </nav>
 

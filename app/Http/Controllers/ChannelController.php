@@ -19,14 +19,20 @@ class ChannelController extends Controller
         ]);
 
         $position = $server->channels()->max('position') + 1;
-        $server->channels()->create([
+        $ch = $server->channels()->create([
             'name'        => strtolower(str_replace(' ', '-', $data['name'])),
             'type'        => $data['type'] ?? 'text',
             'category_id' => $data['category_id'] ?? null,
             'position'    => $position,
         ]);
 
-        return redirect()->route('servers.show', $server);
+        return response()->json([
+            'id'          => $ch->id,
+            'name'        => $ch->name,
+            'type'        => $ch->type,
+            'category_id' => $ch->category_id,
+            'position'    => $ch->position,
+        ], 201);
     }
 
     public function reorder(Request $request, Server $server)

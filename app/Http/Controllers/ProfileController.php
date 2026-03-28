@@ -51,7 +51,7 @@ class ProfileController extends Controller
             fn($serverId) => broadcast(new UserProfileUpdated($user, $serverId))
         );
 
-        return Redirect::route('profile.edit');
+        return Redirect::back();
     }
 
     /**

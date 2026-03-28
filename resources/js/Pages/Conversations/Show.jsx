@@ -70,6 +70,7 @@ export default function Show({ conversation, other, members: initialMembers = nu
     const [statusOpen, setStatusOpen]         = useState(false);
     const [mentionBadges, setMentionBadges]   = useState(initialBadges?.mentions ?? {});
     const [dmConversations, setDmConversations] = useState(initialBadges?.dmConversations ?? []);
+    const [mobileSidebar, setMobileSidebar]   = useState(false);
 
     const [attachmentFile, setAttachmentFile]       = useState(null);
     const [attachmentPreview, setAttachmentPreview] = useState(null);
@@ -364,10 +365,10 @@ export default function Show({ conversation, other, members: initialMembers = nu
         <AuthenticatedLayout>
             <Head title={isGroup ? convName : `@ ${convName}`} />
 
-            <div className="flex h-screen bg-gray-800 text-gray-100">
+            <div className="flex h-screen bg-gray-800 text-gray-100 sm:pb-0 pb-14">
 
                 {/* Rail de servidores */}
-                <nav className="w-[72px] bg-gray-950 flex flex-col items-center py-3 gap-1 shrink-0 overflow-y-auto">
+                <nav className="hidden sm:flex w-[72px] bg-gray-950 flex-col items-center py-3 gap-1 shrink-0 overflow-y-auto">
                     {userServers.map((srv) => {
                         const badge = mentionBadges[srv.id] ?? 0;
                         return (
@@ -454,8 +455,11 @@ export default function Show({ conversation, other, members: initialMembers = nu
                 </nav>
                 {serverModalOpen && <ServerModal onClose={() => setServerModalOpen(false)} />}
 
+                {mobileSidebar && (
+                    <div className="fixed inset-0 z-40 sm:hidden bg-black/50" onClick={() => setMobileSidebar(false)} />
+                )}
                 {/* Sidebar izquierdo: conversaciones */}
-                <aside className="w-52 bg-gray-900 flex flex-col shrink-0">
+                <aside className={`${mobileSidebar ? 'fixed inset-y-0 left-0 z-50 flex' : 'hidden sm:flex'} w-52 bg-gray-900 flex-col shrink-0`}>
                     <div className="px-3 py-2.5 border-b border-gray-700 flex items-center justify-between">
                         <span className="font-bold text-white text-sm">Mensajes directos</span>
                         <button
@@ -546,6 +550,11 @@ export default function Show({ conversation, other, members: initialMembers = nu
                 <div className="flex-1 flex flex-col overflow-hidden min-w-0">
                     {/* Header */}
                     <header className="px-4 py-2.5 border-b border-gray-700 flex items-center gap-3 shrink-0">
+                        <button type="button" onClick={() => setMobileSidebar(v => !v)} className="sm:hidden text-gray-400 hover:text-white shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                            </svg>
+                        </button>
                         {isGroup ? (
                             <>
                                 <GroupAvatar name={conversation.name} iconColor={conversation.icon_color} size="lg" />
@@ -855,6 +864,52 @@ export default function Show({ conversation, other, members: initialMembers = nu
                     </div>
                 </div>
             )}
+
+            {/* Barra de navegación inferior — solo móvil */}
+            <nav className="sm:hidden fixed bottom-0 inset-x-0 bg-gray-950 border-t border-gray-800 flex items-center z-30" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+                <div className="flex-1 flex items-center gap-2 overflow-x-auto px-2 py-2 no-scrollbar">
+                    {userServers.map((srv) => {
+                        const badge = mentionBadges[srv.id] ?? 0;
+                        return (
+                            <div key={srv.id} className="relative shrink-0">
+                                <Link
+                                    href={srv.first_channel_id ? route('channels.show', srv.first_channel_id) : route('servers.show', srv.id)}
+                                    prefetch
+                                    className="w-10 h-10 flex items-center justify-center font-bold text-sm rounded-xl overflow-hidden bg-gray-700 text-gray-300"
+                                >
+                                    {srv.icon_url ? <img src={srv.icon_url} alt={srv.name} className="w-full h-full object-cover" /> : srv.name[0].toUpperCase()}
+                                </Link>
+                                {badge > 0 && (
+                                    <span className="absolute -top-1 -right-1 min-w-[1rem] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 pointer-events-none">
+                                        {badge > 99 ? '99+' : badge}
+                                    </span>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+                <div className="w-px h-8 bg-gray-800 shrink-0" />
+                <div className="flex items-center gap-2 px-2 py-2 shrink-0">
+                    {[...dmConversations].sort((a, b) => (b.unread ?? 0) - (a.unread ?? 0)).slice(0, 2).map((conv) => (
+                        <div key={conv.id} className="relative">
+                            <Link href={route('conversations.show', conv.id)} className={`w-10 h-10 rounded-xl overflow-hidden bg-gray-700 flex items-center justify-center ${conv.id === conversation.id ? 'ring-2 ring-indigo-500' : ''}`}>
+                                {conv.type === 'group'
+                                    ? <span className="w-full h-full flex items-center justify-center text-sm font-bold text-white" style={{ backgroundColor: conv.icon_color ?? '#6366f1' }}>{(conv.name ?? '#')[0].toUpperCase()}</span>
+                                    : conv.user?.avatar_url
+                                        ? <img src={conv.user.avatar_url} alt={conv.user.name} className="w-full h-full object-cover" />
+                                        : <span className="w-full h-full flex items-center justify-center text-sm font-bold text-white" style={{ backgroundColor: conv.user?.banner_color ?? '#6366f1' }}>{conv.user?.name?.[0]?.toUpperCase()}</span>
+                                }
+                            </Link>
+                            {conv.unread > 0 && (
+                                <span className="absolute -top-1 -right-1 min-w-[1rem] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 pointer-events-none">
+                                    {conv.unread > 99 ? '99+' : conv.unread}
+                                </span>
+                            )}
+                        </div>
+                    ))}
+                    <Link href={route('friends.index')} prefetch className="w-10 h-10 flex items-center justify-center text-indigo-300 bg-gray-700 rounded-xl text-lg" title="Amigos">👥</Link>
+                </div>
+            </nav>
         </AuthenticatedLayout>
     );
 }

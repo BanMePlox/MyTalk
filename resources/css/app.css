@@ -17,6 +17,10 @@ html:not(.dark) .text-white    { color: #111827; }
 html:not(.dark) .border-gray-700 { border-color: #d1d5db; }
 html:not(.dark) .border-gray-600 { border-color: #d1d5db; }
 
+/* Hide scrollbar but keep scroll functional */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
 /* Keep code blocks always dark */
 html:not(.dark) .hljs,
 html:not(.dark) pre,
