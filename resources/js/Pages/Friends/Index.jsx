@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
+import { useTrans } from '@/Hooks/useTrans';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import ServerModal from '@/Components/ServerModal';
 import { useTheme } from '@/Contexts/ThemeContext';
@@ -7,9 +8,9 @@ import ProfileModal from '@/Components/ProfileModal';
 import ServerRail from '@/Components/ServerRail';
 
 const STATUS_CONFIG = {
-    online: { dot: 'bg-green-500', label: 'En línea' },
-    away:   { dot: 'bg-yellow-400', label: 'Ausente' },
-    dnd:    { dot: 'bg-red-500',   label: 'No molestar' },
+    online: { dot: 'bg-green-500' },
+    away:   { dot: 'bg-yellow-400' },
+    dnd:    { dot: 'bg-red-500' },
 };
 
 function StatusDot({ status, size = 'md' }) {
@@ -36,6 +37,7 @@ function Avatar({ user, size = 'md' }) {
 
 export default function Index({ friends: initialFriends, incoming: initialIncoming, outgoing: initialOutgoing, userServers = [], userFolders = [] }) {
     const { auth, badges: initialBadges } = usePage().props;
+    const t = useTrans();
     const [serverModalOpen, setServerModalOpen] = useState(false);
     const [tab, setTab]             = useState('online');
     const [friends, setFriends]     = useState(initialFriends ?? []);
@@ -138,15 +140,15 @@ export default function Index({ friends: initialFriends, incoming: initialIncomi
         setAddMsg(null);
         try {
             await window.axios.post(route('friends.store', { user: parseInt(addInput.trim()) }));
-            setAddMsg({ type: 'success', text: 'Solicitud enviada.' });
+            setAddMsg({ type: 'success', text: t('friends.request_sent') });
             setAddInput('');
             router.reload({ only: [] });
         } catch (err) {
             const status = err.response?.status;
-            if (status === 422) setAddMsg({ type: 'error', text: 'Ya tienes o enviaste una solicitud a este usuario.' });
-            else if (status === 404) setAddMsg({ type: 'error', text: 'Usuario no encontrado.' });
-            else if (status === 403) setAddMsg({ type: 'error', text: 'No puedes añadirte a ti mismo.' });
-            else setAddMsg({ type: 'error', text: 'Error al enviar la solicitud.' });
+            if (status === 422) setAddMsg({ type: 'error', text: t('friends.error_already') });
+            else if (status === 404) setAddMsg({ type: 'error', text: t('friends.error_not_found') });
+            else if (status === 403) setAddMsg({ type: 'error', text: t('friends.error_self') });
+            else setAddMsg({ type: 'error', text: t('friends.error_generic') });
         } finally {
             setAdding(false);
         }
@@ -181,7 +183,7 @@ export default function Index({ friends: initialFriends, incoming: initialIncomi
     }
 
     async function removeFriend(user) {
-        if (!confirm(`¿Eliminar a ${user.name} de tus amigos?`)) return;
+        if (!confirm(t('friends.remove_confirm', { name: user.name }))) return;
         try {
             await window.axios.delete(route('friends.destroy', { user: user.id }));
             setFriends((prev) => prev.filter((u) => u.id !== user.id));
@@ -212,7 +214,7 @@ export default function Index({ friends: initialFriends, incoming: initialIncomi
 
     return (
         <AuthenticatedLayout>
-            <Head title="Amigos" />
+            <Head title={t('friends.title')} />
 
             <div className="flex h-screen bg-gray-800 text-gray-100 sm:pb-0 pb-14">
 
@@ -233,7 +235,7 @@ export default function Index({ friends: initialFriends, incoming: initialIncomi
                 {/* Sidebar */}
                 <aside className={`${mobileSidebar ? 'fixed inset-y-0 left-0 z-50 flex' : 'hidden sm:flex'} w-52 bg-gray-900 flex-col shrink-0`}>
                     <div className="px-4 py-3 border-b border-gray-700">
-                        <span className="font-bold text-white block">Mensajes directos</span>
+                        <span className="font-bold text-white block">{t('nav.direct_messages')}</span>
                     </div>
                     <nav className="flex-1 overflow-y-auto p-2 space-y-0.5">
                         <Link
@@ -242,7 +244,7 @@ export default function Index({ friends: initialFriends, incoming: initialIncomi
                             className="flex items-center gap-2 px-2 py-1.5 rounded text-sm bg-gray-700 text-white"
                         >
                             <span className="text-base">👥</span>
-                            <span className="truncate flex-1">Amigos</span>
+                            <span className="truncate flex-1">{t('nav.friends')}</span>
                             {pendingCount > 0 && (
                                 <span className="ml-auto min-w-[1.1rem] h-[1.1rem] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 shrink-0">
                                     {pendingCount}
@@ -299,31 +301,31 @@ export default function Index({ friends: initialFriends, incoming: initialIncomi
                             </div>
                             <div className="text-left min-w-0">
                                 <p className="text-sm text-gray-200 truncate leading-tight">{auth.user.name}</p>
-                                <p className="text-xs text-gray-400 leading-tight">{STATUS_CONFIG[myStatus]?.label}</p>
+                                <p className="text-xs text-gray-400 leading-tight">{t('status.' + (myStatus ?? 'online'))}</p>
                             </div>
                         </button>
                         {statusOpen && (
                             <div className="absolute bottom-full left-2 mb-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl w-44 py-1 z-10">
-                                {Object.entries(STATUS_CONFIG).map(([key, { dot, label }]) => (
+                                {Object.entries(STATUS_CONFIG).map(([key, { dot }]) => (
                                     <button
                                         key={key}
                                         onClick={() => changeStatus(key)}
                                         className={`flex items-center gap-3 w-full px-3 py-2 text-sm hover:bg-gray-700 transition-colors ${myStatus === key ? 'text-white' : 'text-gray-300'}`}
                                     >
                                         <span className={`w-2.5 h-2.5 rounded-full ${dot} shrink-0`} />
-                                        {label}
+                                        {t('status.' + key)}
                                         {myStatus === key && <span className="ml-auto text-indigo-400">✓</span>}
                                     </button>
                                 ))}
                                 <div className="border-t border-gray-700 mt-1 pt-1">
                                     <button onClick={toggleTheme} className="flex items-center gap-3 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors">
-                                        {dark ? '☀ Modo claro' : '🌙 Modo oscuro'}
+                                        {dark ? t('status.light_mode') : t('status.dark_mode')}
                                     </button>
                                     <button onClick={() => { setStatusOpen(false); setProfileModalOpen(true); }} className="flex items-center gap-3 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors">
-                                        Mi perfil
+                                        {t('status.my_profile')}
                                     </button>
                                     <Link href={route('logout')} method="post" as="button" className="flex items-center gap-3 w-full px-3 py-2 text-sm text-red-400 hover:bg-gray-700 transition-colors">
-                                        Cerrar sesión
+                                        {t('status.logout')}
                                     </Link>
                                 </div>
                             </div>
@@ -340,12 +342,12 @@ export default function Index({ friends: initialFriends, incoming: initialIncomi
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
                             </svg>
                         </button>
-                        <span className="font-semibold text-white mr-3 sm:inline hidden">👥 Amigos</span>
+                        <span className="font-semibold text-white mr-3 sm:inline hidden">👥 {t('nav.friends')}</span>
                         {[
-                            { key: 'online', label: 'En línea' },
-                            { key: 'all',    label: 'Todos' },
-                            { key: 'pending', label: `Pendientes${pendingCount > 0 ? ` (${pendingCount})` : ''}` },
-                            { key: 'add',    label: '+ Añadir amigo' },
+                            { key: 'online',  label: t('friends.tab_online') },
+                            { key: 'all',     label: t('friends.tab_all') },
+                            { key: 'pending', label: `${t('friends.tab_pending')}${pendingCount > 0 ? ` (${pendingCount})` : ''}` },
+                            { key: 'add',     label: `+ ${t('friends.add_friend')}` },
                         ].map(({ key, label }) => (
                             <button
                                 key={key}
@@ -365,15 +367,15 @@ export default function Index({ friends: initialFriends, incoming: initialIncomi
                         {/* Añadir amigo */}
                         {tab === 'add' && (
                             <div className="max-w-xl mx-auto px-6 py-8">
-                                <h2 className="text-white font-semibold text-lg mb-1">Añadir amigo</h2>
-                                <p className="text-gray-400 text-sm mb-4">Puedes añadir amigos usando su ID de usuario.</p>
+                                <h2 className="text-white font-semibold text-lg mb-1">{t('friends.add_title')}</h2>
+                                <p className="text-gray-400 text-sm mb-4">{t('friends.add_description')}</p>
                                 <div className="flex gap-2">
                                     <input
                                         type="number"
                                         value={addInput}
                                         onChange={(e) => { setAddInput(e.target.value); setAddMsg(null); }}
                                         onKeyDown={(e) => e.key === 'Enter' && sendFriendRequest()}
-                                        placeholder="ID de usuario"
+                                        placeholder={t('friends.user_id_ph')}
                                         className="flex-1 bg-gray-700 text-white placeholder-gray-400 rounded-lg px-4 py-2.5 outline-none border border-gray-600 focus:border-indigo-500 text-sm"
                                     />
                                     <button
@@ -381,7 +383,7 @@ export default function Index({ friends: initialFriends, incoming: initialIncomi
                                         disabled={adding || !addInput.trim()}
                                         className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
                                     >
-                                        {adding ? 'Enviando…' : 'Enviar'}
+                                        {adding ? t('friends.sending') : t('friends.send')}
                                     </button>
                                 </div>
                                 {addMsg && (
@@ -390,7 +392,7 @@ export default function Index({ friends: initialFriends, incoming: initialIncomi
                                     </p>
                                 )}
                                 <p className="mt-3 text-xs text-gray-500">
-                                    Tu ID: <span className="font-mono text-gray-300 select-all">{auth.user.id}</span>
+                                    {t('friends.your_id')} <span className="font-mono text-gray-300 select-all">{auth.user.id}</span>
                                 </p>
                             </div>
                         )}
@@ -401,7 +403,7 @@ export default function Index({ friends: initialFriends, incoming: initialIncomi
                                 {incoming.length > 0 && (
                                     <section>
                                         <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-2">
-                                            Recibidas — {incoming.length}
+                                            {t('friends.received_header', { count: incoming.length })}
                                         </h3>
                                         <div className="space-y-1">
                                             {incoming.map((user) => (
@@ -409,17 +411,17 @@ export default function Index({ friends: initialFriends, incoming: initialIncomi
                                                     <Avatar user={user} />
                                                     <div className="flex-1 min-w-0">
                                                         <p className="text-sm font-medium text-white truncate">{user.name}</p>
-                                                        <p className="text-xs text-gray-400">Solicitud entrante</p>
+                                                        <p className="text-xs text-gray-400">{t('friends.incoming_request')}</p>
                                                     </div>
                                                     <div className="flex items-center gap-2 shrink-0">
                                                         <button
                                                             onClick={() => acceptRequest(user)}
-                                                            title="Aceptar"
+                                                            title={t('friends.accept')}
                                                             className="w-8 h-8 rounded-full bg-green-600/20 hover:bg-green-600 text-green-400 hover:text-white flex items-center justify-center transition-colors text-sm"
                                                         >✓</button>
                                                         <button
                                                             onClick={() => declineRequest(user)}
-                                                            title="Rechazar"
+                                                            title={t('friends.decline')}
                                                             className="w-8 h-8 rounded-full bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white flex items-center justify-center transition-colors text-sm"
                                                         >✕</button>
                                                     </div>
@@ -431,7 +433,7 @@ export default function Index({ friends: initialFriends, incoming: initialIncomi
                                 {outgoing.length > 0 && (
                                     <section>
                                         <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-2">
-                                            Enviadas — {outgoing.length}
+                                            {t('friends.sent_header', { count: outgoing.length })}
                                         </h3>
                                         <div className="space-y-1">
                                             {outgoing.map((user) => (
@@ -439,11 +441,11 @@ export default function Index({ friends: initialFriends, incoming: initialIncomi
                                                     <Avatar user={user} />
                                                     <div className="flex-1 min-w-0">
                                                         <p className="text-sm font-medium text-white truncate">{user.name}</p>
-                                                        <p className="text-xs text-gray-400">Solicitud pendiente</p>
+                                                        <p className="text-xs text-gray-400">{t('friends.pending_request')}</p>
                                                     </div>
                                                     <button
                                                         onClick={() => cancelRequest(user)}
-                                                        title="Cancelar"
+                                                        title={t('friends.cancel')}
                                                         className="w-8 h-8 rounded-full bg-gray-600/40 hover:bg-gray-600 text-gray-400 hover:text-white flex items-center justify-center transition-colors text-sm shrink-0"
                                                     >✕</button>
                                                 </div>
@@ -454,7 +456,7 @@ export default function Index({ friends: initialFriends, incoming: initialIncomi
                                 {incoming.length === 0 && outgoing.length === 0 && (
                                     <div className="text-center text-gray-500 py-16">
                                         <p className="text-4xl mb-3">✉️</p>
-                                        <p className="text-sm">No tienes solicitudes pendientes.</p>
+                                        <p className="text-sm">{t('friends.no_pending')}</p>
                                     </div>
                                 )}
                             </div>
@@ -466,7 +468,9 @@ export default function Index({ friends: initialFriends, incoming: initialIncomi
                                 {displayList.length > 0 ? (
                                     <>
                                         <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-2">
-                                            {tab === 'online' ? 'En línea' : 'Todos los amigos'} — {displayList.length}
+                                            {tab === 'online'
+                                                ? t('friends.online_header', { count: displayList.length })
+                                                : t('friends.all_header', { count: displayList.length })}
                                         </h3>
                                         <div className="space-y-1">
                                             {displayList.map((user) => {
@@ -482,18 +486,18 @@ export default function Index({ friends: initialFriends, incoming: initialIncomi
                                                         <div className="flex-1 min-w-0">
                                                             <p className="text-sm font-medium text-white truncate">{user.name}</p>
                                                             <p className="text-xs text-gray-400">
-                                                                {status ? STATUS_CONFIG[status]?.label : 'Desconectado'}
+                                                                {t('status.' + (status ?? 'offline'))}
                                                             </p>
                                                         </div>
                                                         <div className="flex items-center gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                                                             <button
                                                                 onClick={() => openDm(user)}
-                                                                title="Mensaje"
+                                                                title={t('friends.message')}
                                                                 className="w-8 h-8 rounded-full bg-gray-600/40 hover:bg-indigo-600 text-gray-300 hover:text-white flex items-center justify-center transition-colors text-sm"
                                                             >💬</button>
                                                             <button
                                                                 onClick={() => removeFriend(user)}
-                                                                title="Eliminar amigo"
+                                                                title={t('friends.remove')}
                                                                 className="w-8 h-8 rounded-full bg-gray-600/40 hover:bg-red-600 text-gray-400 hover:text-white flex items-center justify-center transition-colors text-sm"
                                                             >✕</button>
                                                         </div>
@@ -506,14 +510,14 @@ export default function Index({ friends: initialFriends, incoming: initialIncomi
                                     <div className="text-center text-gray-500 py-16">
                                         <p className="text-4xl mb-3">{tab === 'online' ? '😴' : '👥'}</p>
                                         <p className="text-sm">
-                                            {tab === 'online' ? 'Ningún amigo está en línea.' : 'Todavía no tienes amigos.'}
+                                            {tab === 'online' ? t('friends.no_online') : t('friends.no_friends')}
                                         </p>
                                         {tab === 'all' && (
                                             <button
                                                 onClick={() => setTab('add')}
                                                 className="mt-3 text-indigo-400 hover:text-indigo-300 text-sm underline"
                                             >
-                                                Añadir amigo
+                                                {t('friends.add_link')}
                                             </button>
                                         )}
                                     </div>

@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
+import { useTrans } from '@/Hooks/useTrans';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import ServerModal from '@/Components/ServerModal';
 import { useVoice } from '@/Contexts/VoiceContext';
 
 const STATUS_CONFIG = {
-    online: { dot: 'bg-green-500', label: 'En línea' },
-    away:   { dot: 'bg-yellow-400', label: 'Ausente' },
-    dnd:    { dot: 'bg-red-500',   label: 'No molestar' },
+    online: { dot: 'bg-green-500' },
+    away:   { dot: 'bg-yellow-400' },
+    dnd:    { dot: 'bg-red-500' },
 };
 
 function StatusDot({ status, size = 'md' }) {
@@ -95,6 +96,7 @@ export default function Show({ conversation, other, members: initialMembers = nu
     const [groupFriends, setGroupFriends]           = useState([]);
 
     const voice = useVoice();
+    const t = useTrans();
     const isGroup = conversation.type === 'group';
     const myRole  = members?.find((m) => m.id === auth.user.id)?.pivot_role;
     const isAdmin = myRole === 'admin';
@@ -305,7 +307,7 @@ export default function Show({ conversation, other, members: initialMembers = nu
     }
 
     function leaveGroup() {
-        if (!confirm('¿Salir de este grupo?')) return;
+        if (!confirm(t('conv.leave_confirm'))) return;
         setLeavingGroup(true);
         router.delete(route('conversations.leave', conversation.id), {
             onError: () => setLeavingGroup(false),
@@ -361,7 +363,7 @@ export default function Show({ conversation, other, members: initialMembers = nu
     }
 
     const convName = isGroup
-        ? (conversation.name ?? 'Grupo')
+        ? (conversation.name ?? t('conv.group'))
         : (other?.name ?? '');
 
     const convDisplayName = (conv) => {
@@ -445,7 +447,7 @@ export default function Show({ conversation, other, members: initialMembers = nu
                     <div className="relative flex items-center w-full px-1.5 group">
                         <Link
                             href={route('conversations.index')}
-                            title="Todos los mensajes directos"
+                            title={t('nav.all_dms')}
                             className="w-12 h-12 flex items-center justify-center text-xl text-indigo-300 bg-gray-700 rounded-full hover:rounded-2xl hover:bg-indigo-500 hover:text-white transition-all duration-150"
                         >✉</Link>
                     </div>
@@ -469,10 +471,10 @@ export default function Show({ conversation, other, members: initialMembers = nu
                 {/* Sidebar izquierdo: conversaciones */}
                 <aside className={`${mobileSidebar ? 'fixed inset-y-0 left-0 z-50 flex' : 'hidden sm:flex'} w-52 bg-gray-900 flex-col shrink-0`}>
                     <div className="px-3 py-2.5 border-b border-gray-700 flex items-center justify-between">
-                        <span className="font-bold text-white text-sm">Mensajes directos</span>
+                        <span className="font-bold text-white text-sm">{t('nav.direct_messages')}</span>
                         <button
                             onClick={openCreateGroup}
-                            title="Nuevo grupo"
+                            title={t('nav.new_group')}
                             className="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 rounded transition-colors text-base leading-none"
                         >+</button>
                     </div>
@@ -482,7 +484,7 @@ export default function Show({ conversation, other, members: initialMembers = nu
                             className="flex items-center gap-2 px-2 py-1.5 rounded text-sm text-gray-400 hover:bg-gray-700 hover:text-white"
                         >
                             <span className="text-base shrink-0">👥</span>
-                            <span className="truncate">Amigos</span>
+                            <span className="truncate">{t('nav.friends')}</span>
                         </Link>
                         <div className="h-px bg-gray-700 my-1" />
                         {dmConversations.map((conv) => {
@@ -533,19 +535,19 @@ export default function Show({ conversation, other, members: initialMembers = nu
                             </div>
                             <div className="text-left min-w-0">
                                 <p className="text-sm text-gray-200 truncate leading-tight">{auth.user.name}</p>
-                                <p className="text-xs text-gray-400 leading-tight">{STATUS_CONFIG[myStatus]?.label}</p>
+                                <p className="text-xs text-gray-400 leading-tight">{t('status.' + (myStatus ?? 'online'))}</p>
                             </div>
                         </button>
                         {statusOpen && (
                             <div className="absolute bottom-full left-2 mb-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl w-44 py-1 z-10">
-                                {Object.entries(STATUS_CONFIG).map(([key, { dot, label }]) => (
+                                {Object.entries(STATUS_CONFIG).map(([key, { dot }]) => (
                                     <button
                                         key={key}
                                         onClick={() => changeStatus(key)}
                                         className={`flex items-center gap-3 w-full px-3 py-2 text-sm hover:bg-gray-700 transition-colors ${myStatus === key ? 'text-white' : 'text-gray-300'}`}
                                     >
                                         <span className={`w-2.5 h-2.5 rounded-full ${dot} shrink-0`} />
-                                        {label}
+                                        {t('status.' + key)}
                                         {myStatus === key && <span className="ml-auto text-indigo-400">✓</span>}
                                     </button>
                                 ))}
@@ -571,7 +573,7 @@ export default function Show({ conversation, other, members: initialMembers = nu
                                         {conversation.name ?? 'Grupo'}
                                     </span>
                                     <p className="text-xs text-gray-400 leading-none">
-                                        {members?.length ?? 0} miembros
+                                        {t('conv.member_count_plural', { count: members?.length ?? 0 })}
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-2 ml-auto shrink-0">
@@ -585,10 +587,10 @@ export default function Show({ conversation, other, members: initialMembers = nu
                                     <button
                                         onClick={leaveGroup}
                                         disabled={leavingGroup}
-                                        title="Salir del grupo"
+                                        title={t('conv.leave_group')}
                                         className="px-3 py-1.5 rounded text-sm text-red-400 hover:text-red-300 hover:bg-gray-700 transition-colors disabled:opacity-50"
                                     >
-                                        Salir
+                                        {t('conv.leave_group')}
                                     </button>
                                 </div>
                             </>
@@ -603,7 +605,7 @@ export default function Show({ conversation, other, members: initialMembers = nu
                                 <div className="flex-1 min-w-0">
                                     <span className="font-semibold text-white">{other?.name}</span>
                                     <p className="text-xs text-gray-400 leading-none">
-                                        {onlineUsers[other?.id] ? STATUS_CONFIG[onlineUsers[other?.id]]?.label : 'Desconectado'}
+                                        {t('status.' + (onlineUsers[other?.id] ?? 'offline'))}
                                     </p>
                                 </div>
                                 <div className="ml-auto flex items-center gap-2 shrink-0">
@@ -611,7 +613,7 @@ export default function Show({ conversation, other, members: initialMembers = nu
                                         <>
                                             <button
                                                 onClick={() => setCallPanelOpen(o => !o)}
-                                                title="Participantes en llamada"
+                                                title={t('voice.participants_title')}
                                                 className={`p-1.5 rounded-lg transition-colors ${callPanelOpen ? 'bg-gray-600 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
                                             >
                                                 <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -625,7 +627,7 @@ export default function Show({ conversation, other, members: initialMembers = nu
                                                 <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                                     <path strokeLinecap="round" strokeLinejoin="round" d="M16 8l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M5 3a2 2 0 00-2 2v1c0 8.284 6.716 15 15 15h1a2 2 0 002-2v-3.28a1 1 0 00-.684-.948l-4.493-1.498a1 1 0 00-1.21.502l-1.13 2.257a11.042 11.042 0 01-5.516-5.517l2.257-1.128a1 1 0 00.502-1.21L9.228 3.683A1 1 0 008.279 3H5z" />
                                                 </svg>
-                                                Colgar
+                                                {t('voice.hang_up')}
                                             </button>
                                         </>
                                     ) : (
@@ -633,12 +635,12 @@ export default function Show({ conversation, other, members: initialMembers = nu
                                             onClick={() => voice.callDm(conversation, auth.user)}
                                             disabled={voice.joined}
                                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium transition-colors"
-                                            title={voice.joined ? 'Ya estás en una llamada' : 'Llamar'}
+                                            title={voice.joined ? t('voice.in_other_call') : t('voice.call')}
                                         >
                                             <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                                             </svg>
-                                            Llamar
+                                            {t('voice.call')}
                                         </button>
                                     )}
                                 </div>
@@ -677,7 +679,7 @@ export default function Show({ conversation, other, members: initialMembers = nu
                                                         }}
                                                         className="w-full bg-gray-600 text-sm text-white rounded px-2 py-1 outline-none border border-indigo-500"
                                                     />
-                                                    <p className="text-xs text-gray-500 mt-0.5">Enter para guardar · Esc para cancelar</p>
+                                                    <p className="text-xs text-gray-500 mt-0.5">{t('chat.save_hint')}</p>
                                                 </div>
                                             ) : (
                                                 <>
@@ -685,7 +687,7 @@ export default function Show({ conversation, other, members: initialMembers = nu
                                                         <p className={`text-sm ${isTmp ? 'text-gray-500' : 'text-gray-300'}`}>
                                                             {msg.content}
                                                             {!isTmp && msg.updated_at && msg.updated_at !== msg.created_at && (
-                                                                <span className="text-xs text-gray-500 ml-1.5">(editado)</span>
+                                                                <span className="text-xs text-gray-500 ml-1.5">{t('chat.edited')}</span>
                                                             )}
                                                         </p>
                                                     )}
@@ -728,7 +730,7 @@ export default function Show({ conversation, other, members: initialMembers = nu
                                 <div className="px-3 py-2.5 border-b border-gray-700 flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                         <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
-                                        <span className="text-sm font-semibold text-gray-300">En llamada</span>
+                                        <span className="text-sm font-semibold text-gray-300">{t('voice.in_call')}</span>
                                     </div>
                                     <button onClick={() => setCallPanelOpen(false)} className="text-gray-500 hover:text-gray-300 text-xs">✕</button>
                                 </div>
@@ -749,7 +751,7 @@ export default function Show({ conversation, other, members: initialMembers = nu
                                                     <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-gray-900" />
                                                 </div>
                                                 <span className={`text-sm font-medium flex-1 truncate ${user.id === auth.user.id ? 'text-indigo-300' : 'text-gray-200'}`}>
-                                                    {user.name}{user.id === auth.user.id ? ' (tú)' : ''}
+                                                    {user.name}{user.id === auth.user.id ? ` ${t('voice.you')}` : ''}
                                                 </span>
                                                 {user.id === auth.user.id && (voice.muted || voice.deafened) && (
                                                     <div className="flex gap-1">
@@ -789,7 +791,7 @@ export default function Show({ conversation, other, members: initialMembers = nu
                                 <div className="p-3 border-t border-gray-700 space-y-2">
                                     <div>
                                         <div className="flex items-center justify-between mb-1">
-                                            <span className="text-xs text-gray-400">Volumen mic</span>
+                                            <span className="text-xs text-gray-400">{t('voice.mic_volume_short')}</span>
                                             <span className="text-xs text-gray-500 font-mono">{voice.micVolume}%</span>
                                         </div>
                                         <input
@@ -839,7 +841,7 @@ export default function Show({ conversation, other, members: initialMembers = nu
                         {isGroup && membersPanelOpen && (
                             <aside className="w-56 bg-gray-900 border-l border-gray-700 flex flex-col shrink-0">
                                 <div className="px-3 py-2.5 border-b border-gray-700 flex items-center justify-between">
-                                    <span className="text-sm font-semibold text-gray-300">Miembros</span>
+                                    <span className="text-sm font-semibold text-gray-300">{t('conv.members_panel')}</span>
                                     <button onClick={() => setMembersPanelOpen(false)} className="text-gray-500 hover:text-gray-300 text-xs">✕</button>
                                 </div>
                                 <div className="flex-1 overflow-y-auto p-2 space-y-1">
@@ -854,7 +856,7 @@ export default function Show({ conversation, other, members: initialMembers = nu
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-sm text-gray-200 truncate leading-tight">{m.name}</p>
                                                 {m.pivot_role === 'admin' && (
-                                                    <p className="text-[10px] text-indigo-400 leading-none">Admin</p>
+                                                    <p className="text-[10px] text-indigo-400 leading-none">{t('conv.admin')}</p>
                                                 )}
                                             </div>
                                         </div>
@@ -863,12 +865,12 @@ export default function Show({ conversation, other, members: initialMembers = nu
 
                                 {isAdmin && friendsToAdd.length > 0 && (
                                     <div className="p-2 border-t border-gray-700">
-                                        <p className="text-xs text-gray-500 mb-1.5 px-1">Añadir amigo</p>
+                                        <p className="text-xs text-gray-500 mb-1.5 px-1">{t('conv.add_member')}</p>
                                         <input
                                             type="text"
                                             value={addMemberSearch}
                                             onChange={(e) => setAddMemberSearch(e.target.value)}
-                                            placeholder="Filtrar amigos..."
+                                            placeholder={t('conv.filter_friends')}
                                             className="w-full bg-gray-800 text-sm text-white placeholder-gray-500 rounded px-2 py-1.5 outline-none border border-gray-600 focus:border-indigo-500"
                                         />
                                         <div className="mt-1 space-y-0.5 max-h-36 overflow-y-auto">
@@ -911,7 +913,7 @@ export default function Show({ conversation, other, members: initialMembers = nu
                                 type="button"
                                 onClick={() => fileInputRef.current?.click()}
                                 className="text-gray-400 hover:text-gray-200 transition-colors shrink-0"
-                                title="Adjuntar imagen"
+                                title={t('chat.attach_image')}
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
@@ -922,7 +924,7 @@ export default function Show({ conversation, other, members: initialMembers = nu
                                 type="text"
                                 value={content}
                                 onChange={(e) => setContent(e.target.value)}
-                                placeholder={isGroup ? `Mensaje en ${conversation.name ?? 'el grupo'}` : `Mensaje a ${other?.name}`}
+                                placeholder={isGroup ? t('chat.message_in', { name: conversation.name ?? t('conv.group') }) : t('chat.message_to', { name: other?.name })}
                                 className="flex-1 bg-transparent text-sm text-white placeholder-gray-400 outline-none"
                             />
                             <button
@@ -930,7 +932,7 @@ export default function Show({ conversation, other, members: initialMembers = nu
                                 disabled={sending || (!content.trim() && !attachmentFile)}
                                 className="text-indigo-400 hover:text-indigo-300 disabled:opacity-40"
                             >
-                                Enviar
+                                {t('chat.send')}
                             </button>
                         </form>
                     </div>
@@ -942,23 +944,23 @@ export default function Show({ conversation, other, members: initialMembers = nu
                     onMouseDown={(e) => { if (e.target === e.currentTarget) setCreateGroupOpen(false); }}>
                     <div className="bg-gray-900 rounded-xl shadow-2xl w-full max-w-md border border-gray-700 overflow-hidden">
                         <div className="px-5 py-4 border-b border-gray-700 flex items-center justify-between">
-                            <h2 className="font-semibold text-white">Nuevo grupo</h2>
+                            <h2 className="font-semibold text-white">{t('conv.create_group_title')}</h2>
                             <button onClick={() => setCreateGroupOpen(false)} className="text-gray-400 hover:text-white text-lg">✕</button>
                         </div>
                         <div className="p-5 space-y-4">
                             <div>
-                                <label className="block text-xs text-gray-400 mb-1">Nombre del grupo (opcional)</label>
+                                <label className="block text-xs text-gray-400 mb-1">{t('conv.group_name_label')}</label>
                                 <input
                                     type="text"
                                     value={groupName}
                                     onChange={(e) => setGroupName(e.target.value)}
-                                    placeholder="Mi grupo"
+                                    placeholder={t('conv.group_name_ph')}
                                     maxLength={100}
                                     className="w-full bg-gray-800 text-white placeholder-gray-500 rounded-lg px-3 py-2 text-sm outline-none border border-gray-600 focus:border-indigo-500"
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs text-gray-400 mb-1">Color del icono</label>
+                                <label className="block text-xs text-gray-400 mb-1">{t('conv.group_color')}</label>
                                 <div className="flex items-center gap-2">
                                     {['#6366f1','#ec4899','#f59e0b','#10b981','#3b82f6','#ef4444','#8b5cf6'].map((c) => (
                                         <button
@@ -971,16 +973,16 @@ export default function Show({ conversation, other, members: initialMembers = nu
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-xs text-gray-400 mb-1">Añadir usuarios</label>
+                                <label className="block text-xs text-gray-400 mb-1">{t('conv.add_users')}</label>
                                 <input
                                     type="text"
                                     value={groupFriendSearch}
                                     onChange={(e) => setGroupFriendSearch(e.target.value)}
-                                    placeholder="Filtrar usuarios..."
+                                    placeholder={t('conv.filter_users')}
                                     className="w-full bg-gray-800 text-white placeholder-gray-500 rounded-lg px-3 py-2 text-sm outline-none border border-gray-600 focus:border-indigo-500 mb-2"
                                 />
                                 {groupFriends.length === 0 && (
-                                    <p className="text-xs text-gray-500">No hay usuarios disponibles. Primero inicia conversaciones directas.</p>
+                                    <p className="text-xs text-gray-500">{t('conv.no_users')}</p>
                                 )}
                                 <div className="max-h-40 overflow-y-auto space-y-0.5">
                                     {groupFriends
@@ -1004,18 +1006,22 @@ export default function Show({ conversation, other, members: initialMembers = nu
                                     }
                                 </div>
                                 {groupSelectedIds.length > 0 && (
-                                    <p className="text-xs text-gray-400 mt-1">{groupSelectedIds.length} seleccionado{groupSelectedIds.length !== 1 ? 's' : ''}</p>
+                                    <p className="text-xs text-gray-400 mt-1">
+                                        {groupSelectedIds.length !== 1
+                                            ? t('conv.selected_plural', { count: groupSelectedIds.length })
+                                            : t('conv.selected', { count: groupSelectedIds.length })}
+                                    </p>
                                 )}
                             </div>
                         </div>
                         <div className="px-5 py-3 border-t border-gray-700 flex justify-end gap-2">
-                            <button onClick={() => setCreateGroupOpen(false)} className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">Cancelar</button>
+                            <button onClick={() => setCreateGroupOpen(false)} className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">{t('conv.cancel')}</button>
                             <button
                                 onClick={createGroup}
                                 disabled={groupSelectedIds.length === 0 || creatingGroup}
                                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
                             >
-                                {creatingGroup ? 'Creando…' : 'Crear grupo'}
+                                {creatingGroup ? t('conv.creating') : t('conv.create_group_btn')}
                             </button>
                         </div>
                     </div>
@@ -1074,20 +1080,20 @@ export default function Show({ conversation, other, members: initialMembers = nu
                     <div className="pointer-events-auto bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl px-5 py-3 flex items-center gap-4">
                         {voice.dmCallStatus === 'calling' && Object.keys(voice.participants).length < 2 ? (
                             <>
-                                <span className="text-sm text-gray-300">Llamando a <strong>{other?.name}</strong>…</span>
-                                <button onClick={() => voice.leave()} className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium transition-colors">Cancelar</button>
+                                <span className="text-sm text-gray-300">{t('voice.calling', { name: other?.name })}</span>
+                                <button onClick={() => voice.leave()} className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium transition-colors">{t('voice.cancel_call')}</button>
                             </>
                         ) : (
                             <>
                                 <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                                <span className="text-sm text-green-400 font-medium">En llamada con {other?.name}</span>
+                                <span className="text-sm text-green-400 font-medium">{t('voice.in_call_with', { name: other?.name })}</span>
                                 <div className="flex items-center gap-2">
-                                    <button onClick={voice.toggleMute} title={voice.muted ? 'Activar mic' : 'Silenciar'} className={`p-1.5 rounded-lg transition-colors ${voice.muted ? 'bg-red-600/20 text-red-400' : 'text-gray-400 hover:bg-gray-700'}`}>
+                                    <button onClick={voice.toggleMute} title={voice.muted ? t('voice.unmute_title') : t('voice.mute_title')} className={`p-1.5 rounded-lg transition-colors ${voice.muted ? 'bg-red-600/20 text-red-400' : 'text-gray-400 hover:bg-gray-700'}`}>
                                         <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                             <path strokeLinecap="round" strokeLinejoin="round" d={voice.muted ? "M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" : "M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"} />
                                         </svg>
                                     </button>
-                                    <button onClick={() => voice.leave()} className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium transition-colors">Colgar</button>
+                                    <button onClick={() => voice.leave()} className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium transition-colors">{t('voice.hang_up')}</button>
                                 </div>
                             </>
                         )}
@@ -1099,7 +1105,7 @@ export default function Show({ conversation, other, members: initialMembers = nu
             {voice.dmCallStatus === 'declined' && voice.activeConversation?.id === conversation.id && (
                 <div className="fixed inset-x-0 top-3 z-50 flex justify-center pointer-events-none">
                     <div className="pointer-events-auto bg-gray-900 border border-red-700 rounded-2xl shadow-2xl px-5 py-3 flex items-center gap-3">
-                        <span className="text-sm text-red-400">{other?.name} ha rechazado la llamada</span>
+                        <span className="text-sm text-red-400">{t('voice.declined', { name: other?.name })}</span>
                         <button onClick={() => voice.leave()} className="text-xs text-gray-400 hover:text-white">✕</button>
                     </div>
                 </div>
@@ -1114,14 +1120,14 @@ export default function Show({ conversation, other, members: initialMembers = nu
                         </div>
                         <div className="text-center">
                             <p className="text-white font-semibold">{voice.incomingCall.fromUser?.name}</p>
-                            <p className="text-sm text-gray-400">Llamada de voz entrante</p>
+                            <p className="text-sm text-gray-400">{t('voice.incoming')}</p>
                         </div>
                         <div className="flex gap-4 w-full">
                             <button
                                 onClick={() => voice.declineDmCall(voice.incomingCall.conversationId)}
                                 className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-medium transition-colors"
                             >
-                                Rechazar
+                                {t('friends.decline')}
                             </button>
                             <button
                                 onClick={() => {
@@ -1130,7 +1136,7 @@ export default function Show({ conversation, other, members: initialMembers = nu
                                 }}
                                 className="flex-1 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white font-medium transition-colors"
                             >
-                                Aceptar
+                                {t('friends.accept')}
                             </button>
                         </div>
                     </div>

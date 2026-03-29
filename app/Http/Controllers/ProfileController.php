@@ -55,6 +55,16 @@ class ProfileController extends Controller
     }
 
     /**
+     * Update the user's preferred locale.
+     */
+    public function updateLocale(Request $request): RedirectResponse
+    {
+        $request->validate(['locale' => 'required|in:es,en']);
+        $request->user()->update(['locale' => $request->locale]);
+        return Redirect::back();
+    }
+
+    /**
      * Delete the user's account.
      */
     public function destroy(Request $request): RedirectResponse

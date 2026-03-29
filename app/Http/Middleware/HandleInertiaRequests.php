@@ -23,6 +23,16 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
+            'locale' => function () use ($request) {
+                $locale = $request->user()?->locale ?? 'es';
+                app()->setLocale($locale);
+                return $locale;
+            },
+            'translations' => function () use ($request) {
+                $locale = $request->user()?->locale ?? 'es';
+                $path = lang_path("{$locale}.json");
+                return file_exists($path) ? json_decode(file_get_contents($path), true) : [];
+            },
             'auth' => function () use ($request) {
                 if (!$request->user()) return ['user' => null];
                 $emojis = UserEmoji::where('user_id', $request->user()->id)

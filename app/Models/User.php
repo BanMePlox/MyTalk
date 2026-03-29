@@ -31,6 +31,7 @@ class User extends Authenticatable
         'bio',
         'custom_status',
         'banner_color',
+        'locale',
     ];
 
     protected $appends = ['avatar_url'];
