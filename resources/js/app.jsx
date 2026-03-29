@@ -18,8 +18,9 @@ createInertiaApp({
         ),
     setup({ el, App, props }) {
         const root = createRoot(el);
+        const authUser = props.initialPage?.props?.auth?.user ?? null;
 
-        root.render(<ThemeProvider><VoiceProvider><App {...props} /></VoiceProvider></ThemeProvider>);
+        root.render(<ThemeProvider><VoiceProvider authUser={authUser}><App {...props} /></VoiceProvider></ThemeProvider>);
     },
     progress: {
         color: '#4B5563',
