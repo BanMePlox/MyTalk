@@ -26,6 +26,12 @@
 import { createContext, useContext, useRef, useState, useCallback, useEffect } from 'react';
 import { usePage } from '@inertiajs/react';
 
+// Inner provider that has access to Inertia page context
+function VoiceProviderInner({ children }) {
+    const { auth } = usePage().props;
+    return <VoiceProviderCore auth={auth}>{children}</VoiceProviderCore>;
+}
+
 const ICE_SERVERS = [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
@@ -36,7 +42,10 @@ const SPEAKING_THRESHOLD = 10;
 const VoiceContext = createContext(null);
 
 export function VoiceProvider({ children }) {
-    const { auth } = usePage().props;
+    return <VoiceProviderInner>{children}</VoiceProviderInner>;
+}
+
+function VoiceProviderCore({ auth, children }) {
 
     const [activeChannel,      setActiveChannel]      = useState(null);
     const [activeConversation, setActiveConversation] = useState(null);
