@@ -1955,6 +1955,35 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                 {serverModalOpen && <ServerModal onClose={() => setServerModalOpen(false)} />}
                 {profileModalOpen && <ProfileModal onClose={() => setProfileModalOpen(false)} onUserEmojisChange={handleUserEmojisChange} />}
 
+                {/* Llamada entrante DM */}
+                {voice.incomingCall && (
+                    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60">
+                        <div className="bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl p-6 w-80 flex flex-col items-center gap-4">
+                            <div className="w-16 h-16 rounded-full bg-indigo-600 flex items-center justify-center text-2xl font-bold text-white">
+                                {voice.incomingCall.fromUser?.name?.[0]?.toUpperCase()}
+                            </div>
+                            <div className="text-center">
+                                <p className="text-white font-semibold">{voice.incomingCall.fromUser?.name}</p>
+                                <p className="text-sm text-gray-400">Llamada de voz entrante</p>
+                            </div>
+                            <div className="flex gap-4 w-full">
+                                <button
+                                    onClick={() => voice.declineDmCall(voice.incomingCall.conversationId)}
+                                    className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-medium transition-colors"
+                                >
+                                    Rechazar
+                                </button>
+                                <button
+                                    onClick={() => voice.joinDm({ id: voice.incomingCall.conversationId }, auth.user)}
+                                    className="flex-1 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white font-medium transition-colors"
+                                >
+                                    Aceptar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Sidebar izquierdo: canales — drawer en móvil, siempre visible en desktop */}
                 {mobileSidebar && (
                     <div className="fixed inset-0 z-40 sm:hidden bg-black/50" onClick={() => setMobileSidebar(false)} />

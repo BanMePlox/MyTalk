@@ -20,6 +20,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ServerController;
 use App\Http\Controllers\UserStatusController;
 use App\Http\Controllers\VoiceController;
+use App\Http\Controllers\ConversationVoiceController;
 use App\Http\Controllers\PollController;
 use App\Http\Controllers\ServerFolderController;
 use App\Http\Controllers\UserEmojiController;
@@ -65,6 +66,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post('/voice/{channel}/signal', [VoiceController::class, 'signal'])->name('voice.signal');
     Route::post('/voice/{channel}/presence', [VoiceController::class, 'presence'])->name('voice.presence');
+
+    Route::post('/voice/conversations/{conversation}/signal', [ConversationVoiceController::class, 'signal'])->name('voice.conversation.signal');
+    Route::post('/voice/conversations/{conversation}/presence', [ConversationVoiceController::class, 'presence'])->name('voice.conversation.presence');
+    Route::post('/voice/conversations/{conversation}/invite', [ConversationVoiceController::class, 'invite'])->name('voice.conversation.invite');
 
     Route::post('/servers/{server}/channels', [ChannelController::class, 'store'])->name('channels.store');
     Route::patch('/servers/{server}/channels/reorder', [ChannelController::class, 'reorder'])->name('channels.reorder');

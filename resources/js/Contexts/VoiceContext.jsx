@@ -1,82 +1,93 @@
 /**
  * VoiceContext — isolated voice service layer.
  *
- * All WebRTC signaling, peer management and presence logic lives here.
- * If this is ever extracted to a microservice, only this file changes;
- * consumers (VoiceChannel, VoiceMiniBar, Show sidebar) stay the same.
+ * Handles both server voice channels and DM voice/video calls.
  *
  * Public interface:
- *   activeChannel         – channel object currently in use, or null
+ *   activeChannel         – channel object when in server call, or null
+ *   activeConversation    – conversation object when in DM call, or null
  *   joined                – boolean
  *   muted / deafened      – boolean
  *   micVolume             – 0-200
  *   participants          – { [userId]: { id, name, avatar_url } }
  *   userVolumes           – { [userId]: 0-100 }
  *   speakingUsers         – { [userId]: boolean }
+ *   incomingCall          – { conversationId, fromUser } or null
+ *   dmCallStatus          – 'idle' | 'calling' | 'active' | 'declined'
  *   join(channel, authUser)
+ *   joinDm(conversation, authUser)
+ *   callDm(conversation, authUser)
+ *   declineDmCall(conversationId)
  *   leave()
- *   toggleMute()
- *   toggleDeafen()
- *   changeMicVolume(val)
- *   changeUserVolume(userId, val)
+ *   toggleMute / toggleDeafen / changeMicVolume / changeUserVolume
+ *   startScreenShare / stopScreenShare / toggleSystemAudio
  */
 
 import { createContext, useContext, useRef, useState, useCallback, useEffect } from 'react';
+import { usePage } from '@inertiajs/react';
 
 const ICE_SERVERS = [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
 ];
 
-const SPEAKING_THRESHOLD = 10; // 0-255 average frequency amplitude
+const SPEAKING_THRESHOLD = 10;
 
 const VoiceContext = createContext(null);
 
 export function VoiceProvider({ children }) {
-    const [activeChannel, setActiveChannel] = useState(null);
-    const [joined,        setJoined]        = useState(false);
-    const [muted,         setMuted]         = useState(false);
-    const [deafened,      setDeafened]      = useState(false);
-    const [micVolume,     setMicVolume]     = useState(100);
-    const [participants,  setParticipants]  = useState({});
-    const [userVolumes,   setUserVolumes]   = useState({});
-    const [speakingUsers, setSpeakingUsers] = useState({});
+    const { auth } = usePage().props;
+
+    const [activeChannel,      setActiveChannel]      = useState(null);
+    const [activeConversation, setActiveConversation] = useState(null);
+    const [joined,             setJoined]             = useState(false);
+    const [muted,              setMuted]              = useState(false);
+    const [deafened,           setDeafened]           = useState(false);
+    const [micVolume,          setMicVolume]          = useState(100);
+    const [participants,       setParticipants]       = useState({});
+    const [userVolumes,        setUserVolumes]        = useState({});
+    const [speakingUsers,      setSpeakingUsers]      = useState({});
     const [sharingScreen,      setSharingScreen]      = useState(false);
-    const [localScreenStream,  setLocalScreenStream]  = useState(null); // own screen preview
-    const [remoteScreens,      setRemoteScreens]      = useState({}); // { [userId]: MediaStream }
+    const [localScreenStream,  setLocalScreenStream]  = useState(null);
+    const [remoteScreens,      setRemoteScreens]      = useState({});
     const [systemAudioEnabled, setSystemAudioEnabled] = useState(false);
-    const [hasSystemAudio,     setHasSystemAudio]     = useState(false); // track available to toggle
+    const [hasSystemAudio,     setHasSystemAudio]     = useState(false);
+    const [incomingCall,       setIncomingCall]       = useState(null); // { conversationId, fromUser }
+    const [dmCallStatus,       setDmCallStatus]       = useState('idle'); // idle|calling|active|declined
 
-    // Stable refs — survive re-renders and navigation
-    const localStreamRef = useRef(null);
-    const gainNodeRef    = useRef(null);
-    const peersRef       = useRef({});
-    const audioElemsRef  = useRef({});
-    const echoChannelRef = useRef(null);
-    const joinedRef      = useRef(false);
-    const authUserRef    = useRef(null);
-    const csrfTokenRef   = useRef(document.querySelector('meta[name="csrf-token"]')?.content ?? '');
+    // Stable refs
+    const localStreamRef       = useRef(null);
+    const gainNodeRef          = useRef(null);
+    const peersRef             = useRef({});
+    const audioElemsRef        = useRef({});
+    const echoChannelRef       = useRef(null);
+    const joinedRef            = useRef(false);
+    const authUserRef          = useRef(null);
+    const csrfTokenRef         = useRef(document.querySelector('meta[name="csrf-token"]')?.content ?? '');
+    const dmConvIdRef          = useRef(null); // non-null when in a DM call
 
-    // Speaking detection refs
-    const audioCtxRef        = useRef(null);   // shared AudioContext for remote streams
+    // Speaking detection
+    const audioCtxRef        = useRef(null);
     const localAnalyserRef   = useRef(null);
-    const remoteAnalysersRef = useRef({});     // { [userId]: AnalyserNode }
-    const remoteGainsRef     = useRef({});     // { [userId]: GainNode } — volume + deafen control
+    const remoteAnalysersRef = useRef({});
+    const remoteGainsRef     = useRef({});
     const animFrameRef       = useRef(null);
 
     // Screen sharing
-    const screenStreamRef      = useRef(null);
-    const screenSendersRef     = useRef({}); // { [userId]: RTCRtpSender } — video track
-    const screenAudioTrackRef  = useRef(null);
-    const sysAudioSendersRef   = useRef({}); // { [userId]: RTCRtpSender } — system audio track
+    const screenStreamRef     = useRef(null);
+    const screenSendersRef    = useRef({});
+    const screenAudioTrackRef = useRef(null);
+    const sysAudioSendersRef  = useRef({});
 
-    // Mirrors of state needed inside rAF loop / callbacks without stale closures
-    const mutedRef         = useRef(false);
-    const deafenedRef      = useRef(false);
-    const userVolumesRef   = useRef({});
-    const activeChannelRef = useRef(null);
-    userVolumesRef.current   = userVolumes;   // always fresh
-    activeChannelRef.current = activeChannel; // always fresh
+    // Always-fresh mirrors to avoid stale closures in rAF / callbacks
+    const mutedRef              = useRef(false);
+    const deafenedRef           = useRef(false);
+    const userVolumesRef        = useRef({});
+    const activeChannelRef      = useRef(null);
+    const activeConversationRef = useRef(null);
+    userVolumesRef.current        = userVolumes;
+    activeChannelRef.current      = activeChannel;
+    activeConversationRef.current = activeConversation;
 
     // ── Speaking detection loop ───────────────────────────────────────────────
 
@@ -87,21 +98,18 @@ export function VoiceProvider({ children }) {
         const tick = () => {
             const next = {};
 
-            // Local user
             if (localAnalyserRef.current && authUserRef.current) {
                 localAnalyserRef.current.getByteFrequencyData(data);
                 const avg = data.reduce((a, b) => a + b, 0) / data.length;
                 next[String(authUserRef.current.id)] = !mutedRef.current && avg > SPEAKING_THRESHOLD;
             }
 
-            // Remote users
             Object.entries(remoteAnalysersRef.current).forEach(([uid, analyser]) => {
                 analyser.getByteFrequencyData(data);
                 const avg = data.reduce((a, b) => a + b, 0) / data.length;
                 next[String(uid)] = avg > SPEAKING_THRESHOLD;
             });
 
-            // Only setState when something actually changed (avoids 60fps re-renders)
             const changed =
                 Object.keys(next).some(k => Boolean(next[k]) !== Boolean(prev[k])) ||
                 Object.keys(prev).some(k => !(k in next));
@@ -138,11 +146,12 @@ export function VoiceProvider({ children }) {
     const encodeSdp = (sdp) => btoa(unescape(encodeURIComponent(sdp)));
     const decodeSdp = (b64) => decodeURIComponent(escape(atob(b64)));
 
+    // Routes to the correct signal endpoint depending on call type
     function sendSignal(channelId, toUserId, data) {
-        window.axios.post(route('voice.signal', channelId), {
-            to_user_id: toUserId,
-            ...data,
-        }).catch(console.error);
+        const url = dmConvIdRef.current
+            ? route('voice.conversation.signal', dmConvIdRef.current)
+            : route('voice.signal', channelId);
+        window.axios.post(url, { to_user_id: toUserId, ...data }).catch(console.error);
     }
 
     // ── Renegotiation ────────────────────────────────────────────────────────
@@ -150,7 +159,7 @@ export function VoiceProvider({ children }) {
     async function renegotiate(userId) {
         const pc        = peersRef.current[userId];
         const channelId = activeChannelRef.current?.id;
-        if (!pc || !channelId) return;
+        if (!pc || (!channelId && !dmConvIdRef.current)) return;
         try {
             const offer = await pc.createOffer();
             await pc.setLocalDescription(offer);
@@ -179,7 +188,6 @@ export function VoiceProvider({ children }) {
         pc.ontrack = ({ streams, track }) => {
             const stream = streams?.[0] ?? new MediaStream([track]);
 
-            // ── Screen share (video track) ──
             if (track.kind === 'video') {
                 setRemoteScreens(prev => ({ ...prev, [userId]: stream }));
                 track.addEventListener('ended', () => {
@@ -192,8 +200,6 @@ export function VoiceProvider({ children }) {
                 return;
             }
 
-            // ── Audio track ──
-            // First audio track = mic (main). Second = system audio from screen share.
             const isSysAudio = !!audioElemsRef.current[userId];
             const audioKey   = isSysAudio ? `${userId}_sys` : userId;
 
@@ -212,7 +218,6 @@ export function VoiceProvider({ children }) {
                 const ctx      = audioCtxRef.current;
                 const mediaSrc = ctx.createMediaStreamSource(stream);
                 const gainNode = ctx.createGain();
-
                 const vol = Math.min((userVolumesRef.current[userId] ?? 100) / 100, 1);
                 gainNode.gain.value = deafenedRef.current ? 0 : vol;
 
@@ -220,7 +225,6 @@ export function VoiceProvider({ children }) {
                 gainNode.connect(ctx.destination);
 
                 if (!isSysAudio) {
-                    // Mic audio: add speaking detection analyser
                     const analyser   = ctx.createAnalyser();
                     analyser.fftSize = 64;
                     mediaSrc.connect(analyser);
@@ -259,7 +263,6 @@ export function VoiceProvider({ children }) {
 
     async function createOffer(channelId, userId) {
         const pc = createPeer(channelId, userId);
-        // Include screen tracks if already sharing (before creating the offer SDP)
         if (screenStreamRef.current && !screenSendersRef.current[userId]) {
             const videoTrack = screenStreamRef.current.getVideoTracks()[0];
             const audioTrack = screenAudioTrackRef.current;
@@ -307,36 +310,98 @@ export function VoiceProvider({ children }) {
         }
     }
 
+    // ── Shared signal dispatcher ──────────────────────────────────────────────
+
+    async function handleVoiceSignal(payload, contextId) {
+        const { type, sdp, candidate, from_user_id } = payload;
+
+        if (type === 'offer') {
+            await handleOffer(contextId, from_user_id, sdp);
+            if (screenStreamRef.current) {
+                const videoTrack = screenStreamRef.current.getVideoTracks()[0];
+                const pc = peersRef.current[from_user_id];
+                if (videoTrack && pc && !screenSendersRef.current[from_user_id]) {
+                    try {
+                        screenSendersRef.current[from_user_id] = pc.addTrack(videoTrack, screenStreamRef.current);
+                        const audioTrack = screenAudioTrackRef.current;
+                        if (audioTrack) {
+                            sysAudioSendersRef.current[from_user_id] = pc.addTrack(audioTrack, screenStreamRef.current);
+                        }
+                        await renegotiate(from_user_id);
+                    } catch (e) {}
+                }
+            }
+        }
+        if (type === 'answer') await handleAnswer(from_user_id, sdp);
+        if (type === 'ice')    await handleIce(from_user_id, candidate);
+        if (type === 'screen-share-stop') {
+            setRemoteScreens(prev => { const n = { ...prev }; delete n[from_user_id]; return n; });
+        }
+        if (type === 'screen-share-start') {
+            const pc = peersRef.current[from_user_id];
+            if (pc) {
+                const receiver = pc.getReceivers().find(r => r.track.kind === 'video');
+                if (receiver) {
+                    setRemoteScreens(prev => ({ ...prev, [from_user_id]: new MediaStream([receiver.track]) }));
+                }
+            }
+        }
+    }
+
+    // ── Shared mic setup ──────────────────────────────────────────────────────
+
+    async function setupMic(currentMicVolume) {
+        const rawStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        audioCtxRef.current = new AudioContext();
+        const audioCtx  = audioCtxRef.current;
+        const source    = audioCtx.createMediaStreamSource(rawStream);
+        const gainNode  = audioCtx.createGain();
+        gainNode.gain.value = currentMicVolume / 100;
+        const dest = audioCtx.createMediaStreamDestination();
+
+        const localAnalyser   = audioCtx.createAnalyser();
+        localAnalyser.fftSize = 64;
+        source.connect(localAnalyser);
+        source.connect(gainNode);
+        gainNode.connect(dest);
+
+        gainNodeRef.current      = gainNode;
+        localAnalyserRef.current = localAnalyser;
+        const localStream        = dest.stream;
+        localStream._rawStream   = rawStream;
+        localStreamRef.current   = localStream;
+    }
+
+    // ── Shared cleanup ────────────────────────────────────────────────────────
+
+    function cleanupMedia() {
+        if (screenStreamRef.current) {
+            screenStreamRef.current.getTracks().forEach(t => t.stop());
+            screenStreamRef.current     = null;
+            screenAudioTrackRef.current = null;
+            screenSendersRef.current    = {};
+            sysAudioSendersRef.current  = {};
+            setSharingScreen(false);
+            setLocalScreenStream(null);
+            setHasSystemAudio(false);
+            setSystemAudioEnabled(false);
+            setRemoteScreens({});
+        }
+        Object.keys(peersRef.current).forEach(closePeer);
+        localStreamRef.current?._rawStream?.getTracks().forEach(t => t.stop());
+        localStreamRef.current?.getTracks().forEach(t => t.stop());
+        localStreamRef.current = null;
+        gainNodeRef.current    = null;
+        stopSpeakingLoop();
+    }
+
     // ── Public API ────────────────────────────────────────────────────────────
 
     const join = useCallback(async (channel, authUser) => {
-        if (joinedRef.current) return; // already in a call
+        if (joinedRef.current) return;
 
-        let localStream;
         try {
-            const rawStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-            // Create a single shared AudioContext during user gesture so it starts in "running"
-            // state. Peers created later reuse this same context — no suspended-context problem.
-            audioCtxRef.current = new AudioContext();
-            const audioCtx = audioCtxRef.current;
-            const source    = audioCtx.createMediaStreamSource(rawStream);
-            const gainNode  = audioCtx.createGain();
-            gainNode.gain.value = micVolume / 100;
-            const dest = audioCtx.createMediaStreamDestination();
-
-            // Local analyser — tap from source (pre-gain) for raw mic level
-            const localAnalyser   = audioCtx.createAnalyser();
-            localAnalyser.fftSize = 64;
-            source.connect(localAnalyser);
-
-            source.connect(gainNode);
-            gainNode.connect(dest);
-
-            gainNodeRef.current      = gainNode;
-            localAnalyserRef.current = localAnalyser;
-            localStream              = dest.stream;
-            localStream._rawStream   = rawStream;
-            localStreamRef.current   = localStream;
+            await setupMic(micVolume);
         } catch (e) {
             alert('No se pudo acceder al micrófono: ' + e.message);
             return;
@@ -346,6 +411,7 @@ export function VoiceProvider({ children }) {
         joinedRef.current   = true;
         mutedRef.current    = false;
         deafenedRef.current = false;
+        dmConvIdRef.current = null;
         window.axios.defaults.headers.common['X-Voice-Channel-Id'] = channel.id;
         setJoined(true);
         setActiveChannel(channel);
@@ -367,125 +433,139 @@ export function VoiceProvider({ children }) {
                 setParticipants(prev => ({ ...prev, [user.id]: user }));
             })
             .leaving(user => {
-                setParticipants(prev => {
-                    const next = { ...prev };
-                    delete next[user.id];
-                    return next;
-                });
+                setParticipants(prev => { const n = { ...prev }; delete n[user.id]; return n; });
                 closePeer(user.id);
             });
 
         window.Echo.private(`App.Models.User.${authUser.id}`)
-            .listen('.VoiceSignal', async ({ type, sdp, candidate, from_user_id, channel_id }) => {
-                if (parseInt(channel_id) !== parseInt(channel.id)) return;
-                if (type === 'offer') {
-                    await handleOffer(channel.id, from_user_id, sdp);
-                    // If we're already sharing, add our screen track to the new peer and renegotiate
-                    if (screenStreamRef.current) {
-                        const videoTrack = screenStreamRef.current.getVideoTracks()[0];
-                        const pc = peersRef.current[from_user_id];
-                        if (videoTrack && pc && !screenSendersRef.current[from_user_id]) {
-                            try {
-                                screenSendersRef.current[from_user_id] = pc.addTrack(videoTrack, screenStreamRef.current);
-                                const audioTrack = screenAudioTrackRef.current;
-                                if (audioTrack) {
-                                    sysAudioSendersRef.current[from_user_id] = pc.addTrack(audioTrack, screenStreamRef.current);
-                                }
-                                await renegotiate(from_user_id);
-                            } catch (e) { /* ignore */ }
-                        }
-                    }
-                }
-                if (type === 'answer') await handleAnswer(from_user_id, sdp);
-                if (type === 'ice')    await handleIce(from_user_id, candidate);
-                if (type === 'screen-share-stop') {
-                    setRemoteScreens(prev => {
-                        const next = { ...prev };
-                        delete next[from_user_id];
-                        return next;
-                    });
-                }
-                if (type === 'screen-share-start') {
-                    // replaceTrack was used — ontrack won't fire. Recover track from existing receiver.
-                    const pc = peersRef.current[from_user_id];
-                    if (pc) {
-                        const receiver = pc.getReceivers().find(r => r.track.kind === 'video');
-                        if (receiver) {
-                            setRemoteScreens(prev => ({
-                                ...prev,
-                                [from_user_id]: new MediaStream([receiver.track]),
-                            }));
-                        }
-                    }
-                }
+            .listen('.VoiceSignal', async (payload) => {
+                if (payload.conversation_id) return; // DM signal — ignore
+                if (parseInt(payload.channel_id) !== parseInt(channel.id)) return;
+                await handleVoiceSignal(payload, channel.id);
             });
     }, [micVolume]);
 
-    const leave = useCallback(() => {
-        const channel  = activeChannel;
-        const authUser = authUserRef.current;
-        if (!joinedRef.current || !channel) return;
+    // ── DM call API ───────────────────────────────────────────────────────────
 
-        // Stop screen share silently (peers are about to close anyway)
-        if (screenStreamRef.current) {
-            screenStreamRef.current.getTracks().forEach(t => t.stop());
-            screenStreamRef.current     = null;
-            screenAudioTrackRef.current = null;
-            screenSendersRef.current    = {}; // cleared on full leave — new call = fresh peers
-            sysAudioSendersRef.current  = {};
-            setSharingScreen(false);
-            setLocalScreenStream(null);
-            setHasSystemAudio(false);
-            setSystemAudioEnabled(false);
-            setRemoteScreens({});
+    const joinDm = useCallback(async (conversation, authUser) => {
+        if (joinedRef.current) return;
+
+        try {
+            await setupMic(micVolume);
+        } catch (e) {
+            alert('No se pudo acceder al micrófono: ' + e.message);
+            return;
         }
 
-        Object.keys(peersRef.current).forEach(closePeer);
-        localStreamRef.current?._rawStream?.getTracks().forEach(t => t.stop());
-        localStreamRef.current?.getTracks().forEach(t => t.stop());
-        localStreamRef.current = null;
-        gainNodeRef.current    = null;
+        authUserRef.current = authUser;
+        joinedRef.current   = true;
+        mutedRef.current    = false;
+        deafenedRef.current = false;
+        dmConvIdRef.current = conversation.id;
+        setJoined(true);
+        setActiveConversation(conversation);
+        setIncomingCall(null);
 
-        stopSpeakingLoop();
+        startSpeakingLoop();
 
-        window.Echo.leave(`presence-voice.${channel.id}`);
+        window.axios.post(route('voice.conversation.presence', conversation.id), { action: 'join' }).catch(console.error);
+
+        echoChannelRef.current = window.Echo.join(`presence-dm-voice.${conversation.id}`)
+            .here(users => {
+                const map = {};
+                users.forEach(u => { map[u.id] = u; });
+                setParticipants(map);
+                users.forEach(u => {
+                    if (u.id !== authUser.id) createOffer(conversation.id, u.id);
+                });
+            })
+            .joining(user => {
+                setParticipants(prev => ({ ...prev, [user.id]: user }));
+                setDmCallStatus('active');
+            })
+            .leaving(user => {
+                setParticipants(prev => { const n = { ...prev }; delete n[user.id]; return n; });
+                closePeer(user.id);
+            });
+
+        window.Echo.private(`App.Models.User.${authUser.id}`)
+            .listen('.VoiceSignal', async (payload) => {
+                if (!payload.conversation_id) return; // channel signal — ignore
+                if (parseInt(payload.conversation_id) !== conversation.id) return;
+                await handleVoiceSignal(payload, conversation.id);
+            });
+    }, [micVolume]);
+
+    // Caller initiates: joins presence channel + sends invite to recipient
+    const callDm = useCallback(async (conversation, authUser) => {
+        if (joinedRef.current) return;
+        setDmCallStatus('calling');
+        await joinDm(conversation, authUser);
+        window.axios.post(route('voice.conversation.invite', conversation.id), { action: 'invite' }).catch(console.error);
+    }, [joinDm]);
+
+    // Callee declines
+    const declineDmCall = useCallback((conversationId) => {
+        setIncomingCall(null);
+        window.axios.post(route('voice.conversation.invite', conversationId), { action: 'decline' }).catch(console.error);
+    }, []);
+
+    // ── Leave ─────────────────────────────────────────────────────────────────
+
+    const leave = useCallback(() => {
+        const channel      = activeChannelRef.current;
+        const conversation = activeConversationRef.current;
+        const isDm         = !!dmConvIdRef.current;
+        const authUser     = authUserRef.current;
+
+        if (!joinedRef.current || (!channel && !conversation)) return;
+
+        cleanupMedia();
+
         if (authUser) {
             window.Echo.private(`App.Models.User.${authUser.id}`).stopListening('.VoiceSignal');
         }
-        echoChannelRef.current = null;
-        joinedRef.current      = false;
-        delete window.axios.defaults.headers.common['X-Voice-Channel-Id'];
 
+        if (isDm) {
+            const convId = conversation.id;
+            window.Echo.leave(`presence-dm-voice.${convId}`);
+            window.axios.post(route('voice.conversation.presence', convId), { action: 'leave' }).catch(() => {});
+            window.axios.post(route('voice.conversation.invite', convId), { action: 'cancel' }).catch(() => {});
+            setActiveConversation(null);
+            setDmCallStatus('idle');
+        } else {
+            window.Echo.leave(`presence-voice.${channel.id}`);
+            window.axios.post(route('voice.presence', channel.id), { action: 'leave' }).catch(() => {});
+            delete window.axios.defaults.headers.common['X-Voice-Channel-Id'];
+            setActiveChannel(null);
+        }
+
+        echoChannelRef.current = null;
+        dmConvIdRef.current    = null;
+        joinedRef.current      = false;
         setJoined(false);
         setMuted(false);
         setDeafened(false);
         setParticipants({});
-        setActiveChannel(null);
+    }, []);
 
-        // Use axios for explicit leave (button click) — reliable and includes CSRF automatically.
-        // keepalive fetch is registered separately via beforeunload for the browser-close case.
-        window.axios.post(route('voice.presence', channel.id), { action: 'leave' }).catch(() => {});
-    }, [activeChannel]);
+    // ── Screen sharing ────────────────────────────────────────────────────────
 
     const stopScreenShare = useCallback(() => {
         if (!screenStreamRef.current) return;
-        // Null refs BEFORE stopping tracks — prevents re-entry from the 'ended' event listener.
         const stream = screenStreamRef.current;
         screenStreamRef.current     = null;
         screenAudioTrackRef.current = null;
         stream.getTracks().forEach(t => t.stop());
 
-        // Use replaceTrack(null) instead of removeTrack — keeps the m-section in the SDP so the
-        // sender can be reused on the next share without renegotiation.
         const channelId = activeChannelRef.current?.id;
         Object.entries(screenSendersRef.current).forEach(([uid, sender]) => {
             sender.replaceTrack(null).catch(() => {});
-            if (channelId) sendSignal(channelId, uid, { type: 'screen-share-stop' });
+            if (channelId || dmConvIdRef.current) sendSignal(channelId, uid, { type: 'screen-share-stop' });
         });
         Object.values(sysAudioSendersRef.current).forEach(sender => {
             sender.replaceTrack(null).catch(() => {});
         });
-        // Keep senders in refs — reused by replaceTrack on next share.
         setSharingScreen(false);
         setLocalScreenStream(null);
         setHasSystemAudio(false);
@@ -499,7 +579,6 @@ export function VoiceProvider({ children }) {
         setSystemAudioEnabled(track.enabled);
     }, []);
 
-    // Stable ref so startScreenShare can call stopScreenShare without dep issues
     const stopScreenShareRef = useRef(null);
     stopScreenShareRef.current = stopScreenShare;
 
@@ -527,21 +606,17 @@ export function VoiceProvider({ children }) {
             Object.entries(peersRef.current).map(async ([uid, pc]) => {
                 try {
                     if (screenSendersRef.current[uid]) {
-                        // Reuse existing sender — replaceTrack, no renegotiation needed
                         await screenSendersRef.current[uid].replaceTrack(videoTrack);
                         if (sysAudioSendersRef.current[uid]) {
                             await sysAudioSendersRef.current[uid].replaceTrack(audioTrack ?? null);
                         }
-                        // Signal remote to re-show the screen (ontrack won't fire again)
-                        if (channelId) sendSignal(channelId, uid, { type: 'screen-share-start' });
+                        if (channelId || dmConvIdRef.current) sendSignal(channelId, uid, { type: 'screen-share-start' });
                     } else {
-                        // First share for this peer — addTrack + renegotiate to add m-section
                         screenSendersRef.current[uid] = pc.addTrack(videoTrack, stream);
                         if (audioTrack) {
                             sysAudioSendersRef.current[uid] = pc.addTrack(audioTrack, stream);
                         }
                         await renegotiate(uid);
-                        // ontrack fires on remote — no extra signal needed for first share
                     }
                 } catch (e) {
                     console.warn('[Voice] Screen share setup failed for', uid, e);
@@ -549,10 +624,11 @@ export function VoiceProvider({ children }) {
             })
         );
 
-        // Handle the browser's native "Stop sharing" button
         videoTrack.addEventListener('ended', () => stopScreenShareRef.current?.());
         setSharingScreen(true);
     }, []);
+
+    // ── Audio controls ────────────────────────────────────────────────────────
 
     const toggleMute = useCallback(() => {
         const track = localStreamRef.current?.getAudioTracks()[0];
@@ -566,7 +642,6 @@ export function VoiceProvider({ children }) {
     const toggleDeafen = useCallback(() => {
         const next = !deafened;
         deafenedRef.current = next;
-        // Audio elements are always muted; gainNode controls volume and deafen
         Object.entries(remoteGainsRef.current).forEach(([uid, gainNode]) => {
             gainNode.gain.value = next ? 0 : Math.min((userVolumesRef.current[uid] ?? 100) / 100, 1);
         });
@@ -582,7 +657,6 @@ export function VoiceProvider({ children }) {
     const changeUserVolume = useCallback((userId, val) => {
         const v = Number(val);
         setUserVolumes(prev => ({ ...prev, [userId]: v }));
-        // Use GainNode if available (AudioContext routed), otherwise fall back to audio element
         const gainNode = remoteGainsRef.current[userId];
         if (gainNode) {
             if (!deafenedRef.current) gainNode.gain.value = Math.min(v / 100, 1);
@@ -592,27 +666,56 @@ export function VoiceProvider({ children }) {
         }
     }, []);
 
-    // Sync participant leave from external VoicePresenceChanged broadcast
+    // ── External presence sync (server voice channels) ────────────────────────
+
     const syncExternalPresence = useCallback((e) => {
         if (!joinedRef.current || !activeChannel) return;
         if (parseInt(e.channel_id) !== parseInt(activeChannel.id)) return;
         if (e.action === 'leave') {
-            setParticipants(prev => {
-                const next = { ...prev };
-                delete next[e.user.id];
-                return next;
-            });
+            setParticipants(prev => { const n = { ...prev }; delete n[e.user.id]; return n; });
             closePeer(e.user.id);
         } else if (e.action === 'join') {
             setParticipants(prev => ({ ...prev, [e.user.id]: e.user }));
         }
     }, [activeChannel]);
 
-    // Browser close/refresh while in call — use keepalive fetch as last resort
+    // ── Incoming DM call listener ─────────────────────────────────────────────
+
+    useEffect(() => {
+        if (!auth?.user?.id) return;
+        const echoPrivate = window.Echo.private(`App.Models.User.${auth.user.id}`);
+        echoPrivate.listen('.DmCallInvite', ({ action, from_user, conversation_id }) => {
+            if (action === 'invite') {
+                if (!joinedRef.current) {
+                    setIncomingCall({ conversationId: conversation_id, fromUser: from_user });
+                }
+            } else if (action === 'cancel') {
+                setIncomingCall(prev => prev?.conversationId === conversation_id ? null : prev);
+            } else if (action === 'decline') {
+                setIncomingCall(prev => prev?.conversationId === conversation_id ? null : prev);
+                if (dmConvIdRef.current === conversation_id) {
+                    setDmCallStatus('declined');
+                }
+            }
+        });
+        return () => {
+            echoPrivate.stopListening('.DmCallInvite');
+        };
+    }, [auth?.user?.id]);
+
+    // ── beforeunload — keepalive fetch ────────────────────────────────────────
+
     useEffect(() => {
         const handleUnload = () => {
-            if (!joinedRef.current || !activeChannel) return;
-            fetch(route('voice.presence', activeChannel.id), {
+            if (!joinedRef.current) return;
+            const isDm   = !!dmConvIdRef.current;
+            const convId = dmConvIdRef.current;
+            const chanId = activeChannelRef.current?.id;
+            const routeUrl = isDm
+                ? route('voice.conversation.presence', convId)
+                : route('voice.presence', chanId);
+            if (!routeUrl) return;
+            fetch(routeUrl, {
                 method: 'POST',
                 keepalive: true,
                 headers: {
@@ -625,10 +728,13 @@ export function VoiceProvider({ children }) {
         };
         window.addEventListener('beforeunload', handleUnload);
         return () => window.removeEventListener('beforeunload', handleUnload);
-    }, [activeChannel]);
+    }, []);
+
+    // ── Context value ─────────────────────────────────────────────────────────
 
     const value = {
         activeChannel,
+        activeConversation,
         joined,
         muted,
         deafened,
@@ -641,7 +747,12 @@ export function VoiceProvider({ children }) {
         remoteScreens,
         systemAudioEnabled,
         hasSystemAudio,
+        incomingCall,
+        dmCallStatus,
         join,
+        joinDm,
+        callDm,
+        declineDmCall,
         leave,
         toggleMute,
         toggleDeafen,

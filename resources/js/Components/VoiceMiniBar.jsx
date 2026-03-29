@@ -2,18 +2,22 @@ import { usePage } from '@inertiajs/react';
 import { useVoice } from '@/Contexts/VoiceContext';
 
 export default function VoiceMiniBar() {
-    const { joined, activeChannel, muted, deafened, speakingUsers, toggleMute, toggleDeafen, leave } = useVoice();
+    const { joined, activeChannel, activeConversation, muted, deafened, speakingUsers, toggleMute, toggleDeafen, leave } = useVoice();
     const { auth } = usePage().props;
     const isSpeaking = speakingUsers[String(auth.user.id)];
 
-    if (!joined || !activeChannel) return null;
+    if (!joined || (!activeChannel && !activeConversation)) return null;
+
+    const label = activeChannel
+        ? activeChannel.name
+        : (activeConversation?.name ?? activeConversation?.other_user?.name ?? 'Llamada');
 
     return (
         <div className="px-2 py-2 border-t border-gray-700 bg-gray-900">
-            {/* Channel name + status */}
+            {/* Channel/DM name + status */}
             <div className="flex items-center gap-1.5 px-1 mb-2">
                 <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
-                <span className="text-xs text-green-400 font-medium truncate flex-1">{activeChannel.name}</span>
+                <span className="text-xs text-green-400 font-medium truncate flex-1">{label}</span>
                 {isSpeaking && (
                     <span className="shrink-0 flex gap-px items-end h-3">
                         {[2, 3, 2].map((h, i) => (

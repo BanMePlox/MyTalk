@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import ServerModal from '@/Components/ServerModal';
+import { useVoice } from '@/Contexts/VoiceContext';
 
 const STATUS_CONFIG = {
     online: { dot: 'bg-green-500', label: 'En línea' },
@@ -92,9 +93,11 @@ export default function Show({ conversation, other, members: initialMembers = nu
     const [creatingGroup, setCreatingGroup]         = useState(false);
     const [groupFriends, setGroupFriends]           = useState([]);
 
+    const voice = useVoice();
     const isGroup = conversation.type === 'group';
     const myRole  = members?.find((m) => m.id === auth.user.id)?.pivot_role;
     const isAdmin = myRole === 'admin';
+    const inThisCall = voice.joined && voice.activeConversation?.id === conversation.id;
 
     const bottomRef    = useRef(null);
     const inputRef     = useRef(null);
@@ -592,11 +595,36 @@ export default function Show({ conversation, other, members: initialMembers = nu
                                         <StatusDot status={onlineUsers[other?.id]} size="sm" />
                                     </span>
                                 </div>
-                                <div>
+                                <div className="flex-1 min-w-0">
                                     <span className="font-semibold text-white">{other?.name}</span>
                                     <p className="text-xs text-gray-400 leading-none">
                                         {onlineUsers[other?.id] ? STATUS_CONFIG[onlineUsers[other?.id]]?.label : 'Desconectado'}
                                     </p>
+                                </div>
+                                <div className="ml-auto shrink-0">
+                                    {inThisCall ? (
+                                        <button
+                                            onClick={() => voice.leave()}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium transition-colors"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M16 8l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M5 3a2 2 0 00-2 2v1c0 8.284 6.716 15 15 15h1a2 2 0 002-2v-3.28a1 1 0 00-.684-.948l-4.493-1.498a1 1 0 00-1.21.502l-1.13 2.257a11.042 11.042 0 01-5.516-5.517l2.257-1.128a1 1 0 00.502-1.21L9.228 3.683A1 1 0 008.279 3H5z" />
+                                            </svg>
+                                            Colgar
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={() => voice.callDm(conversation, auth.user)}
+                                            disabled={voice.joined}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium transition-colors"
+                                            title={voice.joined ? 'Ya estás en una llamada' : 'Llamar'}
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                            </svg>
+                                            Llamar
+                                        </button>
+                                    )}
                                 </div>
                             </>
                         )}
@@ -910,6 +938,75 @@ export default function Show({ conversation, other, members: initialMembers = nu
                     <Link href={route('friends.index')} prefetch className="w-10 h-10 flex items-center justify-center text-indigo-300 bg-gray-700 rounded-xl text-lg" title="Amigos">👥</Link>
                 </div>
             </nav>
+
+            {/* Llamada en curso — "Llamando..." o in-call UI */}
+            {inThisCall && (
+                <div className="fixed inset-x-0 top-0 z-50 flex justify-center pt-3 pointer-events-none">
+                    <div className="pointer-events-auto bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl px-5 py-3 flex items-center gap-4">
+                        {voice.dmCallStatus === 'calling' && Object.keys(voice.participants).length < 2 ? (
+                            <>
+                                <span className="text-sm text-gray-300">Llamando a <strong>{other?.name}</strong>…</span>
+                                <button onClick={() => voice.leave()} className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium transition-colors">Cancelar</button>
+                            </>
+                        ) : (
+                            <>
+                                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                                <span className="text-sm text-green-400 font-medium">En llamada con {other?.name}</span>
+                                <div className="flex items-center gap-2">
+                                    <button onClick={voice.toggleMute} title={voice.muted ? 'Activar mic' : 'Silenciar'} className={`p-1.5 rounded-lg transition-colors ${voice.muted ? 'bg-red-600/20 text-red-400' : 'text-gray-400 hover:bg-gray-700'}`}>
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d={voice.muted ? "M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" : "M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"} />
+                                        </svg>
+                                    </button>
+                                    <button onClick={() => voice.leave()} className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium transition-colors">Colgar</button>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Llamada rechazada */}
+            {voice.dmCallStatus === 'declined' && voice.activeConversation?.id === conversation.id && (
+                <div className="fixed inset-x-0 top-3 z-50 flex justify-center pointer-events-none">
+                    <div className="pointer-events-auto bg-gray-900 border border-red-700 rounded-2xl shadow-2xl px-5 py-3 flex items-center gap-3">
+                        <span className="text-sm text-red-400">{other?.name} ha rechazado la llamada</span>
+                        <button onClick={() => voice.leave()} className="text-xs text-gray-400 hover:text-white">✕</button>
+                    </div>
+                </div>
+            )}
+
+            {/* Llamada entrante */}
+            {voice.incomingCall && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60">
+                    <div className="bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl p-6 w-80 flex flex-col items-center gap-4">
+                        <div className="w-16 h-16 rounded-full bg-indigo-600 flex items-center justify-center text-2xl font-bold text-white">
+                            {voice.incomingCall.fromUser?.name?.[0]?.toUpperCase()}
+                        </div>
+                        <div className="text-center">
+                            <p className="text-white font-semibold">{voice.incomingCall.fromUser?.name}</p>
+                            <p className="text-sm text-gray-400">Llamada de voz entrante</p>
+                        </div>
+                        <div className="flex gap-4 w-full">
+                            <button
+                                onClick={() => voice.declineDmCall(voice.incomingCall.conversationId)}
+                                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-medium transition-colors"
+                            >
+                                Rechazar
+                            </button>
+                            <button
+                                onClick={() => {
+                                    const conv = { id: voice.incomingCall.conversationId };
+                                    voice.joinDm(conv, auth.user);
+                                }}
+                                className="flex-1 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white font-medium transition-colors"
+                            >
+                                Aceptar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </AuthenticatedLayout>
     );
 }
