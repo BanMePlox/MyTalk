@@ -21,7 +21,7 @@ export default function TitleBar() {
     }
 
     return (
-        <div className="flex items-center justify-between h-8 bg-gray-950 shrink-0 select-none" data-tauri-drag-region>
+        <div className="fixed top-0 left-0 right-0 z-[9999] flex items-center justify-between h-8 bg-gray-950 select-none" data-tauri-drag-region>
             {/* Logo + título */}
             <div className="flex items-center gap-2 px-3 pointer-events-none" data-tauri-drag-region>
                 <div className="w-4 h-4 bg-indigo-500 rounded flex items-center justify-center text-[9px] font-bold text-white leading-none">M</div>

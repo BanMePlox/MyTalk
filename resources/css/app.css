@@ -17,6 +17,16 @@ html:not(.dark) .text-white    { color: #111827; }
 html:not(.dark) .border-gray-700 { border-color: #d1d5db; }
 html:not(.dark) .border-gray-600 { border-color: #d1d5db; }
 
+/* Tauri desktop app — compensate for custom title bar (2rem = 32px) */
+html.in-tauri body {
+    padding-top: 2rem;
+    box-sizing: border-box;
+    height: 100vh;
+    overflow: hidden;
+}
+html.in-tauri .h-screen { height: calc(100vh - 2rem) !important; }
+html.in-tauri .min-h-screen { min-height: calc(100vh - 2rem) !important; }
+
 /* Hide scrollbar but keep scroll functional */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

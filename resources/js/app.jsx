@@ -29,19 +29,17 @@ createInertiaApp({
         const root = createRoot(el);
         const authUser = props.initialPage?.props?.auth?.user ?? null;
 
+        if (isTauri) document.documentElement.classList.add('in-tauri');
+
         root.render(
             <ThemeProvider>
                 <VoiceProvider authUser={authUser}>
-                    {isTauri ? (
-                        <div className="flex flex-col h-screen overflow-hidden">
-                            <TitleBarBoundary><Suspense fallback={null}><TitleBar /></Suspense></TitleBarBoundary>
-                            <div className="flex-1 overflow-hidden">
-                                <App {...props} />
-                            </div>
-                        </div>
-                    ) : (
-                        <App {...props} />
+                    {isTauri && (
+                        <TitleBarBoundary>
+                            <Suspense fallback={null}><TitleBar /></Suspense>
+                        </TitleBarBoundary>
                     )}
+                    <App {...props} />
                 </VoiceProvider>
             </ThemeProvider>
         );
