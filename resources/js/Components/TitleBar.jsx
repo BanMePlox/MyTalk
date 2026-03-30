@@ -13,9 +13,11 @@ export default function TitleBar() {
     const [updateReady, setUpdateReady] = useState(null); // update object when available
 
     useEffect(() => {
-        win().isMaximized().then(setMaximized);
-        const unlisten = win().onResized(() => win().isMaximized().then(setMaximized));
-        return () => { unlisten.then(f => f()); };
+        try {
+            win().isMaximized().then(setMaximized).catch(() => {});
+            const p = win().onResized(() => win().isMaximized().then(setMaximized).catch(() => {}));
+            return () => { p.then(f => f()).catch(() => {}); };
+        } catch {}
     }, []);
 
     useEffect(() => {

@@ -1,0 +1,16 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "remote-access",
+  "description": "Allows mytalk.pjimenezpf.com to use Tauri APIs",
+  "remote": {
+    "urls": ["https://mytalk.pjimenezpf.com", "https://mytalk.pjimenezpf.com/*"]
+  },
+  "windows": ["main"],
+  "permissions": [
+    "core:window:allow-minimize",
+    "core:window:allow-hide",
+    "core:window:allow-toggle-maximize",
+    "core:window:allow-is-maximized",
+    "core:window:allow-start-dragging"
+  ]
+}

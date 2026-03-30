@@ -26,12 +26,16 @@ createInertiaApp({
         root.render(
             <ThemeProvider>
                 <VoiceProvider authUser={authUser}>
-                    <div className={isTauri ? 'flex flex-col h-screen overflow-hidden' : 'contents'}>
-                        {isTauri && TitleBar && <Suspense fallback={null}><TitleBar /></Suspense>}
-                        <div className={isTauri ? 'flex-1 overflow-hidden' : 'contents'}>
-                            <App {...props} />
+                    {isTauri ? (
+                        <div className="flex flex-col h-screen overflow-hidden">
+                            <Suspense fallback={null}><TitleBar /></Suspense>
+                            <div className="flex-1 overflow-hidden">
+                                <App {...props} />
+                            </div>
                         </div>
-                    </div>
+                    ) : (
+                        <App {...props} />
+                    )}
                 </VoiceProvider>
             </ThemeProvider>
         );
