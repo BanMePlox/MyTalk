@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
-import { useForm, usePage } from '@inertiajs/react';
+import { router, useForm, usePage } from '@inertiajs/react';
+import { useTrans } from '@/Hooks/useTrans';
 
 const BANNER_PRESETS = ['#6366f1', '#8b5cf6', '#ec4899', '#ef4444', '#f97316', '#22c55e', '#0ea5e9', '#14b8a6'];
 
@@ -23,7 +24,9 @@ function Input({ className = '', ...props }) {
 }
 
 function ProfileTab({ onClose }) {
-    const user = usePage().props.auth.user;
+    const { auth, locale } = usePage().props;
+    const user = auth.user;
+    const t = useTrans();
     const avatarInput = useRef();
     const [avatarPreview, setAvatarPreview] = useState(user.avatar_url ?? null);
 
@@ -130,15 +133,35 @@ function ProfileTab({ onClose }) {
                 <p className="text-xs text-gray-500 text-right -mt-1">{data.bio.length}/160</p>
             </Field>
 
+            <div className="border-t border-gray-700 pt-4">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">{t('profile.language')}</p>
+                <div className="flex gap-2">
+                    {[{ key: 'es', label: t('profile.lang_es') }, { key: 'en', label: t('profile.lang_en') }].map(({ key, label }) => (
+                        <button
+                            key={key}
+                            type="button"
+                            onClick={() => router.patch(route('profile.locale'), { locale: key })}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                                locale === key
+                                    ? 'bg-indigo-600 text-white border-indigo-600'
+                                    : 'bg-gray-900 text-gray-300 border-gray-600 hover:border-indigo-400'
+                            }`}
+                        >
+                            {label}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
             <div className="flex items-center gap-3 pt-1">
                 <button
                     type="submit"
                     disabled={processing}
                     className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium rounded-md transition-colors"
                 >
-                    {processing ? 'Guardando...' : 'Guardar'}
+                    {processing ? t('profile.saving') : t('profile.save')}
                 </button>
-                {recentlySuccessful && <span className="text-green-400 text-sm">¡Guardado!</span>}
+                {recentlySuccessful && <span className="text-green-400 text-sm">{t('profile.saved')}</span>}
             </div>
         </form>
     );

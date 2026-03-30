@@ -127,5 +127,8 @@
 
     "profile.language":    "Language",
     "profile.lang_es":     "Español",
-    "profile.lang_en":     "English"
+    "profile.lang_en":     "English",
+    "profile.save":        "Save",
+    "profile.saving":      "Saving...",
+    "profile.saved":       "Saved!"
 }
