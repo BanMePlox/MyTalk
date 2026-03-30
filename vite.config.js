@@ -10,13 +10,4 @@ export default defineConfig({
         }),
         react(),
     ],
-    build: {
-        rollupOptions: {
-            external: [
-                '@tauri-apps/api/window',
-                '@tauri-apps/plugin-updater',
-                '@tauri-apps/plugin-process',
-            ],
-        },
-    },
 });
