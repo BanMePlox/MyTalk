@@ -1,35 +1,23 @@
-import { useEffect, useRef, useState } from 'react';
-import { getCurrentWindow } from '@tauri-apps/api/window';
-import { check as checkUpdate } from '@tauri-apps/plugin-updater';
-import { relaunch } from '@tauri-apps/plugin-process';
-
 export default function TitleBar() {
-    const winRef = useRef(null);
-    function win() {
-        if (!winRef.current) winRef.current = getCurrentWindow();
-        return winRef.current;
-    }
-    const [maximized, setMaximized] = useState(false);
-    const [updateReady, setUpdateReady] = useState(null); // update object when available
-
-    useEffect(() => {
+    async function minimize() {
         try {
-            win().isMaximized().then(setMaximized).catch(() => {});
-            const p = win().onResized(() => win().isMaximized().then(setMaximized).catch(() => {}));
-            return () => { p.then(f => f()).catch(() => {}); };
+            const { getCurrentWindow } = await import('@tauri-apps/api/window');
+            await getCurrentWindow().minimize();
         } catch {}
-    }, []);
+    }
 
-    useEffect(() => {
-        checkUpdate().then(update => {
-            if (update?.available) setUpdateReady(update);
-        }).catch(() => {});
-    }, []);
+    async function toggleMaximize() {
+        try {
+            const { getCurrentWindow } = await import('@tauri-apps/api/window');
+            await getCurrentWindow().toggleMaximize();
+        } catch {}
+    }
 
-    async function installUpdate() {
-        if (!updateReady) return;
-        await updateReady.downloadAndInstall();
-        await relaunch();
+    async function hide() {
+        try {
+            const { getCurrentWindow } = await import('@tauri-apps/api/window');
+            await getCurrentWindow().hide();
+        } catch {}
     }
 
     return (
@@ -40,21 +28,10 @@ export default function TitleBar() {
                 <span className="text-white/50 text-xs">MyTalk</span>
             </div>
 
-            {/* Notificación de actualización */}
-            {updateReady && (
-                <button
-                    onClick={installUpdate}
-                    className="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-0.5 rounded transition"
-                >
-                    Nueva versión disponible — Instalar y reiniciar
-                </button>
-            )}
-
             {/* Controles de ventana */}
             <div className="flex items-center h-full">
-                {/* Minimizar */}
                 <button
-                    onClick={() => win().minimize()}
+                    onClick={minimize}
                     className="w-10 h-full flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition"
                     title="Minimizar"
                 >
@@ -63,27 +40,18 @@ export default function TitleBar() {
                     </svg>
                 </button>
 
-                {/* Maximizar / restaurar */}
                 <button
-                    onClick={() => win().toggleMaximize()}
+                    onClick={toggleMaximize}
                     className="w-10 h-full flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition"
-                    title={maximized ? 'Restaurar' : 'Maximizar'}
+                    title="Maximizar"
                 >
-                    {maximized ? (
-                        <svg className="w-3 h-3" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1">
-                            <rect x="2" y="0" width="8" height="8" />
-                            <path d="M0 2v8h8" />
-                        </svg>
-                    ) : (
-                        <svg className="w-3 h-3" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1">
-                            <rect x="0" y="0" width="10" height="10" />
-                        </svg>
-                    )}
+                    <svg className="w-3 h-3" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1">
+                        <rect x="0" y="0" width="10" height="10" />
+                    </svg>
                 </button>
 
-                {/* Cerrar (ocultar a bandeja) */}
                 <button
-                    onClick={() => win().hide()}
+                    onClick={hide}
                     className="w-10 h-full flex items-center justify-center text-white/40 hover:text-white hover:bg-red-600 transition"
                     title="Minimizar a bandeja"
                 >
