@@ -1,10 +1,10 @@
 {
-  "version": "0.1.0",
-  "notes": "Versión inicial",
+  "version": "0.2.0",
+  "notes": "Barra de título personalizada y correcciones de layout",
   "pub_date": "2026-03-30T00:00:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTMHVYUE94Mk9Rd0JuTlRRQTJ4VkFmWmJQZ2hwTzFreTR0T09qdzh5VmJvNjN3bDZHZEdnajVxSGRWTG55RXRhaGh5dm02UlVmR0t4NytId3RJWFp1VHk5cDd6MHVMQ2dFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc0ODgyNjc3CWZpbGU6TXlUYWxrXzAuMS4wX3g2NC1zZXR1cC5leGUKSnA3WmRKd0dha2NhbTk3c1JLSmJwQWlXb3BJMGt6R243V3hzV01rcys2cmd2M2lzZ0Y4TVd0UWxsSGxRcU9iWFhaN09uQmg1NUZzNkQwOEkyRUxEQkE9PQo=",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTMHVYUE94Mk9Rd09rUlV6MFRjM1JtZ1hSU0tmeWNXM05zUytGVHc2TElUZVVnOGhxRGFqQmJqd2JXSDNQKzJQM3RwWkFra0pXYXlZK2w4dGZUZzRhWFVjdE11c0xPUUFRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc0ODg0MzE1CWZpbGU6TXlUYWxrXzAuMi4wX3g2NC1zZXR1cC5leGUKeFpRRkYrc2NCTjhUMFQ4TlFQRVdSUzVqdFc2ZVNENEpVdUFoR04wTW5NS0kzRkVWcW9LNmFtcG9CSWJ4SjNPMHVyMnNLMEJFemVyeHZBMmYweVVOQUE9PQo=",
       "url": "https://mytalk.pjimenezpf.com/downloads/MyTalk-setup.exe"
     }
   }
