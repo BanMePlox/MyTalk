@@ -1,24 +1,15 @@
+async function invoke(cmd, args = {}) {
+    try {
+        return await window.__TAURI_INTERNALS__.invoke(cmd, args);
+    } catch {}
+}
+
+function windowLabel() {
+    return window.__TAURI_INTERNALS__?.metadata?.currentWindow?.label ?? 'main';
+}
+
 export default function TitleBar() {
-    async function minimize() {
-        try {
-            const { getCurrentWindow } = await import('@tauri-apps/api/window');
-            await getCurrentWindow().minimize();
-        } catch {}
-    }
-
-    async function toggleMaximize() {
-        try {
-            const { getCurrentWindow } = await import('@tauri-apps/api/window');
-            await getCurrentWindow().toggleMaximize();
-        } catch {}
-    }
-
-    async function hide() {
-        try {
-            const { getCurrentWindow } = await import('@tauri-apps/api/window');
-            await getCurrentWindow().hide();
-        } catch {}
-    }
+    const label = windowLabel();
 
     return (
         <div className="fixed top-0 left-0 right-0 z-[9999] flex items-center justify-between h-8 bg-gray-950 select-none" data-tauri-drag-region>
@@ -31,7 +22,7 @@ export default function TitleBar() {
             {/* Controles de ventana */}
             <div className="flex items-center h-full">
                 <button
-                    onClick={minimize}
+                    onClick={() => invoke('plugin:window|minimize', { label })}
                     className="w-10 h-full flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition"
                     title="Minimizar"
                 >
@@ -41,7 +32,7 @@ export default function TitleBar() {
                 </button>
 
                 <button
-                    onClick={toggleMaximize}
+                    onClick={() => invoke('plugin:window|toggle_maximize', { label })}
                     className="w-10 h-full flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition"
                     title="Maximizar"
                 >
@@ -51,7 +42,7 @@ export default function TitleBar() {
                 </button>
 
                 <button
-                    onClick={hide}
+                    onClick={() => invoke('plugin:window|hide', { label })}
                     className="w-10 h-full flex items-center justify-center text-white/40 hover:text-white hover:bg-red-600 transition"
                     title="Minimizar a bandeja"
                 >
