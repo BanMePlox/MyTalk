@@ -1,17 +1,20 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { check as checkUpdate } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
 
-const win = getCurrentWindow();
-
 export default function TitleBar() {
+    const winRef = useRef(null);
+    function win() {
+        if (!winRef.current) winRef.current = getCurrentWindow();
+        return winRef.current;
+    }
     const [maximized, setMaximized] = useState(false);
     const [updateReady, setUpdateReady] = useState(null); // update object when available
 
     useEffect(() => {
-        win.isMaximized().then(setMaximized);
-        const unlisten = win.onResized(() => win.isMaximized().then(setMaximized));
+        win().isMaximized().then(setMaximized);
+        const unlisten = win().onResized(() => win().isMaximized().then(setMaximized));
         return () => { unlisten.then(f => f()); };
     }, []);
 
@@ -49,7 +52,7 @@ export default function TitleBar() {
             <div className="flex items-center h-full">
                 {/* Minimizar */}
                 <button
-                    onClick={() => win.minimize()}
+                    onClick={() => win().minimize()}
                     className="w-10 h-full flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition"
                     title="Minimizar"
                 >
@@ -60,7 +63,7 @@ export default function TitleBar() {
 
                 {/* Maximizar / restaurar */}
                 <button
-                    onClick={() => win.toggleMaximize()}
+                    onClick={() => win().toggleMaximize()}
                     className="w-10 h-full flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition"
                     title={maximized ? 'Restaurar' : 'Maximizar'}
                 >
@@ -78,7 +81,7 @@ export default function TitleBar() {
 
                 {/* Cerrar (ocultar a bandeja) */}
                 <button
-                    onClick={() => win.hide()}
+                    onClick={() => win().hide()}
                     className="w-10 h-full flex items-center justify-center text-white/40 hover:text-white hover:bg-red-600 transition"
                     title="Minimizar a bandeja"
                 >
