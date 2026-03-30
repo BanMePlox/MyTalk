@@ -130,5 +130,23 @@
     "profile.lang_en":     "English",
     "profile.save":        "Guardar",
     "profile.saving":      "Guardando...",
-    "profile.saved":       "¡Guardado!"
+    "profile.saved":       "¡Guardado!",
+
+    "status.custom_status": "Estado personalizado",
+    "status.what_doing":    "¿Qué estás haciendo?",
+    "status.nickname":      "Apodo",
+    "status.add_nickname":  "+ Apodo en este servidor",
+
+    "server.add":           "Añadir un servidor",
+    "server.subtitle":      "Crea uno nuevo o únete a uno existente",
+    "server.create":        "Crear servidor",
+    "server.join_code":     "Unirse con código",
+    "server.icon_label":    "Icono (opcional)",
+    "server.name_label":    "Nombre del servidor",
+    "server.name_ph":       "Mi servidor",
+    "server.creating":      "Creando...",
+    "server.invite_label":  "Código de invitación",
+    "server.invite_ph":     "aBcD1234",
+    "server.joining":       "Uniéndose...",
+    "server.join":          "Unirse"
 }

@@ -130,5 +130,23 @@
     "profile.lang_en":     "English",
     "profile.save":        "Save",
     "profile.saving":      "Saving...",
-    "profile.saved":       "Saved!"
+    "profile.saved":       "Saved!",
+
+    "status.custom_status": "Custom status",
+    "status.what_doing":    "What are you doing?",
+    "status.nickname":      "Nickname",
+    "status.add_nickname":  "+ Nickname on this server",
+
+    "server.add":           "Add a server",
+    "server.subtitle":      "Create a new one or join an existing one",
+    "server.create":        "Create server",
+    "server.join_code":     "Join with code",
+    "server.icon_label":    "Icon (optional)",
+    "server.name_label":    "Server name",
+    "server.name_ph":       "My server",
+    "server.creating":      "Creating...",
+    "server.invite_label":  "Invite code",
+    "server.invite_ph":     "aBcD1234",
+    "server.joining":       "Joining...",
+    "server.join":          "Join"
 }
