@@ -1,5 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 
+const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+
 export default function Welcome({ auth }) {
     return (
         <>
@@ -13,6 +15,18 @@ export default function Welcome({ auth }) {
                         <span className="font-semibold text-lg">MyTalk</span>
                     </div>
                     <div className="flex items-center gap-3">
+                        {!isTauri && (
+                            <a
+                                href="/downloads/MyTalk-setup.exe"
+                                download
+                                className="text-white/60 hover:text-white px-4 py-2 text-sm transition flex items-center gap-1.5"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                Descargar app
+                            </a>
+                        )}
                         {auth?.user ? (
                             <Link href={route('friends.index')} className="bg-indigo-500 hover:bg-indigo-600 px-4 py-2 rounded-lg text-sm font-medium transition">
                                 Ir a la app
@@ -42,7 +56,7 @@ export default function Welcome({ auth }) {
                     <p className="text-white/50 text-lg max-w-lg mb-10">
                         Crea servidores, organiza canales, chatea con tu equipo y mantente conectado. Todo en un solo lugar.
                     </p>
-                    <div className="flex gap-4">
+                    <div className="flex flex-wrap justify-center gap-4">
                         {auth?.user ? (
                             <Link href={route('friends.index')} className="bg-indigo-500 hover:bg-indigo-600 px-6 py-3 rounded-lg font-medium text-base transition shadow-lg shadow-indigo-500/30">
                                 Abrir MyTalk
@@ -56,6 +70,18 @@ export default function Welcome({ auth }) {
                                     Iniciar sesión
                                 </Link>
                             </>
+                        )}
+                        {!isTauri && (
+                            <a
+                                href="/downloads/MyTalk-setup.exe"
+                                download
+                                className="bg-white/10 hover:bg-white/20 px-6 py-3 rounded-lg font-medium text-base transition flex items-center gap-2"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                Descargar para Windows
+                            </a>
                         )}
                     </div>
                 </main>
