@@ -6,7 +6,13 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 import { ThemeProvider } from './Contexts/ThemeContext';
 import { VoiceProvider } from './Contexts/VoiceContext';
-import { lazy, Suspense } from 'react';
+import { Component, lazy, Suspense } from 'react';
+
+class TitleBarBoundary extends Component {
+    state = { crashed: false };
+    static getDerivedStateFromError() { return { crashed: true }; }
+    render() { return this.state.crashed ? null : this.props.children; }
+}
 
 const appName = import.meta.env.VITE_APP_NAME || 'MyTalk';
 const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
@@ -28,7 +34,7 @@ createInertiaApp({
                 <VoiceProvider authUser={authUser}>
                     {isTauri ? (
                         <div className="flex flex-col h-screen overflow-hidden">
-                            <Suspense fallback={null}><TitleBar /></Suspense>
+                            <TitleBarBoundary><Suspense fallback={null}><TitleBar /></Suspense></TitleBarBoundary>
                             <div className="flex-1 overflow-hidden">
                                 <App {...props} />
                             </div>
