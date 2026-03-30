@@ -11,7 +11,7 @@ export default function Welcome({ auth }) {
                 {/* Nav */}
                 <nav className="flex items-center justify-between px-8 py-5 border-b border-white/10">
                     <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center font-bold text-sm">M</div>
+                        <img src="/images/MyTalk.png" alt="MyTalk" className="w-8 h-8 rounded-lg object-contain" />
                         <span className="font-semibold text-lg">MyTalk</span>
                     </div>
                     <div className="flex items-center gap-3">
@@ -46,9 +46,7 @@ export default function Welcome({ auth }) {
 
                 {/* Hero */}
                 <main className="flex-1 flex flex-col items-center justify-center text-center px-6 py-24">
-                    <div className="w-16 h-16 bg-indigo-500 rounded-2xl flex items-center justify-center text-3xl font-bold mb-8 shadow-lg shadow-indigo-500/30">
-                        M
-                    </div>
+                    <img src="/images/MyTalk.png" alt="MyTalk" className="w-16 h-16 rounded-2xl object-contain mb-8 shadow-lg" />
                     <h1 className="text-5xl font-bold mb-4 leading-tight">
                         Tu espacio para<br />
                         <span className="text-indigo-400">hablar en tiempo real</span>

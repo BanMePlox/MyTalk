@@ -19,7 +19,7 @@ export default function Login({ status, canResetPassword }) {
 
             <div className="w-full max-w-sm">
                 <div className="text-center mb-8">
-                    <div className="w-12 h-12 bg-indigo-500 rounded-xl flex items-center justify-center text-xl font-bold mx-auto mb-4 shadow-lg shadow-indigo-500/30">M</div>
+                    <img src="/images/MyTalk.png" alt="MyTalk" className="w-12 h-12 rounded-xl object-contain mx-auto mb-4" />
                     <h1 className="text-white text-2xl font-bold">Bienvenido de nuevo</h1>
                     <p className="text-white/40 text-sm mt-1">Inicia sesión en tu cuenta</p>
                 </div>
