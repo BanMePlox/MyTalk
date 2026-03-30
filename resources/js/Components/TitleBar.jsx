@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react';
+
 async function invoke(cmd, args = {}) {
     try {
         return await window.__TAURI_INTERNALS__.invoke(cmd, args);
@@ -10,6 +12,18 @@ function windowLabel() {
 
 export default function TitleBar() {
     const label = windowLabel();
+    const [updateAvailable, setUpdateAvailable] = useState(false);
+
+    useEffect(() => {
+        invoke('plugin:updater|check').then(update => {
+            if (update?.available) setUpdateAvailable(true);
+        });
+    }, []);
+
+    async function installUpdate() {
+        await invoke('plugin:updater|download_and_install');
+        await invoke('plugin:process|restart');
+    }
 
     return (
         <div className="fixed top-0 left-0 right-0 z-[9999] flex items-center justify-between h-8 bg-gray-950 select-none" data-tauri-drag-region>
@@ -18,6 +32,15 @@ export default function TitleBar() {
                 <div className="w-4 h-4 bg-indigo-500 rounded flex items-center justify-center text-[9px] font-bold text-white leading-none">M</div>
                 <span className="text-white/50 text-xs">MyTalk</span>
             </div>
+
+            {updateAvailable && (
+                <button
+                    onClick={installUpdate}
+                    className="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-0.5 rounded transition"
+                >
+                    Nueva versión disponible — Instalar y reiniciar
+                </button>
+            )}
 
             {/* Controles de ventana */}
             <div className="flex items-center h-full">
