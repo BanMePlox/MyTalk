@@ -40,7 +40,7 @@ export default function TitleBar() {
             });
             internals.invoke('plugin:updater|download_and_install', {
                 rid: updateRid.current,
-                headers: {},
+                headers: [],
                 onEvent: `__CHANNEL__:${onEvent}`,
             }).catch(e => { setDebugInfo(`invoke err: ${e}`); reject(e); });
         });
