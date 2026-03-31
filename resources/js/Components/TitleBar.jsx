@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 async function invoke(cmd, args = {}) {
     try {
@@ -14,18 +14,34 @@ export default function TitleBar() {
     const label = windowLabel();
     const [updateAvailable, setUpdateAvailable] = useState(false);
     const [debugInfo, setDebugInfo] = useState('checking…');
+    const updateRid = useRef(null);
 
     useEffect(() => {
         invoke('plugin:updater|check')
             .then(update => {
-                setDebugInfo(update ? JSON.stringify(update) : 'null (no update)');
-                if (update?.version) setUpdateAvailable(true);
+                setDebugInfo(update ? `rid:${update.rid} v${update.currentVersion}→${update.version}` : 'null (no update)');
+                if (update?.version) {
+                    updateRid.current = update.rid;
+                    setUpdateAvailable(true);
+                }
             })
             .catch(e => setDebugInfo(`error: ${e}`));
     }, []);
 
     async function installUpdate() {
-        await invoke('plugin:updater|download_and_install');
+        const internals = window.__TAURI_INTERNALS__;
+        setDebugInfo('downloading…');
+        await new Promise((resolve, reject) => {
+            const onEvent = internals.transformCallback((event) => {
+                setDebugInfo(`event: ${event.event}`);
+                if (event.event === 'Finished') resolve();
+                if (event.event === 'Error') reject(new Error(JSON.stringify(event.data)));
+            });
+            internals.invoke('plugin:updater|download_and_install', {
+                rid: updateRid.current,
+                onEvent,
+            }).catch(reject);
+        });
         await invoke('plugin:process|restart');
     }
 
