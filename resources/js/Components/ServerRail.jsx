@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, router } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 
 const FOLDER_COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#ef4444', '#f97316', '#22c55e', '#0ea5e9', '#14b8a6'];
 
@@ -130,6 +130,9 @@ export default function ServerRail({
     currentServerId = null,
     onAddServer,
 }) {
+    const { auth } = usePage().props;
+    const isAdmin = auth?.is_admin ?? false;
+
     const [folders, setFolders] = useState(initialFolders);
     const [collapsedFolders, setCollapsedFolders] = useState({});
     const [contextMenu, setContextMenu] = useState(null);
@@ -351,6 +354,21 @@ export default function ServerRail({
                         className="w-12 h-12 flex items-center justify-center font-bold text-2xl text-green-400 bg-gray-700 rounded-full hover:rounded-2xl hover:bg-green-500 hover:text-white transition-all duration-150"
                     >+</button>
                 </div>
+
+                {isAdmin && (
+                    <div className="relative flex items-center w-full px-1.5 group">
+                        <Link href={route('admin.index')} title="Panel de administración"
+                            className="w-12 h-12 flex items-center justify-center bg-gray-700 rounded-full hover:rounded-2xl hover:bg-indigo-600 hover:text-white transition-all duration-150"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-indigo-400 group-hover:text-white" viewBox="0 0 24 24" fill="currentColor">
+                                <path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 1 0 0 10.5 5.25 5.25 0 0 0 0-10.5ZM9.75 6.75a2.25 2.25 0 1 1 4.5 0 2.25 2.25 0 0 1-4.5 0ZM9.25 13.5A6.75 6.75 0 0 0 2.5 20.25a.75.75 0 0 0 .75.75h17.5a.75.75 0 0 0 .75-.75A6.75 6.75 0 0 0 14.75 13.5h-5.5Z" clipRule="evenodd" />
+                            </svg>
+                        </Link>
+                        <div className="absolute left-full ml-3 px-2 py-1 bg-gray-900 text-white text-xs rounded shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">
+                            Panel de administración
+                        </div>
+                    </div>
+                )}
             </nav>
 
             {/* Context menu */}
