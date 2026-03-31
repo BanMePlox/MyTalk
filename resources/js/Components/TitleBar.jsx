@@ -17,8 +17,8 @@ export default function TitleBar() {
     const updateRid = useRef(null);
 
     useEffect(() => {
+        invoke('plugin:app|version').then(v => { if (v) setCurrentVersion(v); });
         invoke('plugin:updater|check').then(update => {
-            if (update?.currentVersion) setCurrentVersion(update.currentVersion);
             if (update?.version) {
                 updateRid.current = update.rid;
                 setUpdateAvailable(true);
