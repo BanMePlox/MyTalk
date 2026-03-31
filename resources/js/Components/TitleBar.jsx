@@ -30,21 +30,19 @@ export default function TitleBar() {
 
     async function installUpdate() {
         const internals = window.__TAURI_INTERNALS__;
-        setDebugInfo('downloading…');
-        await new Promise((resolve, reject) => {
-            const onEvent = internals.transformCallback((event) => {
-                setDebugInfo(`evt: ${JSON.stringify(event)}`);
-                const name = event?.event ?? event;
-                if (name === 'Finished') resolve();
-                if (name === 'Error') reject(new Error(JSON.stringify(event.data)));
-            });
-            internals.invoke('plugin:updater|download_and_install', {
-                rid: updateRid.current,
-                headers: [],
-                onEvent: `__CHANNEL__:${onEvent}`,
-            }).catch(e => { setDebugInfo(`invoke err: ${e}`); reject(e); });
+        setUpdateAvailable(false);
+        setDebugInfo('installing…');
+        const onEvent = internals.transformCallback((event) => {
+            setDebugInfo(`evt: ${JSON.stringify(event)}`);
         });
-        await invoke('plugin:process|restart');
+        internals.invoke('plugin:updater|download_and_install', {
+            rid: updateRid.current,
+            headers: [],
+            onEvent: `__CHANNEL__:${onEvent}`,
+        }).catch(e => {
+            setDebugInfo(`err: ${e}`);
+            setUpdateAvailable(true);
+        });
     }
 
     return (
