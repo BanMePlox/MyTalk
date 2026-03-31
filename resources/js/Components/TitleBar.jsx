@@ -41,7 +41,7 @@ export default function TitleBar() {
             internals.invoke('plugin:updater|download_and_install', {
                 rid: updateRid.current,
                 headers: {},
-                onEvent,
+                onEvent: String(onEvent),
             }).catch(e => { setDebugInfo(`invoke err: ${e}`); reject(e); });
         });
         await invoke('plugin:process|restart');
