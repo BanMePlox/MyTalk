@@ -13,10 +13,12 @@ function windowLabel() {
 export default function TitleBar() {
     const label = windowLabel();
     const [updateAvailable, setUpdateAvailable] = useState(false);
+    const [currentVersion, setCurrentVersion] = useState(null);
     const updateRid = useRef(null);
 
     useEffect(() => {
         invoke('plugin:updater|check').then(update => {
+            if (update?.currentVersion) setCurrentVersion(update.currentVersion);
             if (update?.version) {
                 updateRid.current = update.rid;
                 setUpdateAvailable(true);
@@ -39,7 +41,7 @@ export default function TitleBar() {
         <div className="fixed top-0 left-0 right-0 z-[9999] flex items-center justify-between h-8 bg-gray-950 select-none" data-tauri-drag-region>
             <div className="flex items-center gap-2 px-3 pointer-events-none" data-tauri-drag-region>
                 <img src="/images/MyTalk.png" alt="MyTalk" className="w-4 h-4 rounded object-contain" />
-                <span className="text-white/50 text-xs">MyTalk</span>
+                <span className="text-white/50 text-xs">MyTalk {currentVersion && <span className="text-white/30">v{currentVersion}</span>}</span>
             </div>
 
             {updateAvailable && (
