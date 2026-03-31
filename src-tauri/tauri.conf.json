@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "MyTalk",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "identifier": "com.mytalk.desktop",
   "build": {
     "frontendDist": "https://mytalk.pjimenezpf.com",
