@@ -13,11 +13,15 @@ function windowLabel() {
 export default function TitleBar() {
     const label = windowLabel();
     const [updateAvailable, setUpdateAvailable] = useState(false);
+    const [debugInfo, setDebugInfo] = useState('checking…');
 
     useEffect(() => {
-        invoke('plugin:updater|check').then(update => {
-            if (update?.available) setUpdateAvailable(true);
-        });
+        invoke('plugin:updater|check')
+            .then(update => {
+                setDebugInfo(update ? `v${update.currentVersion}→${update.latestVersion} available:${update.available}` : 'null response');
+                if (update?.available) setUpdateAvailable(true);
+            })
+            .catch(e => setDebugInfo(`error: ${e}`));
     }, []);
 
     async function installUpdate() {
@@ -31,6 +35,7 @@ export default function TitleBar() {
             <div className="flex items-center gap-2 px-3 pointer-events-none" data-tauri-drag-region>
                 <img src="/images/MyTalk.png" alt="MyTalk" className="w-4 h-4 rounded object-contain" />
                 <span className="text-white/50 text-xs">MyTalk</span>
+                <span className="text-yellow-400/70 text-xs ml-2">[{debugInfo}]</span>
             </div>
 
             {updateAvailable && (
