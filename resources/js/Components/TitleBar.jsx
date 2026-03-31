@@ -13,42 +13,33 @@ function windowLabel() {
 export default function TitleBar() {
     const label = windowLabel();
     const [updateAvailable, setUpdateAvailable] = useState(false);
-    const [debugInfo, setDebugInfo] = useState('checking…');
     const updateRid = useRef(null);
 
     useEffect(() => {
-        invoke('plugin:updater|check')
-            .then(update => {
-                setDebugInfo(update ? `rid:${update.rid} v${update.currentVersion}→${update.version}` : 'null (no update)');
-                if (update?.version) {
-                    updateRid.current = update.rid;
-                    setUpdateAvailable(true);
-                }
-            })
-            .catch(e => setDebugInfo(`error: ${e}`));
+        invoke('plugin:updater|check').then(update => {
+            if (update?.version) {
+                updateRid.current = update.rid;
+                setUpdateAvailable(true);
+            }
+        });
     }, []);
 
-    async function installUpdate() {
+    function installUpdate() {
         const internals = window.__TAURI_INTERNALS__;
         setUpdateAvailable(false);
-        setDebugInfo('installing…');
-        const onEvent = internals.transformCallback((event) => {
-            setDebugInfo(`evt: ${JSON.stringify(event)}`);
-        });
+        const onEvent = internals.transformCallback(() => {});
         internals.invoke('plugin:updater|download_and_install', {
             rid: updateRid.current,
             headers: [],
             onEvent: `__CHANNEL__:${onEvent}`,
-        }).catch(e => setDebugInfo(`err: ${e}`));
+        }).catch(() => {});
     }
 
     return (
         <div className="fixed top-0 left-0 right-0 z-[9999] flex items-center justify-between h-8 bg-gray-950 select-none" data-tauri-drag-region>
-            {/* Logo + título */}
             <div className="flex items-center gap-2 px-3 pointer-events-none" data-tauri-drag-region>
                 <img src="/images/MyTalk.png" alt="MyTalk" className="w-4 h-4 rounded object-contain" />
                 <span className="text-white/50 text-xs">MyTalk</span>
-                <span className="text-yellow-400/70 text-xs ml-2">[{debugInfo}]</span>
             </div>
 
             {updateAvailable && (
@@ -60,7 +51,6 @@ export default function TitleBar() {
                 </button>
             )}
 
-            {/* Controles de ventana */}
             <div className="flex items-center h-full">
                 <button
                     onClick={() => invoke('plugin:window|minimize', { label })}
