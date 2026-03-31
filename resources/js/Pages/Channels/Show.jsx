@@ -52,11 +52,12 @@ import VoiceChannel from '@/Pages/Channels/VoiceChannel';
 import VoiceMiniBar from '@/Components/VoiceMiniBar';
 import { useVoice } from '@/Contexts/VoiceContext';
 import { useTheme } from '@/Contexts/ThemeContext';
+import { useTrans } from '@/Hooks/useTrans';
 
 const STATUS_CONFIG = {
-    online: { dot: 'bg-green-500', label: 'En línea' },
-    away:   { dot: 'bg-yellow-400', label: 'Ausente' },
-    dnd:    { dot: 'bg-red-500',   label: 'No molestar' },
+    online: { dot: 'bg-green-500' },
+    away:   { dot: 'bg-yellow-400' },
+    dnd:    { dot: 'bg-red-500' },
 };
 
 const ROLE_LABEL = { owner: 'Propietario', admin: 'Admin' };
@@ -830,6 +831,7 @@ function ProfilePopover({ member, status, anchorX, anchorY, onClose, authId }) {
 
 export default function Show({ channel, messages: initialMessages, pinnedMessages: initialPinnedMessages = [], userServers = [], userFolders = [], visibleChannelIds = null, canManageMessages = false, canManageRoles = false, canManageChannels = false, canKickMembers = false, canBanMembers = false, canSendMessages = true, isOwner = false, serverEmojis: initialServerEmojis = [], memberUserEmojis = [], initialVoiceParticipants = {} }) {
     const { auth, badges: initialBadges, vapidPublicKey } = usePage().props;
+    const t = useTrans();
     const voice = useVoice();
     const { dark, toggle: toggleTheme, compact, toggleCompact } = useTheme();
     const syncPresenceRef = useRef(null);
@@ -2288,7 +2290,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                 className="w-full text-left text-xs text-gray-500 hover:text-gray-300 px-1 mb-1 transition-colors truncate"
                                 title="Cambiar apodo en este servidor"
                             >
-                                {(() => { const me = members.find(m => m.id === auth.user.id); return me?.nickname ? `Apodo: ${me.nickname}` : '+ Apodo en este servidor'; })()}
+                                {(() => { const me = members.find(m => m.id === auth.user.id); return me?.nickname ? `${t('status.nickname')}: ${me.nickname}` : t('status.add_nickname'); })()}
                             </button>
                         )}
                         <button
@@ -2304,7 +2306,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                             <div className="text-left min-w-0">
                                 <p className="text-sm text-gray-200 truncate leading-tight">{auth.user.name}</p>
                                 <p className="text-xs text-gray-400 truncate leading-tight">
-                                    {myCustomStatus || STATUS_CONFIG[myStatus]?.label}
+                                    {myCustomStatus || t('status.' + myStatus)}
                                 </p>
                             </div>
                         </button>
@@ -2312,40 +2314,40 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                         {statusOpen && (
                             <div className="absolute bottom-full left-2 mb-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl w-56 py-1 z-10">
                                 <div className="px-3 py-2 border-b border-gray-700">
-                                    <p className="text-xs text-gray-400 mb-1">Estado personalizado</p>
+                                    <p className="text-xs text-gray-400 mb-1">{t('status.custom_status')}</p>
                                     <div className="flex gap-1">
                                         <input
                                             type="text"
                                             value={customStatusInput}
                                             onChange={(e) => setCustomStatusInput(e.target.value)}
                                             onKeyDown={(e) => e.key === 'Enter' && saveCustomStatus()}
-                                            placeholder="¿Qué estás haciendo?"
+                                            placeholder={t('status.what_doing')}
                                             maxLength={60}
                                             className="flex-1 bg-gray-900 text-white text-xs rounded px-2 py-1 outline-none placeholder-gray-500"
                                         />
                                         <button onClick={saveCustomStatus} className="text-xs bg-indigo-600 hover:bg-indigo-500 text-white rounded px-2 py-1">✓</button>
                                     </div>
                                 </div>
-                                {Object.entries(STATUS_CONFIG).map(([key, { dot, label }]) => (
+                                {Object.entries(STATUS_CONFIG).map(([key, { dot }]) => (
                                     <button
                                         key={key}
                                         onClick={() => changeStatus(key)}
                                         className={`flex items-center gap-3 w-full px-3 py-2 text-sm hover:bg-gray-700 transition-colors ${myStatus === key ? 'text-white' : 'text-gray-300'}`}
                                     >
                                         <span className={`w-2.5 h-2.5 rounded-full ${dot} shrink-0`} />
-                                        {label}
+                                        {t('status.' + key)}
                                         {myStatus === key && <span className="ml-auto text-indigo-400">✓</span>}
                                     </button>
                                 ))}
                                 <div className="border-t border-gray-700 mt-1 pt-1">
                                     <button onClick={toggleTheme} className="flex items-center gap-3 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors">
-                                        {dark ? '☀ Modo claro' : '🌙 Modo oscuro'}
+                                        {dark ? t('status.light_mode') : t('status.dark_mode')}
                                     </button>
                                     <button onClick={() => { setStatusOpen(false); setProfileModalOpen(true); }} className="flex items-center gap-3 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors">
-                                        Mi perfil
+                                        {t('status.my_profile')}
                                     </button>
                                     <Link href={route('logout')} method="post" as="button" className="flex items-center gap-3 w-full px-3 py-2 text-sm text-red-400 hover:bg-gray-700 transition-colors">
-                                        Cerrar sesión
+                                        {t('status.logout')}
                                     </Link>
                                 </div>
                             </div>
