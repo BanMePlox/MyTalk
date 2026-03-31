@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\BanController;
 use App\Http\Controllers\ThreadController;
 use App\Http\Controllers\LinkPreviewController;
@@ -138,6 +139,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/servers/{server}/emojis', [\App\Http\Controllers\ServerEmojiController::class, 'index'])->name('server.emojis.index');
     Route::post('/servers/{server}/emojis', [\App\Http\Controllers\ServerEmojiController::class, 'store'])->name('server.emojis.store');
     Route::delete('/emojis/{emoji}', [\App\Http\Controllers\ServerEmojiController::class, 'destroy'])->name('server.emojis.destroy');
+});
+
+Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/', [AdminController::class, 'index'])->name('index');
+    Route::post('/broadcast', [AdminController::class, 'broadcast'])->name('broadcast');
 });
 
 require __DIR__.'/auth.php';

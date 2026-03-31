@@ -32,6 +32,8 @@ class User extends Authenticatable
         'custom_status',
         'banner_color',
         'locale',
+        'is_admin',
+        'is_system',
     ];
 
     protected $appends = ['avatar_url'];
@@ -62,7 +64,9 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            'password'          => 'hashed',
+            'is_admin'          => 'boolean',
+            'is_system'         => 'boolean',
         ];
     }
 

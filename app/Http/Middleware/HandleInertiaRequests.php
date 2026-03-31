@@ -41,6 +41,7 @@ class HandleInertiaRequests extends Middleware
                 return [
                     'user'       => $request->user()->makeVisible(['email']),
                     'userEmojis' => $emojis,
+                    'is_admin'   => $request->user()->is_admin,
                 ];
             },
             'vapidPublicKey' => config('services.vapid.public_key'),
