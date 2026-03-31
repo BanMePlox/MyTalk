@@ -39,10 +39,7 @@ export default function TitleBar() {
             rid: updateRid.current,
             headers: [],
             onEvent: `__CHANNEL__:${onEvent}`,
-        }).catch(e => {
-            setDebugInfo(`err: ${e}`);
-            setUpdateAvailable(true);
-        });
+        }).catch(e => setDebugInfo(`err: ${e}`));
     }
 
     return (
