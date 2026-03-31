@@ -18,7 +18,7 @@ export default function TitleBar() {
     useEffect(() => {
         invoke('plugin:updater|check')
             .then(update => {
-                setDebugInfo(update ? `v${update.currentVersion}→${update.version} available:${!!update.version}` : 'null (no update)');
+                setDebugInfo(update ? JSON.stringify(update) : 'null (no update)');
                 if (update?.version) setUpdateAvailable(true);
             })
             .catch(e => setDebugInfo(`error: ${e}`));
