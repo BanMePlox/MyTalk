@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useTrans } from '@/Hooks/useTrans';
+import { notify } from '@/Hooks/useNotify';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import ServerModal from '@/Components/ServerModal';
 import { useTheme } from '@/Contexts/ThemeContext';
@@ -124,6 +125,7 @@ export default function Index({ friends: initialFriends, incoming: initialIncomi
                 }
                 return [...prev, { id: e.conversation_id, type: 'direct', unread: 1, user: { id: e.sender_id, name: e.sender, avatar_url: e.sender_avatar, banner_color: e.sender_banner_color } }];
             });
+            if (document.hidden) notify(`Mensaje de ${e.sender}`, e.content);
         });
 
         return () => {

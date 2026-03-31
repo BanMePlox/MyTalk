@@ -53,6 +53,7 @@ import VoiceMiniBar from '@/Components/VoiceMiniBar';
 import { useVoice } from '@/Contexts/VoiceContext';
 import { useTheme } from '@/Contexts/ThemeContext';
 import { useTrans } from '@/Hooks/useTrans';
+import { notify } from '@/Hooks/useNotify';
 
 const STATUS_CONFIG = {
     online: { dot: 'bg-green-500' },
@@ -1292,10 +1293,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                 setChannelMentionBadges((prev) => ({ ...prev, [e.channel_id]: (prev[e.channel_id] ?? 0) + 1 }));
             }
             if (document.hidden) {
-                new Notification(`${e.sender} te mencionó en #${e.channel}`, {
-                    body: e.content,
-                    icon: '/images/logo.svg',
-                });
+                notify(`${e.sender} te mencionó en #${e.channel}`, e.content);
             } else {
                 const id = Date.now();
                 setToasts((prev) => [...prev, { id, type: 'mention', ...e }]);
@@ -1315,10 +1313,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                 return [...prev, { id: e.conversation_id, type: 'direct', unread: 1, user: { id: e.sender_id, name: e.sender, avatar_url: e.sender_avatar, banner_color: e.sender_banner_color } }];
             });
             if (document.hidden) {
-                new Notification(`Mensaje de ${e.sender}`, {
-                    body: e.content,
-                    icon: '/images/logo.svg',
-                });
+                notify(`Mensaje de ${e.sender}`, e.content);
             } else {
                 const id = Date.now();
                 setToasts((prev) => [...prev, { id, type: 'dm', ...e }]);

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useTrans } from '@/Hooks/useTrans';
+import { notify } from '@/Hooks/useNotify';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import ServerModal from '@/Components/ServerModal';
 import { useVoice } from '@/Contexts/VoiceContext';
@@ -192,6 +193,7 @@ export default function Show({ conversation, other, members: initialMembers = nu
                     },
                 }];
             });
+            if (document.hidden) notify(`Mensaje de ${e.sender}`, e.content);
         });
         return () => {
             userChannel.stopListening('.MentionReceived');
