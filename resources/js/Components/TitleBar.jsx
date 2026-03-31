@@ -33,14 +33,16 @@ export default function TitleBar() {
         setDebugInfo('downloading…');
         await new Promise((resolve, reject) => {
             const onEvent = internals.transformCallback((event) => {
-                setDebugInfo(`event: ${event.event}`);
-                if (event.event === 'Finished') resolve();
-                if (event.event === 'Error') reject(new Error(JSON.stringify(event.data)));
+                setDebugInfo(`evt: ${JSON.stringify(event)}`);
+                const name = event?.event ?? event;
+                if (name === 'Finished') resolve();
+                if (name === 'Error') reject(new Error(JSON.stringify(event.data)));
             });
             internals.invoke('plugin:updater|download_and_install', {
                 rid: updateRid.current,
+                headers: {},
                 onEvent,
-            }).catch(reject);
+            }).catch(e => { setDebugInfo(`invoke err: ${e}`); reject(e); });
         });
         await invoke('plugin:process|restart');
     }
