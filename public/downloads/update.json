@@ -1,10 +1,10 @@
 ﻿{
-  "version": "0.3.0",
-  "notes": "Notificaciones nativas, panel de administracion",
+  "version": "0.4.0",
+  "notes": "Notificaciones nativas",
   "pub_date": "2026-04-01T00:00:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTMHVYUE94Mk9Rd0xSazV4dEgvZ1lUTmI3YlNhSURRWnNTbDJORTJkS0JNT0xUTnV4TXZwTkpRR3JpZFIyOG9jdUNmWU9BQ2kyTUFYL0FFWGk1L0dCSG4wZTMvTC8zM1FjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc1MDAxNDM2CWZpbGU6TXlUYWxrXzAuMy4wX3g2NC1zZXR1cC5leGUKS0I1OW1pMEJ1dXlOTldPUytzWFdQTFd2dlRDWUNCYnE0Ulp5UGtuTjYwWEZSMlNXOEtseis0R1RZZGhaOFNocmRuT3kxdnhZZUhWaDJKMDdYcFJOQ2c9PQo=",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTMHVYUE94Mk9Rd0lXMG95NUVGK2NRRE5zcmpBUVduSmtGcjBEeXdZVEk5UGpNYlVIK1dwakJRSGN5MzZmNE5mZjlyeWxCL00zaWc0UEVtaGhCUmFMdUJNRTBHemFseXd3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc1MDAyMTI5CWZpbGU6TXlUYWxrXzAuNC4wX3g2NC1zZXR1cC5leGUKWVdtZDJNWmxEWlUwSnQzQVFSQjZwL0wzYnd2NUg4UzVPMEpPcEkwbndXbzZ6OWV3MWtWVW42NWhIQXlRTEdCQlBvUUtSdTkxZ2lBcDRZaVVWZ0lWQWc9PQo=",
       "url": "https://mytalk.pjimenezpf.com/downloads/MyTalk-setup.exe"
     }
   }
