@@ -18,12 +18,15 @@ export default function TitleBar() {
 
     useEffect(() => {
         invoke('plugin:app|version').then(v => { if (v) setCurrentVersion(v); });
-        invoke('plugin:updater|check').then(update => {
-            if (update?.version) {
-                updateRid.current = update.rid;
-                setUpdateAvailable(true);
-            }
-        });
+        window.__TAURI_INTERNALS__.invoke('plugin:updater|check')
+            .then(update => {
+                setCurrentVersion(v => v + (update ? ` upd:${update.version}` : ' upd:null'));
+                if (update?.version) {
+                    updateRid.current = update.rid;
+                    setUpdateAvailable(true);
+                }
+            })
+            .catch(e => setCurrentVersion(v => v + ` err:${e}`));
     }, []);
 
     function installUpdate() {
