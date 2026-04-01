@@ -51,6 +51,7 @@ Aplicación de chat en tiempo real inspirada en Discord. Construida con **Larave
 - Autocompletado `@usuario` con sugerencias
 - Badges de menciones no leídas por canal y servidor
 - **Notificaciones push** (Web Push / VAPID) — funcionan con la pestaña cerrada
+- **Notificaciones nativas del SO** en la app de escritorio (sin permisos de navegador)
 - Notificaciones nativas del navegador y toasts in-app
 
 ### Mensajes directos y amigos
@@ -68,6 +69,17 @@ Aplicación de chat en tiempo real inspirada en Discord. Construida con **Larave
 - **Compartir pantalla** con `getDisplayMedia`; soporte de audio del sistema con toggle; pantalla completa en el receptor; stop/reinicio sin renegociación WebRTC
 - Prueba de micrófono antes de unirse
 - Emojis personalizados del servidor con sintaxis `:nombre:`
+
+### App de escritorio (Windows)
+- Aplicación nativa para Windows construida con **Tauri 2**
+- Barra de título personalizada integrada con controles de ventana
+- **Actualizaciones automáticas**: detecta nuevas versiones y las instala sin salir de la app
+- Notificaciones nativas del sistema operativo
+
+### Administración
+- Panel `/admin` accesible solo para superadmins
+- Envío de mensajes **broadcast** a todos los usuarios (aparece como DM de la cuenta sistema *MyTalk*)
+- Estadísticas básicas de la plataforma
 
 ### Roles y moderación
 - Roles personalizados por servidor con color
@@ -100,6 +112,7 @@ Aplicación de chat en tiempo real inspirada en Discord. Construida con **Larave
 | **Backend** | PHP 8.2, Laravel 12, Laravel Reverb, Inertia.js, minishlink/web-push |
 | **Frontend** | React 18, Tailwind CSS, Laravel Echo, highlight.js |
 | **Base de datos** | SQLite (dev) / MySQL (prod) |
+| **Escritorio** | Tauri 2 (Windows), tauri-plugin-updater, tauri-plugin-notification |
 | **Tooling** | Vite 7, Concurrently, Laravel Pint, PHPUnit |
 
 ---

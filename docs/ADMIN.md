@@ -169,11 +169,11 @@ autorestart=true
 
 | Tabla                    | Descripción                                              |
 |--------------------------|----------------------------------------------------------|
-| `users`                  | Cuentas de usuario                                       |
+| `users`                  | Cuentas de usuario (incluye `is_admin` e `is_system`)    |
 | `servers`                | Servidores de chat                                       |
 | `server_members`         | Relación usuario–servidor (con apodo y rol base)         |
 | `channel_categories`     | Categorías para agrupar canales                          |
-| `channels`               | Canales de texto/anuncios                                |
+| `channels`               | Canales de texto/anuncios/voz                            |
 | `channel_permissions`    | Permisos por rol para cada canal (ver, escribir)         |
 | `roles`                  | Roles personalizados por servidor                        |
 | `server_member_roles`    | Relación usuario–rol dentro de un servidor               |
@@ -188,7 +188,11 @@ autorestart=true
 | `bans`                   | Usuarios baneados de un servidor                         |
 | `unread_mentions`        | Contador de menciones no leídas por canal                |
 | `push_subscriptions`     | Suscripciones Web Push por usuario                       |
-| `server_emojis`          | Emojis personalizados por servidor (nombre + ruta imagen) |
+| `server_emojis`          | Emojis personalizados por servidor                       |
+| `user_emojis`            | Emojis personalizados por usuario                        |
+| `polls`                  | Encuestas adjuntas a mensajes                            |
+| `poll_votes`             | Votos de encuestas por usuario                           |
+| `server_folders`         | Carpetas para agrupar servidores en el rail              |
 | `jobs`                   | Cola de trabajos para broadcasting                       |
 | `sessions`               | Sesiones de usuario                                      |
 
@@ -201,6 +205,32 @@ php artisan migrate              # Ejecutar migraciones pendientes
 php artisan migrate:fresh        # Rehacer toda la BD (borra datos)
 php artisan migrate:status       # Ver estado de las migraciones
 ```
+
+---
+
+## Superadmin y cuenta sistema
+
+### Crear la cuenta sistema (MyTalk)
+
+La cuenta sistema envía los mensajes de broadcast a todos los usuarios:
+
+```bash
+php artisan db:seed --class=SystemUserSeeder
+```
+
+### Marcar un usuario como administrador
+
+```bash
+php artisan tinker --execute="App\Models\User::where('email','TU_EMAIL')->update(['is_admin'=>true]);"
+```
+
+Los administradores tienen acceso al panel `/admin` desde el rail de servidores.
+
+### Panel de administración (`/admin`)
+
+Permite:
+- Ver estadísticas básicas (usuarios, conversaciones)
+- Enviar un mensaje broadcast a todos los usuarios (aparece como DM de la cuenta sistema)
 
 ---
 
@@ -217,6 +247,54 @@ Cada servidor tiene su propio sistema de roles personalizados (creados desde *Aj
 | `ban_members`    | Banear y desbanear miembros                     |
 
 El **propietario** tiene todos los permisos siempre. Los permisos de canal (ver / escribir) se configuran individualmente por rol en *Ajustes del servidor → Canales*.
+
+---
+
+## App de escritorio (Tauri)
+
+La app de escritorio se distribuye como instalador `.exe` para Windows.
+
+### Compilar
+
+```powershell
+$env:TAURI_SIGNING_PRIVATE_KEY = (Get-Content "src-tauri/mytalk.key" -Raw)
+$env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = ""
+npx tauri build
+```
+
+La clave privada de firma está en `src-tauri/mytalk.key` (gitignoreado). Password vacío.
+
+### Publicar una nueva versión
+
+1. Actualiza `"version"` en `src-tauri/tauri.conf.json`
+2. Compila con el comando anterior
+3. Ejecuta en PowerShell:
+
+```powershell
+$version = "X.Y.Z"
+$sig = (Get-Content "src-tauri\target\release\bundle\nsis\MyTalk_${version}_x64-setup.exe.sig" -Raw).Trim()
+$obj = [PSCustomObject]@{
+    version = $version
+    notes = "Descripcion del release"
+    pub_date = (Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ")
+    platforms = [PSCustomObject]@{
+        "windows-x86_64" = [PSCustomObject]@{
+            signature = $sig
+            url = "https://mytalk.pjimenezpf.com/downloads/MyTalk-setup.exe"
+        }
+    }
+}
+$json = $obj | ConvertTo-Json -Depth 10
+$encoding = New-Object System.Text.UTF8Encoding($false)   # Sin BOM — obligatorio
+[System.IO.File]::WriteAllText("public\downloads\update.json", $json, $encoding)
+Copy-Item "src-tauri\target\release\bundle\nsis\MyTalk_${version}_x64-setup.exe" "public\downloads\MyTalk-setup.exe"
+```
+
+4. Push y pull en el servidor
+
+> **Importante:** Usar `New-Object System.Text.UTF8Encoding($false)` para escribir sin BOM. `[System.Text.Encoding]::UTF8` añade BOM y el updater de Tauri falla silenciosamente.
+
+> Cambios en `src-tauri/capabilities/` requieren recompilar el `.exe`. La primera instalación de una versión con nuevas capabilities debe hacerse manualmente.
 
 ---
 

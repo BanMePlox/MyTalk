@@ -261,9 +261,31 @@ Haz clic en el botón de apodo en la parte inferior del sidebar (dentro de un se
 
 ---
 
+## App de escritorio
+
+MyTalk tiene una aplicación nativa para **Windows** construida con Tauri. Descárgala desde:
+
+```
+https://mytalk.pjimenezpf.com/downloads/MyTalk-setup.exe
+```
+
+### Ventajas sobre el navegador
+
+- Barra de título integrada con controles de ventana.
+- **Notificaciones nativas del sistema operativo** (sin depender de permisos del navegador).
+- **Actualizaciones automáticas**: cuando hay una nueva versión, aparece un botón en la barra de título. Al pulsarlo, la app descarga e instala la actualización y se reinicia automáticamente.
+
+---
+
 ## Notificaciones
 
+### En el navegador
+
 Si concedes permiso, la aplicación envía **notificaciones push** al navegador incluso cuando la pestaña está cerrada: menciones, mensajes directos y nuevos mensajes en canales.
+
+### En la app de escritorio
+
+Las notificaciones se envían como **notificaciones nativas de Windows** a través del sistema operativo. La primera vez que se recibe una notificación, la app puede solicitar permiso. No es necesario tener ninguna configuración adicional del navegador.
 
 ---
 

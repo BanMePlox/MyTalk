@@ -27,6 +27,20 @@
 | highlight.js | 11.x | Syntax highlighting para bloques de código en mensajes |
 | Service Worker (`sw.js`) | Web API | Recepción de notificaciones push en background |
 
+## App de escritorio
+
+| Tecnología | Versión | Uso |
+|---|---|---|
+| Tauri | 2.x | Framework para apps nativas (wrapper WebView sobre el frontend web) |
+| tauri-plugin-updater | 2.x | Actualizaciones automáticas con firma minisign |
+| tauri-plugin-notification | 2.x | Notificaciones nativas del sistema operativo |
+| tauri-plugin-process | 2.x | Reinicio de la app tras instalar una actualización |
+| tauri-plugin-window-state | 2.x | Persistencia del tamaño y posición de la ventana |
+
+La app empaqueta el frontend como una WebView que apunta a `https://mytalk.pjimenezpf.com`. Los permisos de las APIs nativas de Tauri se configuran en `src-tauri/capabilities/remote.json` (para contenido remoto) y `src-tauri/capabilities/default.json` (para contenido local).
+
+---
+
 ## Tooling
 
 | Tecnología | Versión | Uso |
