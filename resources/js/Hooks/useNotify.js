@@ -6,12 +6,12 @@ async function initTauriNotifications() {
     if (!isTauri) return;
     try {
         const granted = await window.__TAURI_INTERNALS__.invoke('plugin:notification|is_permission_granted');
-        if (granted) {
+        if (granted === true || granted?.toLowerCase?.() === 'granted') {
             tauriPermissionGranted = true;
             return;
         }
         const result = await window.__TAURI_INTERNALS__.invoke('plugin:notification|request_permission');
-        tauriPermissionGranted = result === 'Granted';
+        tauriPermissionGranted = result?.toLowerCase() === 'granted';
     } catch {}
 }
 
