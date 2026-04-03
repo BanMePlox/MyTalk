@@ -1,12 +1,13 @@
 import { useRef, useState } from 'react';
 import { router } from '@inertiajs/react';
+import { useTrans } from '@/Hooks/useTrans';
 
 const PERMISSIONS = [
-    { key: 'manage_roles',    label: 'Gestionar roles' },
-    { key: 'manage_channels', label: 'Gestionar canales' },
-    { key: 'kick_members',    label: 'Expulsar miembros' },
-    { key: 'ban_members',     label: 'Banear miembros' },
-    { key: 'manage_messages', label: 'Gestionar mensajes' },
+    { key: 'manage_roles',    label: 'perm.manage_roles' },
+    { key: 'manage_channels', label: 'perm.manage_channels' },
+    { key: 'kick_members',    label: 'perm.kick_members' },
+    { key: 'ban_members',     label: 'perm.ban_members' },
+    { key: 'manage_messages', label: 'perm.manage_messages' },
 ];
 
 const DEFAULT_COLORS = ['#5865f2', '#57f287', '#fee75c', '#eb459e', '#ed4245', '#ff7043', '#99aab5', '#ffffff'];
@@ -26,6 +27,7 @@ function Avatar({ user, size = 8 }) {
 }
 
 function RolesTab({ server, roles, setRoles, canManageRoles }) {
+    const t = useTrans();
     const [editingId, setEditingId] = useState(null);
     const [editForm, setEditForm]   = useState({});
     const [newRole, setNewRole]     = useState({ name: '', color: '#5865f2', permissions: [] });
@@ -79,7 +81,7 @@ function RolesTab({ server, roles, setRoles, canManageRoles }) {
     return (
         <div className="space-y-3">
             {roles.length === 0 && (
-                <p className="text-gray-500 text-sm">No hay roles creados todavía.</p>
+                <p className="text-gray-500 text-sm">{t('settings.no_roles')}</p>
             )}
 
             {roles.map(role => (
@@ -93,7 +95,7 @@ function RolesTab({ server, roles, setRoles, canManageRoles }) {
                                 className="w-full bg-gray-700 border border-gray-600 text-gray-100 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
                             />
                             <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-xs text-gray-400">Color:</span>
+                                <span className="text-xs text-gray-400">{t('settings.color')}</span>
                                 {DEFAULT_COLORS.map(c => (
                                     <button key={c} onClick={() => setEditForm(f => ({ ...f, color: c }))}
                                         className="w-5 h-5 rounded-full border-2 transition-transform hover:scale-110"
@@ -110,18 +112,18 @@ function RolesTab({ server, roles, setRoles, canManageRoles }) {
                                             checked={editForm.permissions.includes(p.key)}
                                             onChange={() => setEditForm(f => ({ ...f, permissions: togglePerm(f.permissions, p.key) }))}
                                             className="accent-indigo-500" />
-                                        {p.label}
+                                        {t(p.label)}
                                     </label>
                                 ))}
                             </div>
                             <div className="flex gap-2 pt-1">
                                 <button onClick={saveEdit}
                                     className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-3 py-1.5 rounded">
-                                    Guardar
+                                    {t('settings.save')}
                                 </button>
                                 <button onClick={() => setEditingId(null)}
                                     className="text-gray-400 hover:text-gray-200 text-xs px-3 py-1.5 rounded hover:bg-gray-700">
-                                    Cancelar
+                                    {t('settings.cancel')}
                                 </button>
                             </div>
                         </div>
@@ -132,7 +134,7 @@ function RolesTab({ server, roles, setRoles, canManageRoles }) {
                             <div className="flex gap-1 text-xs text-gray-500 mr-2">
                                 {(role.permissions ?? []).map(p => (
                                     <span key={p} className="bg-gray-700 px-1.5 py-0.5 rounded text-gray-400">
-                                        {PERMISSIONS.find(x => x.key === p)?.label ?? p}
+                                        {t(PERMISSIONS.find(x => x.key === p)?.label ?? p)}
                                     </span>
                                 ))}
                             </div>
@@ -146,7 +148,7 @@ function RolesTab({ server, roles, setRoles, canManageRoles }) {
                                         <div className="flex items-center gap-1">
                                             <button onClick={() => deleteRole(role.id)}
                                                 className="text-xs bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded">
-                                                Borrar
+                                                {t('settings.delete')}
                                             </button>
                                             <button onClick={() => setConfirmDelete(null)}
                                                 className="text-xs text-gray-400 hover:text-gray-200 px-1">✕</button>
@@ -166,16 +168,16 @@ function RolesTab({ server, roles, setRoles, canManageRoles }) {
 
             {canManageRoles && (
                 <form onSubmit={createRole} className="bg-gray-800 rounded-lg p-3 space-y-2 border border-dashed border-gray-600">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Nuevo rol</p>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{t('settings.new_role')}</p>
                     <input
                         type="text"
                         value={newRole.name}
                         onChange={e => setNewRole(f => ({ ...f, name: e.target.value }))}
-                        placeholder="Nombre del rol"
+                        placeholder={t('settings.role_name_ph')}
                         className="w-full bg-gray-700 border border-gray-600 text-gray-100 placeholder-gray-500 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
                     />
                     <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs text-gray-400">Color:</span>
+                        <span className="text-xs text-gray-400">{t('settings.color')}</span>
                         {DEFAULT_COLORS.map(c => (
                             <button type="button" key={c} onClick={() => setNewRole(f => ({ ...f, color: c }))}
                                 className="w-5 h-5 rounded-full border-2 transition-transform hover:scale-110"
@@ -192,13 +194,13 @@ function RolesTab({ server, roles, setRoles, canManageRoles }) {
                                     checked={newRole.permissions.includes(p.key)}
                                     onChange={() => setNewRole(f => ({ ...f, permissions: togglePerm(f.permissions, p.key) }))}
                                     className="accent-indigo-500" />
-                                {p.label}
+                                {t(p.label)}
                             </label>
                         ))}
                     </div>
                     <button type="submit" disabled={creating}
                         className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-1.5 rounded disabled:opacity-50">
-                        {creating ? 'Creando...' : '+ Crear rol'}
+                        {creating ? t('settings.creating') : t('settings.create_role')}
                     </button>
                 </form>
             )}
@@ -207,6 +209,7 @@ function RolesTab({ server, roles, setRoles, canManageRoles }) {
 }
 
 function MembersTab({ server, roles, canManageRoles, canKickMembers, isOwner, reloadKey }) {
+    const t = useTrans();
     const [confirmKick, setConfirmKick] = useState(null);
     const [assigningRole, setAssigningRole] = useState({});
 
@@ -252,7 +255,7 @@ function MembersTab({ server, roles, canManageRoles, canKickMembers, isOwner, re
                                     <span className="font-medium text-gray-100 text-sm">{member.name}</span>
                                     {isThisOwner && (
                                         <span className="text-xs bg-yellow-600/30 text-yellow-400 px-1.5 py-0.5 rounded">
-                                            Propietario
+                                            {t('settings.owner')}
                                         </span>
                                     )}
                                     {memberRoles.map(role => (
@@ -268,7 +271,7 @@ function MembersTab({ server, roles, canManageRoles, canKickMembers, isOwner, re
                                     <div className="flex items-center gap-1 shrink-0">
                                         <button onClick={() => kickMember(member.id)}
                                             className="text-xs bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded">
-                                            Expulsar
+                                            {t('settings.kick')}
                                         </button>
                                         <button onClick={() => setConfirmKick(null)}
                                             className="text-xs text-gray-400 px-1">✕</button>
@@ -276,7 +279,7 @@ function MembersTab({ server, roles, canManageRoles, canKickMembers, isOwner, re
                                 ) : (
                                     <button onClick={() => setConfirmKick(member.id)}
                                         className="text-xs text-gray-500 hover:text-red-400 px-2 py-1 rounded hover:bg-gray-700 shrink-0">
-                                        Expulsar
+                                        {t('settings.kick')}
                                     </button>
                                 )
                             )}
@@ -284,7 +287,7 @@ function MembersTab({ server, roles, canManageRoles, canKickMembers, isOwner, re
 
                         {canManageRoles && !isThisOwner && roles.length > 0 && (
                             <div className="flex items-center gap-1.5 flex-wrap pl-10">
-                                <span className="text-xs text-gray-500">Roles:</span>
+                                <span className="text-xs text-gray-500">{t('settings.roles_label')}</span>
                                 {roles.map(role => {
                                     const hasRole = memberRoles.some(r => r.id === role.id);
                                     const key = `${member.id}-${role.id}`;
@@ -312,6 +315,7 @@ function MembersTab({ server, roles, canManageRoles, canKickMembers, isOwner, re
 }
 
 function CategoriesTab({ server, canManageChannels, onChannelAssign, onCategoryChange }) {
+    const t = useTrans();
     const [categories, setCategories] = useState(server.categories ?? []);
     const [channels, setChannels] = useState(server.channels ?? []);
     const [editingId, setEditingId] = useState(null);
@@ -369,7 +373,7 @@ function CategoriesTab({ server, canManageChannels, onChannelAssign, onCategoryC
         <div className="space-y-4">
             {/* Lista de categorías */}
             {categories.length === 0 && (
-                <p className="text-gray-500 text-sm">No hay categorías todavía.</p>
+                <p className="text-gray-500 text-sm">{t('settings.no_categories')}</p>
             )}
             {categories.map(cat => (
                 <div key={cat.id} className="bg-gray-800 rounded-lg p-3">
@@ -382,7 +386,7 @@ function CategoriesTab({ server, canManageChannels, onChannelAssign, onCategoryC
                                 onKeyDown={e => { if (e.key === 'Enter') saveEdit(cat); if (e.key === 'Escape') setEditingId(null); }}
                                 className="flex-1 bg-gray-700 border border-gray-600 text-gray-100 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
                             />
-                            <button onClick={() => saveEdit(cat)} className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-1 rounded">Guardar</button>
+                            <button onClick={() => saveEdit(cat)} className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-1 rounded">{t('settings.save')}</button>
                             <button onClick={() => setEditingId(null)} className="text-xs text-gray-400 hover:text-gray-200 px-1">✕</button>
                         </div>
                     ) : (
@@ -395,7 +399,7 @@ function CategoriesTab({ server, canManageChannels, onChannelAssign, onCategoryC
                                     {confirmDelete === cat.id ? (
                                         <div className="flex items-center gap-1">
                                             <button onClick={() => deleteCategory(cat.id)}
-                                                className="text-xs bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded">Borrar</button>
+                                                className="text-xs bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded">{t('settings.delete')}</button>
                                             <button onClick={() => setConfirmDelete(null)}
                                                 className="text-xs text-gray-400 hover:text-gray-200 px-1">✕</button>
                                         </div>
@@ -413,7 +417,7 @@ function CategoriesTab({ server, canManageChannels, onChannelAssign, onCategoryC
             {/* Asignar canales a categorías */}
             {channels.length > 0 && (
                 <div className="bg-gray-800 rounded-lg p-3 space-y-2">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Asignar canales</p>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{t('settings.assign_channels')}</p>
                     {channels.map(ch => (
                         <div key={ch.id} className="flex items-center gap-2">
                             <span className="text-xs text-gray-300 flex-1">#{ch.name}</span>
@@ -423,7 +427,7 @@ function CategoriesTab({ server, canManageChannels, onChannelAssign, onCategoryC
                                 disabled={!canManageChannels}
                                 className="bg-gray-700 border border-gray-600 text-gray-100 rounded px-2 py-0.5 text-xs focus:outline-none"
                             >
-                                <option value="">— Sin categoría</option>
+                                <option value="">{t('settings.no_category_option')}</option>
                                 {categories.map(cat => (
                                     <option key={cat.id} value={cat.id}>{cat.name}</option>
                                 ))}
@@ -436,18 +440,18 @@ function CategoriesTab({ server, canManageChannels, onChannelAssign, onCategoryC
             {/* Crear categoría */}
             {canManageChannels && (
                 <form onSubmit={createCategory} className="bg-gray-800 rounded-lg p-3 space-y-2 border border-dashed border-gray-600">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Nueva categoría</p>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{t('settings.new_category')}</p>
                     <div className="flex gap-2">
                         <input
                             type="text"
                             value={newName}
                             onChange={e => setNewName(e.target.value)}
-                            placeholder="Nombre de la categoría"
+                            placeholder={t('settings.category_name_ph')}
                             className="flex-1 bg-gray-700 border border-gray-600 text-gray-100 placeholder-gray-500 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
                         />
                         <button type="submit" disabled={creating}
                             className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-3 py-1 rounded disabled:opacity-50">
-                            {creating ? '...' : '+ Crear'}
+                            {creating ? '...' : t('settings.create')}
                         </button>
                     </div>
                 </form>
@@ -457,6 +461,7 @@ function CategoriesTab({ server, canManageChannels, onChannelAssign, onCategoryC
 }
 
 function BansTab({ server }) {
+    const t = useTrans();
     const [bans, setBans] = useState(null);
     const [loading, setLoading] = useState(false);
     const [confirmUnban, setConfirmUnban] = useState(null);
@@ -487,30 +492,30 @@ function BansTab({ server }) {
         return (
             <div className="flex items-center justify-center py-8">
                 <button onClick={load} className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-2 rounded">
-                    Cargar bans
+                    {t('settings.load_bans')}
                 </button>
             </div>
         );
     }
 
-    if (loading) return <p className="text-gray-400 text-sm py-4">Cargando...</p>;
+    if (loading) return <p className="text-gray-400 text-sm py-4">{t('settings.loading')}</p>;
 
     return (
         <div className="space-y-2">
-            {bans.length === 0 && <p className="text-gray-500 text-sm">No hay usuarios baneados.</p>}
+            {bans.length === 0 && <p className="text-gray-500 text-sm">{t('settings.no_bans')}</p>}
             {bans.map(ban => (
                 <div key={ban.id} className="bg-gray-800 rounded-lg p-3 flex items-center gap-3">
                     <Avatar user={ban.user} size={8} />
                     <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-100">{ban.user.name}</p>
-                        {ban.reason && <p className="text-xs text-gray-400 truncate">Razón: {ban.reason}</p>}
-                        <p className="text-xs text-gray-500">Baneado por {ban.banned_by.name}</p>
+                        {ban.reason && <p className="text-xs text-gray-400 truncate">{t('settings.reason')} {ban.reason}</p>}
+                        <p className="text-xs text-gray-500">{t('settings.banned_by')} {ban.banned_by.name}</p>
                     </div>
                     {confirmUnban === ban.user.id ? (
                         <div className="flex items-center gap-1 shrink-0">
                             <button onClick={() => unban(ban.user.id)}
                                 className="text-xs bg-green-700 hover:bg-green-600 text-white px-2 py-1 rounded">
-                                Desbanear
+                                {t('settings.unban')}
                             </button>
                             <button onClick={() => setConfirmUnban(null)}
                                 className="text-xs text-gray-400 px-1">✕</button>
@@ -518,7 +523,7 @@ function BansTab({ server }) {
                     ) : (
                         <button onClick={() => setConfirmUnban(ban.user.id)}
                             className="text-xs text-gray-500 hover:text-green-400 px-2 py-1 rounded hover:bg-gray-700 shrink-0">
-                            Desbanear
+                            {t('settings.unban')}
                         </button>
                     )}
                 </div>
@@ -528,6 +533,7 @@ function BansTab({ server }) {
 }
 
 function ChannelsTab({ server, roles, canManageChannels }) {
+    const t = useTrans();
     // Local state: { channelId: { roleId: { can_view, can_send } } }
     const [perms, setPerms] = useState(() => {
         const map = {};
@@ -591,7 +597,7 @@ function ChannelsTab({ server, roles, canManageChannels }) {
 
     return (
         <div className="space-y-2">
-            {channels.length === 0 && <p className="text-gray-500 text-sm">No hay canales.</p>}
+            {channels.length === 0 && <p className="text-gray-500 text-sm">{t('settings.no_channels')}</p>}
             {channels.map(ch => {
                 const chPerms = perms[ch.id] ?? {};
                 const isOpen = expanded === ch.id;
@@ -618,19 +624,19 @@ function ChannelsTab({ server, roles, canManageChannels }) {
                         {isOpen && (
                             <div className="border-t border-gray-700 px-3 py-3 space-y-3">
                                 <div className="flex items-center gap-3">
-                                    <span className="text-xs text-gray-400">Tipo:</span>
+                                    <span className="text-xs text-gray-400">{t('settings.channel_type')}</span>
                                     <select
                                         value={channelTypes[ch.id] ?? 'text'}
                                         onChange={e => changeType(ch.id, e.target.value)}
                                         className="bg-gray-700 text-gray-200 text-xs rounded px-2 py-1 border border-gray-600 outline-none"
                                     >
-                                        <option value="text"># Texto</option>
-                                        <option value="announcement">📢 Anuncios</option>
-                                        <option value="voice">🔊 Voz</option>
+                                        <option value="text">{t('settings.type_text')}</option>
+                                        <option value="announcement">{t('settings.type_announcement')}</option>
+                                        <option value="voice">{t('settings.type_voice')}</option>
                                     </select>
                                 </div>
                                 {roles.length === 0 && (
-                                    <p className="text-xs text-gray-500">No hay roles en este servidor. Crea roles primero.</p>
+                                    <p className="text-xs text-gray-500">{t('settings.no_roles_server')}</p>
                                 )}
                                 {roles.map(role => {
                                     const override = chPerms[role.id];
@@ -656,7 +662,7 @@ function ChannelsTab({ server, roles, canManageChannels }) {
                                                             onChange={e => save(ch.id, role.id, { ...override, can_view: e.target.checked })}
                                                             className="accent-indigo-500"
                                                         />
-                                                        Ver canal
+                                                        {t('settings.view_channel')}
                                                     </label>
                                                     <label className="flex items-center gap-1.5 text-xs text-gray-300 cursor-pointer">
                                                         <input
@@ -666,7 +672,7 @@ function ChannelsTab({ server, roles, canManageChannels }) {
                                                             onChange={e => save(ch.id, role.id, { ...override, can_send: e.target.checked })}
                                                             className="accent-indigo-500"
                                                         />
-                                                        Enviar mensajes
+                                                        {t('settings.send_messages')}
                                                     </label>
                                                     {canManageChannels && (
                                                         <button
@@ -674,17 +680,17 @@ function ChannelsTab({ server, roles, canManageChannels }) {
                                                             disabled={isSaving}
                                                             className="text-xs text-gray-500 hover:text-red-400 transition-colors ml-auto"
                                                             title="Quitar override"
-                                                        >✕ quitar</button>
+                                                        >{t('settings.remove_override')}</button>
                                                     )}
                                                 </div>
                                             ) : (
                                                 <div className="flex items-center gap-2 flex-1">
-                                                    <span className="text-xs text-gray-500 italic">Por defecto (todo permitido)</span>
+                                                    <span className="text-xs text-gray-500 italic">{t('settings.default_allowed')}</span>
                                                     {canManageChannels && (
                                                         <button
                                                             onClick={() => save(ch.id, role.id, { can_view: true, can_send: true })}
                                                             className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
-                                                        >+ Añadir override</button>
+                                                        >{t('settings.add_override')}</button>
                                                     )}
                                                 </div>
                                             )}
@@ -701,6 +707,7 @@ function ChannelsTab({ server, roles, canManageChannels }) {
 }
 
 function EmojisTab({ server, initialEmojis, onEmojiAdded, onEmojiDeleted }) {
+    const t = useTrans();
     const [emojis, setEmojis] = useState(initialEmojis ?? []);
     const [name, setName]     = useState('');
     const [error, setError]   = useState('');
@@ -747,11 +754,11 @@ function EmojisTab({ server, initialEmojis, onEmojiAdded, onEmojiDeleted }) {
     return (
         <div className="space-y-4">
             <form onSubmit={upload} className="flex flex-col gap-2">
-                <p className="text-xs text-gray-400">Sube imágenes PNG/GIF (máx. 512 KB). Úsalas en mensajes con <code className="bg-gray-700 text-pink-300 rounded px-1">:nombre:</code></p>
+                <p className="text-xs text-gray-400">{t('settings.emoji_hint')} <code className="bg-gray-700 text-pink-300 rounded px-1">:nombre:</code></p>
                 <div className="flex gap-2">
                     <input
                         type="text"
-                        placeholder="nombre (ej: pepe)"
+                        placeholder={t('settings.emoji_name_ph')}
                         value={name}
                         onChange={e => setName(e.target.value.toLowerCase())}
                         className="flex-1 bg-gray-700 text-gray-100 rounded px-3 py-1.5 text-sm border border-gray-600 focus:outline-none focus:border-indigo-500"
@@ -766,13 +773,13 @@ function EmojisTab({ server, initialEmojis, onEmojiAdded, onEmojiDeleted }) {
                         type="submit"
                         disabled={uploading}
                         className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm rounded disabled:opacity-50"
-                    >{uploading ? '...' : 'Subir'}</button>
+                    >{uploading ? '...' : t('settings.emoji_upload')}</button>
                 </div>
                 {error && <p className="text-xs text-red-400">{error}</p>}
             </form>
 
             {emojis.length === 0 ? (
-                <p className="text-sm text-gray-500">No hay emojis aún.</p>
+                <p className="text-sm text-gray-500">{t('settings.emoji_no_emojis')}</p>
             ) : (
                 <div className="grid grid-cols-2 gap-2">
                     {emojis.map(emoji => (
@@ -781,7 +788,7 @@ function EmojisTab({ server, initialEmojis, onEmojiAdded, onEmojiDeleted }) {
                             <span className="text-sm text-gray-200 flex-1 font-mono">:{emoji.name}:</span>
                             {confirmDelete === emoji.id ? (
                                 <div className="flex gap-1">
-                                    <button onClick={() => remove(emoji)} className="text-xs bg-red-600 hover:bg-red-700 text-white px-2 py-0.5 rounded">Eliminar</button>
+                                    <button onClick={() => remove(emoji)} className="text-xs bg-red-600 hover:bg-red-700 text-white px-2 py-0.5 rounded">{t('settings.emoji_delete')}</button>
                                     <button onClick={() => setConfirmDelete(null)} className="text-xs text-gray-400 hover:text-gray-200">✕</button>
                                 </div>
                             ) : (
@@ -796,6 +803,7 @@ function EmojisTab({ server, initialEmojis, onEmojiAdded, onEmojiDeleted }) {
 }
 
 export default function ServerSettingsModal({ show, onClose, server, roles: initialRoles, canManageRoles, canKickMembers, canBanMembers = false, isOwner, canManageChannels = false, serverEmojis = [], onEmojiAdded, onEmojiDeleted, reloadKey = 'server', onChannelAssign, onCategoryChange }) {
+    const t = useTrans();
     const [tab, setTab]   = useState('roles');
     const [roles, setRoles] = useState(initialRoles ?? []);
 
@@ -807,25 +815,25 @@ export default function ServerSettingsModal({ show, onClose, server, roles: init
             <div className="relative bg-gray-900 rounded-xl border border-gray-700 w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl">
                 {/* Header */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-gray-700 shrink-0">
-                    <h2 className="text-gray-100 font-semibold">Ajustes del servidor — {server.name}</h2>
+                    <h2 className="text-gray-100 font-semibold">{t('settings.server_settings', { name: server.name })}</h2>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-200 text-xl leading-none">&times;</button>
                 </div>
 
                 {/* Tabs */}
                 <div className="flex gap-1 px-5 pt-3 shrink-0 flex-wrap">
                     {[
-                        { key: 'roles', label: 'Roles', show: true },
-                        { key: 'members', label: 'Miembros', show: true },
-                        { key: 'categories', label: 'Categorías', show: true },
-                        { key: 'channels', label: 'Canales', show: canManageChannels || isOwner },
-                        { key: 'bans', label: 'Bans', show: canBanMembers || isOwner },
-                        { key: 'emojis', label: 'Emojis', show: isOwner },
-                    ].filter(t => t.show).map(t => (
-                        <button key={t.key} onClick={() => setTab(t.key)}
+                        { key: 'roles', label: t('settings.tabs_roles'), show: true },
+                        { key: 'members', label: t('settings.tabs_members'), show: true },
+                        { key: 'categories', label: t('settings.tabs_categories'), show: true },
+                        { key: 'channels', label: t('settings.tabs_channels'), show: canManageChannels || isOwner },
+                        { key: 'bans', label: t('settings.tabs_bans'), show: canBanMembers || isOwner },
+                        { key: 'emojis', label: t('settings.tabs_emojis'), show: isOwner },
+                    ].filter(item => item.show).map(item => (
+                        <button key={item.key} onClick={() => setTab(item.key)}
                             className={`px-4 py-2 text-sm font-medium rounded-t transition-colors ${
-                                tab === t.key ? 'bg-gray-800 text-white' : 'text-gray-400 hover:text-gray-200'
+                                tab === item.key ? 'bg-gray-800 text-white' : 'text-gray-400 hover:text-gray-200'
                             }`}>
-                            {t.label}
+                            {item.label}
                         </button>
                     ))}
                 </div>

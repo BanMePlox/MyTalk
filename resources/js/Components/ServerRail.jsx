@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
+import { useTrans } from '@/Hooks/useTrans';
 
 const FOLDER_COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#ef4444', '#f97316', '#22c55e', '#0ea5e9', '#14b8a6'];
 
@@ -131,6 +132,7 @@ export default function ServerRail({
     onAddServer,
 }) {
     const { auth } = usePage().props;
+    const t = useTrans();
     const isAdmin = auth?.is_admin ?? false;
 
     const [folders, setFolders] = useState(initialFolders);
@@ -243,7 +245,7 @@ export default function ServerRail({
         if (targetSrv.folder_id) {
             await addToFolder(targetSrv.folder_id, src.id);
         } else {
-            setFolderModal({ mode: 'create', serverId: src.id, targetServerId: targetSrv.id, name: 'Nueva carpeta', color: '#6366f1' });
+            setFolderModal({ mode: 'create', serverId: src.id, targetServerId: targetSrv.id, name: t('folder.new'), color: '#6366f1' });
         }
     }
 
@@ -314,7 +316,7 @@ export default function ServerRail({
                     <div key={conv.id} className="flex items-center w-full px-1.5 group">
                         <div className="relative">
                             <Link href={route('conversations.show', conv.id)}
-                                title={conv.type === 'group' ? (conv.name ?? 'Grupo') : conv.user?.name}
+                                title={conv.type === 'group' ? (conv.name ?? t('conv.group')) : conv.user?.name}
                                 prefetch
                                 className={`w-12 h-12 flex items-center justify-center font-bold text-sm bg-gray-700 hover:bg-indigo-500 text-white transition-all duration-150 overflow-hidden ${conv.type === 'group' ? 'rounded-2xl' : 'rounded-full hover:rounded-2xl'}`}
                             >
@@ -357,7 +359,7 @@ export default function ServerRail({
 
                 {isAdmin && (
                     <div className="relative flex items-center w-full px-1.5 group">
-                        <Link href={route('admin.index')} title="Panel de administración"
+                        <Link href={route('admin.index')} title={t('folder.admin_panel')}
                             className="w-12 h-12 flex items-center justify-center bg-gray-700 rounded-full hover:rounded-2xl hover:bg-indigo-600 hover:text-white transition-all duration-150"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-indigo-400 group-hover:text-white" viewBox="0 0 24 24" fill="currentColor">
@@ -365,7 +367,7 @@ export default function ServerRail({
                             </svg>
                         </Link>
                         <div className="absolute left-full ml-3 px-2 py-1 bg-gray-900 text-white text-xs rounded shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">
-                            Panel de administración
+                            {t('folder.admin_panel')}
                         </div>
                     </div>
                 )}
@@ -379,14 +381,14 @@ export default function ServerRail({
                         <>
                             <p className="px-3 py-1 text-xs text-gray-500 font-semibold truncate">{contextMenu.target.name}</p>
                             <div className="border-t border-gray-700 my-1" />
-                            <button onClick={() => { setContextMenu(null); setFolderModal({ mode: 'create', serverId: contextMenu.target.id, name: 'Nueva carpeta', color: '#6366f1' }); }}
+                            <button onClick={() => { setContextMenu(null); setFolderModal({ mode: 'create', serverId: contextMenu.target.id, name: t('folder.new'), color: '#6366f1' }); }}
                                 className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700">
-                                Nueva carpeta
+                                {t('folder.new')}
                             </button>
                             {folders.length > 0 && (
                                 <>
                                     <div className="border-t border-gray-700 my-1" />
-                                    <p className="px-3 py-1 text-xs text-gray-500">Mover a carpeta</p>
+                                    <p className="px-3 py-1 text-xs text-gray-500">{t('folder.move_to')}</p>
                                     {folders.map(f => (
                                         <button key={f.id} onClick={() => { setContextMenu(null); addToFolder(f.id, contextMenu.target.id); }}
                                             className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 flex items-center gap-2">
@@ -401,7 +403,7 @@ export default function ServerRail({
                                     <div className="border-t border-gray-700 my-1" />
                                     <button onClick={() => { setContextMenu(null); removeFromFolder(contextMenu.target.folder_id, contextMenu.target.id); }}
                                         className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-gray-700">
-                                        Quitar de carpeta
+                                        {t('folder.remove')}
                                     </button>
                                 </>
                             )}
@@ -413,11 +415,11 @@ export default function ServerRail({
                             <div className="border-t border-gray-700 my-1" />
                             <button onClick={() => { setContextMenu(null); setFolderModal({ mode: 'edit', folderId: contextMenu.target.id, name: contextMenu.target.name, color: contextMenu.target.color }); }}
                                 className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700">
-                                Editar carpeta
+                                {t('folder.edit')}
                             </button>
                             <button onClick={() => { setContextMenu(null); deleteFolder(contextMenu.target.id); }}
                                 className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-gray-700">
-                                Disolver carpeta
+                                {t('folder.delete')}
                             </button>
                         </>
                     )}
@@ -430,17 +432,17 @@ export default function ServerRail({
                     <div className="absolute inset-0 bg-black/60" />
                     <div className="relative bg-gray-800 border border-gray-700 rounded-xl w-full max-w-xs p-5 shadow-2xl" onClick={e => e.stopPropagation()}>
                         <h3 className="text-white font-semibold mb-4">
-                            {folderModal.mode === 'create' ? 'Nueva carpeta' : 'Editar carpeta'}
+                            {folderModal.mode === 'create' ? t('folder.new') : t('folder.edit')}
                         </h3>
                         <div className="space-y-4">
                             <div>
-                                <label className="text-xs text-gray-400 font-semibold uppercase tracking-wide block mb-1">Nombre</label>
+                                <label className="text-xs text-gray-400 font-semibold uppercase tracking-wide block mb-1">{t('folder.name_label')}</label>
                                 <input autoFocus type="text" maxLength={50} value={folderModal.name}
                                     onChange={e => setFolderModal(prev => ({ ...prev, name: e.target.value }))}
                                     className="w-full bg-gray-900 border border-gray-600 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500" />
                             </div>
                             <div>
-                                <label className="text-xs text-gray-400 font-semibold uppercase tracking-wide block mb-2">Color</label>
+                                <label className="text-xs text-gray-400 font-semibold uppercase tracking-wide block mb-2">{t('folder.color_label')}</label>
                                 <div className="flex items-center gap-2 flex-wrap">
                                     {FOLDER_COLORS.map(c => (
                                         <button key={c} type="button" onClick={() => setFolderModal(prev => ({ ...prev, color: c }))}
@@ -453,7 +455,7 @@ export default function ServerRail({
                         <div className="flex gap-2 mt-5">
                             <button onClick={() => setFolderModal(null)}
                                 className="flex-1 px-3 py-2 text-sm text-gray-400 bg-gray-700 hover:bg-gray-600 rounded-md transition-colors">
-                                Cancelar
+                                {t('folder.cancel')}
                             </button>
                             <button
                                 onClick={async () => {
@@ -471,7 +473,7 @@ export default function ServerRail({
                                     setFolderModal(null);
                                 }}
                                 className="flex-1 px-3 py-2 text-sm text-white bg-indigo-600 hover:bg-indigo-500 rounded-md transition-colors">
-                                {folderModal.mode === 'create' ? 'Crear' : 'Guardar'}
+                                {folderModal.mode === 'create' ? t('folder.create') : t('folder.save')}
                             </button>
                         </div>
                     </div>

@@ -61,13 +61,13 @@ const STATUS_CONFIG = {
     dnd:    { dot: 'bg-red-500' },
 };
 
-const ROLE_LABEL = { owner: 'Propietario', admin: 'Admin' };
+const ROLE_TRANS_KEY = { owner: 'chat.role_owner', admin: 'chat.role_admin' };
 const ROLE_COLOR = { owner: 'text-yellow-400', admin: 'text-indigo-400' };
 
-function formatTyping(names) {
-    if (names.length === 1) return `${names[0]} está escribiendo...`;
-    if (names.length === 2) return `${names[0]} y ${names[1]} están escribiendo...`;
-    return 'Varios usuarios están escribiendo...';
+function formatTyping(names, t) {
+    if (names.length === 1) return t('chat.typing_one', { name: names[0] });
+    if (names.length === 2) return t('chat.typing_two', { name1: names[0], name2: names[1] });
+    return t('chat.typing_many');
 }
 
 function TypingDots() {
@@ -86,6 +86,7 @@ function TypingDots() {
 
 // Resalta @Nombre/@Apodo en el contenido del mensaje
 function CodeBlock({ lang, code }) {
+    const t = useTrans();
     const [copied, setCopied] = useState(false);
 
     const highlighted = (() => {
@@ -106,12 +107,12 @@ function CodeBlock({ lang, code }) {
     return (
         <div className="my-1 rounded-lg overflow-hidden border border-gray-700 text-sm">
             <div className="flex items-center justify-between px-3 py-1 bg-gray-800 border-b border-gray-700">
-                <span className="text-xs text-gray-400 font-mono">{lang || 'código'}</span>
+                <span className="text-xs text-gray-400 font-mono">{lang || t('chat.code_label')}</span>
                 <button
                     onClick={copy}
                     className="text-xs text-gray-400 hover:text-gray-200 transition-colors flex items-center gap-1"
                 >
-                    {copied ? '✓ Copiado' : 'Copiar'}
+                    {copied ? t('chat.copied_code') : t('chat.copy_code')}
                 </button>
             </div>
             <pre className="overflow-x-auto p-3 bg-[#0d1117] m-0">
@@ -263,6 +264,7 @@ const HELP_PAGES = [
 ];
 
 function SyntaxHelpPopup({ onClose }) {
+    const t = useTrans();
     const [page, setPage] = useState(0);
     const ref = useRef(null);
     const current = HELP_PAGES[page];
@@ -282,7 +284,7 @@ function SyntaxHelpPopup({ onClose }) {
         >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700 bg-gray-800">
-                <span className="text-sm font-semibold text-gray-100">✦ Guía de formato</span>
+                <span className="text-sm font-semibold text-gray-100">{t('chat.format_guide')}</span>
                 <button onClick={onClose} className="text-gray-400 hover:text-gray-200 text-lg leading-none">×</button>
             </div>
 
@@ -350,7 +352,7 @@ function SyntaxHelpPopup({ onClose }) {
                     onClick={() => setPage(p => Math.max(0, p - 1))}
                     disabled={page === 0}
                     className="text-xs text-gray-400 hover:text-gray-200 disabled:opacity-30 disabled:cursor-default px-2 py-1 rounded hover:bg-gray-700 transition-colors"
-                >← Anterior</button>
+                >{t('chat.prev_page')}</button>
 
                 <div className="flex gap-1.5">
                     {HELP_PAGES.map((_, i) => (
@@ -366,7 +368,7 @@ function SyntaxHelpPopup({ onClose }) {
                     onClick={() => setPage(p => Math.min(HELP_PAGES.length - 1, p + 1))}
                     disabled={page === HELP_PAGES.length - 1}
                     className="text-xs text-gray-400 hover:text-gray-200 disabled:opacity-30 disabled:cursor-default px-2 py-1 rounded hover:bg-gray-700 transition-colors"
-                >Siguiente →</button>
+                >{t('chat.next_page')}</button>
             </div>
         </div>
     );
@@ -427,6 +429,7 @@ const IMAGE_EXT_RE = /\.(jpe?g|png|gif|webp|avif|svg)(\?.*)?$/i;
 const TWITTER_RE = /https?:\/\/(www\.)?(twitter\.com|x\.com)\/(\w+)\/status\/(\d+)/i;
 
 function TwitterCard({ url }) {
+    const t = useTrans();
     const m = url.match(TWITTER_RE);
     if (!m) return null;
     const username = m[3];
@@ -438,7 +441,7 @@ function TwitterCard({ url }) {
             </svg>
             <div className="min-w-0">
                 <p className="text-xs text-gray-400">@{username} en X</p>
-                <p className="text-sm text-gray-200 truncate">Ver tuit</p>
+                <p className="text-sm text-gray-200 truncate">{t('chat.view_tweet')}</p>
             </div>
             <svg className="w-4 h-4 text-gray-500 ml-auto shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -624,6 +627,7 @@ function ContextMenuItem({ onClick, danger, children }) {
 }
 
 function ContextMenu({ menu, onClose, authId, canManageMessages, canManageRoles, canBanMembers, serverRoles, memberRolesMap, onEdit, onDelete, onPin, onReply, onOpenProfile, onOpenDM, onToggleRole, onBan }) {
+    const t = useTrans();
     const ref = useRef();
 
     useEffect(() => {
@@ -667,17 +671,17 @@ function ContextMenu({ menu, onClose, authId, canManageMessages, canManageRoles,
                     )}
                     {isOwn && (
                         <ContextMenuItem onClick={() => { onEdit(menu.msg); onClose(); }}>
-                            <span>✏️</span> Editar mensaje
+                            <span>✏️</span> {t('chat.edit_msg')}
                         </ContextMenuItem>
                     )}
                     {canManageMessages && (
                         <ContextMenuItem onClick={() => { onPin(menu.msg); onClose(); }}>
-                            <span>📌</span> {menu.msg?.pinned_at ? 'Desfijar' : 'Fijar mensaje'}
+                            <span>📌</span> {menu.msg?.pinned_at ? t('chat.unpin_msg') : t('chat.pin_msg')}
                         </ContextMenuItem>
                     )}
                     {canDel && (
                         <ContextMenuItem danger onClick={() => { onDelete(menu.msg); onClose(); }}>
-                            <span>🗑️</span> Eliminar mensaje
+                            <span>🗑️</span> {t('chat.delete_msg')}
                         </ContextMenuItem>
                     )}
                 </>
@@ -686,17 +690,17 @@ function ContextMenu({ menu, onClose, authId, canManageMessages, canManageRoles,
             {menu.type === 'user' && member && (
                 <>
                     <ContextMenuItem onClick={() => { onOpenProfile(member, menu.x, menu.y); onClose(); }}>
-                        <span>👤</span> Ver perfil
+                        <span>👤</span> {t('chat.view_profile')}
                     </ContextMenuItem>
                     {member.id !== authId && (
                         <ContextMenuItem onClick={() => { onOpenDM(member); onClose(); }}>
-                            <span>💬</span> Mensaje directo
+                            <span>💬</span> {t('chat.direct_message')}
                         </ContextMenuItem>
                     )}
                     {canManageRoles && member.id !== authId && serverRoles.length > 0 && (
                         <>
                             <div className="border-t border-gray-700 mx-2 my-1" />
-                            <p className="px-3 py-1 text-xs text-gray-500 uppercase tracking-wide">Roles</p>
+                            <p className="px-3 py-1 text-xs text-gray-500 uppercase tracking-wide">{t('chat.roles_label')}</p>
                             {serverRoles.map(role => {
                                 const hasRole = memberRoles.some(r => r.id === role.id);
                                 return (
@@ -776,13 +780,13 @@ function ProfilePopover({ member, status, anchorX, anchorY, onClose, authId }) {
                 {/* Nombre y rol */}
                 <p className="font-bold text-white text-lg leading-tight">{member.nickname ?? member.name}</p>
                 {member.nickname && <p className="text-xs text-gray-400">{member.name}</p>}
-                {ROLE_LABEL[member.pivot?.role] && (
-                    <p className={`text-xs font-medium ${ROLE_COLOR[member.pivot?.role]}`}>{ROLE_LABEL[member.pivot?.role]}</p>
+                {ROLE_TRANS_KEY[member.pivot?.role] && (
+                    <p className={`text-xs font-medium ${ROLE_COLOR[member.pivot?.role]}`}>{t(ROLE_TRANS_KEY[member.pivot?.role])}</p>
                 )}
 
                 {/* Estado de conexión */}
                 <p className="text-xs text-gray-400 mt-0.5">
-                    {status ? STATUS_CONFIG[status]?.label : 'Desconectado'}
+                    {status ? STATUS_CONFIG[status]?.label : t('chat.offline_status')}
                 </p>
 
                 {/* Estado personalizado */}
@@ -793,7 +797,7 @@ function ProfilePopover({ member, status, anchorX, anchorY, onClose, authId }) {
                 {/* Roles del servidor */}
                 {(member.server_roles?.length > 0) && (
                     <div className="mt-3 pt-3 border-t border-gray-700">
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Roles</p>
+                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">{t('chat.roles_label')}</p>
                         <div className="flex flex-wrap gap-1.5">
                             {member.server_roles.map(role => (
                                 <span key={role.id}
@@ -809,7 +813,7 @@ function ProfilePopover({ member, status, anchorX, anchorY, onClose, authId }) {
                 {/* Bio */}
                 {member.bio && (
                     <div className="mt-3 pt-3 border-t border-gray-700">
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Sobre mí</p>
+                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">{t('chat.about_me')}</p>
                         <p className="text-sm text-gray-300 whitespace-pre-wrap">{member.bio}</p>
                     </div>
                 )}
@@ -821,7 +825,7 @@ function ProfilePopover({ member, status, anchorX, anchorY, onClose, authId }) {
                             onClick={() => router.post(route('conversations.open', member.id))}
                             className="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium py-1.5 rounded-lg transition-colors"
                         >
-                            Mensaje directo
+                            {t('chat.direct_message')}
                         </button>
                     </div>
                 )}
@@ -3099,7 +3103,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                             {Object.keys(typingUsers).length > 0 && (
                                 <p className="text-xs text-gray-400 italic">
                                     <TypingDots />
-                                    {formatTyping(Object.values(typingUsers))}
+                                    {formatTyping(Object.values(typingUsers), t)}
                                 </p>
                             )}
                         </div>

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTrans } from '@/Hooks/useTrans';
 
 async function invoke(cmd, args = {}) {
     try {
@@ -12,6 +13,7 @@ function windowLabel() {
 
 export default function TitleBar() {
     const label = windowLabel();
+    const t = useTrans();
     const [updateAvailable, setUpdateAvailable] = useState(false);
     const [currentVersion, setCurrentVersion] = useState(null);
     const updateRid = useRef(null);
@@ -49,7 +51,7 @@ export default function TitleBar() {
                     onClick={installUpdate}
                     className="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-0.5 rounded transition"
                 >
-                    Nueva versión disponible — Instalar y reiniciar
+                    {t('app.update_available')}
                 </button>
             )}
 
@@ -57,7 +59,7 @@ export default function TitleBar() {
                 <button
                     onClick={() => invoke('plugin:window|minimize', { label })}
                     className="w-10 h-full flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition"
-                    title="Minimizar"
+                    title={t('app.minimize')}
                 >
                     <svg className="w-3 h-3" viewBox="0 0 10 1" fill="currentColor">
                         <rect width="10" height="1" />
@@ -67,7 +69,7 @@ export default function TitleBar() {
                 <button
                     onClick={() => invoke('plugin:window|toggle_maximize', { label })}
                     className="w-10 h-full flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition"
-                    title="Maximizar"
+                    title={t('app.maximize')}
                 >
                     <svg className="w-3 h-3" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1">
                         <rect x="0" y="0" width="10" height="10" />
@@ -77,7 +79,7 @@ export default function TitleBar() {
                 <button
                     onClick={() => invoke('plugin:window|hide', { label })}
                     className="w-10 h-full flex items-center justify-center text-white/40 hover:text-white hover:bg-red-600 transition"
-                    title="Minimizar a bandeja"
+                    title={t('app.minimize_tray')}
                 >
                     <svg className="w-3 h-3" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.2">
                         <line x1="0" y1="0" x2="10" y2="10" />

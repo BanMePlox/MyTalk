@@ -1,7 +1,9 @@
 import InputError from '@/Components/InputError';
 import { Head, Link, useForm } from '@inertiajs/react';
+import { useTrans } from '@/Hooks/useTrans';
 
 export default function Login({ status, canResetPassword }) {
+    const t = useTrans();
     const { data, setData, post, processing, errors, reset } = useForm({
         email: '',
         password: '',
@@ -20,8 +22,8 @@ export default function Login({ status, canResetPassword }) {
             <div className="w-full max-w-sm">
                 <div className="text-center mb-8">
                     <img src="/images/MyTalk.png" alt="MyTalk" className="w-12 h-12 rounded-xl object-contain mx-auto mb-4" />
-                    <h1 className="text-white text-2xl font-bold">Bienvenido de nuevo</h1>
-                    <p className="text-white/40 text-sm mt-1">Inicia sesión en tu cuenta</p>
+                    <h1 className="text-white text-2xl font-bold">{t('auth.login_title')}</h1>
+                    <p className="text-white/40 text-sm mt-1">{t('auth.login_subtitle')}</p>
                 </div>
 
                 {status && (
@@ -32,7 +34,7 @@ export default function Login({ status, canResetPassword }) {
 
                 <form onSubmit={submit} className="space-y-4">
                     <div>
-                        <label className="block text-sm text-white/60 mb-1.5">Correo electrónico</label>
+                        <label className="block text-sm text-white/60 mb-1.5">{t('auth.email')}</label>
                         <input
                             type="email"
                             value={data.email}
@@ -45,7 +47,7 @@ export default function Login({ status, canResetPassword }) {
                     </div>
 
                     <div>
-                        <label className="block text-sm text-white/60 mb-1.5">Contraseña</label>
+                        <label className="block text-sm text-white/60 mb-1.5">{t('auth.password')}</label>
                         <input
                             type="password"
                             value={data.password}
@@ -64,11 +66,11 @@ export default function Login({ status, canResetPassword }) {
                                 onChange={e => setData('remember', e.target.checked)}
                                 className="rounded border-white/20 bg-white/5 text-indigo-500 focus:ring-indigo-500"
                             />
-                            Recuérdame
+                            {t('auth.remember')}
                         </label>
                         {canResetPassword && (
                             <Link href={route('password.request')} className="text-indigo-400 hover:text-indigo-300 transition">
-                                ¿Olvidaste tu contraseña?
+                                {t('auth.forgot_password')}
                             </Link>
                         )}
                     </div>
@@ -78,14 +80,14 @@ export default function Login({ status, canResetPassword }) {
                         disabled={processing}
                         className="w-full bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg transition shadow-lg shadow-indigo-500/20"
                     >
-                        {processing ? 'Iniciando sesión...' : 'Iniciar sesión'}
+                        {processing ? t('auth.login_processing') : t('auth.login_btn')}
                     </button>
                 </form>
 
                 <p className="text-center text-white/40 text-sm mt-6">
-                    ¿No tienes cuenta?{' '}
+                    {t('auth.no_account')}{' '}
                     <Link href={route('register')} className="text-indigo-400 hover:text-indigo-300 transition">
-                        Regístrate
+                        {t('auth.register_link')}
                     </Link>
                 </p>
             </div>

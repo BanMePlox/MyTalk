@@ -1,7 +1,9 @@
 import InputError from '@/Components/InputError';
 import { Head, Link, useForm } from '@inertiajs/react';
+import { useTrans } from '@/Hooks/useTrans';
 
 export default function Register() {
+    const t = useTrans();
     const { data, setData, post, processing, errors, reset } = useForm({
         name: '',
         email: '',
@@ -21,13 +23,13 @@ export default function Register() {
             <div className="w-full max-w-sm">
                 <div className="text-center mb-8">
                     <img src="/images/MyTalk.png" alt="MyTalk" className="w-12 h-12 rounded-xl object-contain mx-auto mb-4" />
-                    <h1 className="text-white text-2xl font-bold">Crear una cuenta</h1>
-                    <p className="text-white/40 text-sm mt-1">Únete a MyTalk hoy mismo</p>
+                    <h1 className="text-white text-2xl font-bold">{t('auth.register_title')}</h1>
+                    <p className="text-white/40 text-sm mt-1">{t('auth.register_subtitle')}</p>
                 </div>
 
                 <form onSubmit={submit} className="space-y-4">
                     <div>
-                        <label className="block text-sm text-white/60 mb-1.5">Nombre de usuario</label>
+                        <label className="block text-sm text-white/60 mb-1.5">{t('auth.username')}</label>
                         <input
                             type="text"
                             value={data.name}
@@ -40,7 +42,7 @@ export default function Register() {
                     </div>
 
                     <div>
-                        <label className="block text-sm text-white/60 mb-1.5">Correo electrónico</label>
+                        <label className="block text-sm text-white/60 mb-1.5">{t('auth.email')}</label>
                         <input
                             type="email"
                             value={data.email}
@@ -52,7 +54,7 @@ export default function Register() {
                     </div>
 
                     <div>
-                        <label className="block text-sm text-white/60 mb-1.5">Contraseña</label>
+                        <label className="block text-sm text-white/60 mb-1.5">{t('auth.password')}</label>
                         <input
                             type="password"
                             value={data.password}
@@ -64,7 +66,7 @@ export default function Register() {
                     </div>
 
                     <div>
-                        <label className="block text-sm text-white/60 mb-1.5">Confirmar contraseña</label>
+                        <label className="block text-sm text-white/60 mb-1.5">{t('auth.confirm_password')}</label>
                         <input
                             type="password"
                             value={data.password_confirmation}
@@ -80,14 +82,14 @@ export default function Register() {
                         disabled={processing}
                         className="w-full bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg transition shadow-lg shadow-indigo-500/20"
                     >
-                        {processing ? 'Creando cuenta...' : 'Crear cuenta'}
+                        {processing ? t('auth.register_processing') : t('auth.register_btn')}
                     </button>
                 </form>
 
                 <p className="text-center text-white/40 text-sm mt-6">
-                    ¿Ya tienes cuenta?{' '}
+                    {t('auth.has_account')}{' '}
                     <Link href={route('login')} className="text-indigo-400 hover:text-indigo-300 transition">
-                        Inicia sesión
+                        {t('auth.login_link')}
                     </Link>
                 </p>
             </div>
