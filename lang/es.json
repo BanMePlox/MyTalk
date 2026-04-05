@@ -320,5 +320,10 @@
     "auth.github":            "Continuar con GitHub",
     "auth.linkedin":          "Continuar con LinkedIn",
     "auth.terms":             "Términos de servicio",
-    "auth.privacy":           "Política de privacidad"
+    "auth.privacy":           "Política de privacidad",
+    "auth.accept_terms":      "Al registrarte aceptas nuestros",
+    "auth.and":               "y la",
+
+    "cookie.message":         "Usamos cookies de sesión estrictamente necesarias para que la app funcione. Más información en nuestra",
+    "cookie.accept":          "Entendido"
 }

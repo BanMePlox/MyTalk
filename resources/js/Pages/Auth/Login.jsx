@@ -1,6 +1,7 @@
 import InputError from '@/Components/InputError';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useTrans } from '@/Hooks/useTrans';
+import CookieBanner from '@/Components/CookieBanner';
 
 export default function Login({ status, canResetPassword }) {
     const t = useTrans();
@@ -16,6 +17,7 @@ export default function Login({ status, canResetPassword }) {
     };
 
     return (
+        <>
         <div className="min-h-screen bg-gray-900 flex items-center justify-center px-4">
             <Head title={t('auth.login_btn')} />
 
@@ -118,5 +120,7 @@ export default function Login({ status, canResetPassword }) {
                 </p>
             </div>
         </div>
+        <CookieBanner />
+        </>
     );
 }

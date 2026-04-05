@@ -18,7 +18,7 @@ Route::get('auth/{provider}/redirect', [SocialAuthController::class, 'redirect']
     ->name('oauth.redirect');
 
 Route::get('auth/{provider}/callback', [SocialAuthController::class, 'callback'])
-    ->middleware('guest')
+    ->middleware(['guest', 'throttle:20,1'])
     ->name('oauth.callback');
 
 Route::middleware('guest')->group(function () {

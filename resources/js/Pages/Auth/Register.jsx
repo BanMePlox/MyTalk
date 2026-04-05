@@ -1,6 +1,7 @@
 import InputError from '@/Components/InputError';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useTrans } from '@/Hooks/useTrans';
+import CookieBanner from '@/Components/CookieBanner';
 
 export default function Register() {
     const t = useTrans();
@@ -84,6 +85,13 @@ export default function Register() {
                     >
                         {processing ? t('auth.register_processing') : t('auth.register_btn')}
                     </button>
+
+                    <p className="text-center text-white/30 text-xs">
+                        {t('auth.accept_terms')}{' '}
+                        <Link href={route('terms')} className="underline hover:text-white/50 transition">{t('auth.terms')}</Link>
+                        {' '}{t('auth.and')}{' '}
+                        <Link href={route('privacy')} className="underline hover:text-white/50 transition">{t('auth.privacy')}</Link>.
+                    </p>
                 </form>
 
                 {/* OAuth */}
@@ -120,5 +128,6 @@ export default function Register() {
                 </p>
             </div>
         </div>
+        <CookieBanner />
     );
 }
