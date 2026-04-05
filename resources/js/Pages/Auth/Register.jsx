@@ -18,6 +18,7 @@ export default function Register() {
     };
 
     return (
+        <>
         <div className="min-h-screen bg-gray-900 flex items-center justify-center px-4">
             <Head title={t('auth.register_title')} />
 
@@ -129,5 +130,6 @@ export default function Register() {
             </div>
         </div>
         <CookieBanner />
+        </>
     );
 }
