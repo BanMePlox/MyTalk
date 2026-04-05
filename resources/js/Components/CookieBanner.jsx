@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { Link } from '@inertiajs/react';
 import { useTrans } from '@/Hooks/useTrans';
 
+const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+
 export default function CookieBanner() {
     const t = useTrans();
     const [visible, setVisible] = useState(false);
 
     useEffect(() => {
-        if (!localStorage.getItem('cookies_accepted')) {
+        if (!isTauri && !localStorage.getItem('cookies_accepted')) {
             setVisible(true);
         }
     }, []);

@@ -1,4 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
+import CookieBanner from '@/Components/CookieBanner';
 
 const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
@@ -104,6 +105,7 @@ export default function Welcome({ auth }) {
                     Desarrollado por Pedro Jiménez Luján · Código abierto bajo licencia MIT
                 </footer>
             </div>
+            {!isTauri && <CookieBanner />}
         </>
     );
 }

@@ -10,10 +10,15 @@ import { usePage } from '@inertiajs/react';
  *   t('voice.calling', { name: 'Pedro' })    // "Calling Pedro…"
  */
 export function useTrans() {
-    const { translations } = usePage().props;
+    let translations = {};
+    try {
+        translations = usePage().props.translations ?? {};
+    } catch {
+        // Outside Inertia context (e.g. TitleBar rendered before <App>)
+    }
 
     return function t(key, replacements = {}) {
-        let str = translations?.[key] ?? key;
+        let str = translations[key] ?? key;
         Object.entries(replacements).forEach(([k, v]) => {
             str = str.replace(new RegExp(`:${k}`, 'g'), String(v));
         });
