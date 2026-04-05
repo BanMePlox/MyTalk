@@ -38,8 +38,10 @@ class HandleInertiaRequests extends Middleware
                 $emojis = UserEmoji::where('user_id', $request->user()->id)
                     ->get(['id', 'name', 'image_path'])
                     ->map(fn($e) => ['id' => $e->id, 'name' => $e->name, 'url' => $e->url]);
+                $user = $request->user()->makeVisible(['email']);
+                $user->has_password = $request->user()->password !== null;
                 return [
-                    'user'       => $request->user()->makeVisible(['email']),
+                    'user'       => $user,
                     'userEmojis' => $emojis,
                     'is_admin'   => $request->user()->is_admin,
                 ];

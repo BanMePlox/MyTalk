@@ -69,13 +69,20 @@ class ProfileController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
-        $request->validate([
-            'password' => ['required', 'current_password'],
-        ]);
-
         $user = $request->user();
 
+        // OAuth-only users have no password — skip password check
+        if ($user->password !== null) {
+            $request->validate([
+                'password' => ['required', 'current_password'],
+            ]);
+        }
+
         Auth::logout();
+
+        if ($user->avatar) {
+            Storage::disk('public')->delete($user->avatar);
+        }
 
         $user->delete();
 

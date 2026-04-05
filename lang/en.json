@@ -314,6 +314,11 @@
     "profile.my_profile":     "My profile",
     "profile.page_title":     "Profile",
     "profile.preview":        "Preview",
+    "profile.delete_title":        "Delete account",
+    "profile.delete_subtitle":     "Once your account is deleted, all your data will be permanently removed. This action cannot be undone.",
+    "profile.delete_btn":          "Delete account",
+    "profile.delete_confirm_title": "Are you sure you want to delete your account?",
+    "profile.delete_confirm_body": "This action is irreversible. All your messages, servers and data will be deleted. Enter your password to confirm.",
 
     "auth.or_continue":       "Or continue with",
     "auth.google":            "Continue with Google",

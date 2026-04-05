@@ -314,6 +314,11 @@
     "profile.my_profile":     "Mi perfil",
     "profile.page_title":     "Perfil",
     "profile.preview":        "Vista previa",
+    "profile.delete_title":        "Eliminar cuenta",
+    "profile.delete_subtitle":     "Una vez eliminada tu cuenta, todos tus datos serán borrados permanentemente. Esta acción no se puede deshacer.",
+    "profile.delete_btn":          "Eliminar cuenta",
+    "profile.delete_confirm_title": "¿Seguro que quieres eliminar tu cuenta?",
+    "profile.delete_confirm_body": "Esta acción es irreversible. Todos tus mensajes, servidores y datos serán eliminados. Introduce tu contraseña para confirmar.",
 
     "auth.or_continue":       "O continúa con",
     "auth.google":            "Continuar con Google",
