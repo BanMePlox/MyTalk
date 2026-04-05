@@ -92,7 +92,7 @@ export default function Login({ status, canResetPassword }) {
                         <div className="flex-1 h-px bg-white/10" />
                     </div>
                     <div className="mt-4 flex flex-col gap-3">
-                        <
+                        <a
                             href={route('oauth.redirect', 'github')}
                             className="w-full flex items-center justify-center gap-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 hover:text-white font-medium py-2.5 rounded-lg transition"
                         >
