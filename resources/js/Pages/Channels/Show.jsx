@@ -236,38 +236,41 @@ function renderContent(text, members = [], selfName = '', selfNickname = '', cus
     return nodes.length === 1 ? nodes[0] : nodes;
 }
 
-const HELP_PAGES = [
-    {
-        title: 'Bloque de código',
-        description: 'Rodea tu código con tres backticks. Añade el lenguaje justo después de los primeros tres para activar el coloreado.',
-        raw: '```javascript\nconst suma = (a, b) => a + b;\nconsole.log(suma(2, 3)); // 5\n```',
-        lang: 'javascript',
-        code: 'const suma = (a, b) => a + b;\nconsole.log(suma(2, 3)); // 5',
-    },
-    {
-        title: 'Código en línea',
-        description: 'Rodea una palabra o expresión corta con un solo backtick para resaltarla dentro de una frase.',
-        raw: 'Usa `console.log()` para depurar.',
-        inline: true,
-    },
-    {
-        title: 'Lenguajes soportados',
-        description: 'Puedes especificar cualquiera de estos lenguajes tras los tres backticks:',
-        langs: ['javascript · js', 'typescript · ts', 'python · py', 'php', 'html · xml', 'css', 'json', 'bash · sh · shell', 'sql', 'java', 'csharp · cs', 'cpp', 'rust · rs', 'go', 'markdown'],
-    },
-    {
-        title: 'Menciones',
-        description: 'Escribe @ seguido del nombre o apodo de un miembro para mencionarlo. Aparecerá un selector con sugerencias.',
-        raw: '@Pedro echa un vistazo a esto 👆',
-        mention: true,
-    },
-];
+function getHelpPages(t) {
+    return [
+        {
+            title: t('chat.help_code_block'),
+            description: t('chat.help_code_block_desc'),
+            raw: '```javascript\nconst suma = (a, b) => a + b;\nconsole.log(suma(2, 3)); // 5\n```',
+            lang: 'javascript',
+            code: 'const suma = (a, b) => a + b;\nconsole.log(suma(2, 3)); // 5',
+        },
+        {
+            title: t('chat.help_inline_code'),
+            description: t('chat.help_inline_code_desc'),
+            raw: 'Usa `console.log()` para depurar.',
+            inline: true,
+        },
+        {
+            title: t('chat.help_languages'),
+            description: t('chat.help_languages_desc'),
+            langs: ['javascript · js', 'typescript · ts', 'python · py', 'php', 'html · xml', 'css', 'json', 'bash · sh · shell', 'sql', 'java', 'csharp · cs', 'cpp', 'rust · rs', 'go', 'markdown'],
+        },
+        {
+            title: t('chat.help_mentions'),
+            description: t('chat.help_mentions_desc'),
+            raw: '@Pedro echa un vistazo a esto 👆',
+            mention: true,
+        },
+    ];
+}
 
 function SyntaxHelpPopup({ onClose }) {
     const t = useTrans();
     const [page, setPage] = useState(0);
     const ref = useRef(null);
-    const current = HELP_PAGES[page];
+    const helpPages = getHelpPages(t);
+    const current = helpPages[page];
 
     useEffect(() => {
         function handleClick(e) {
@@ -355,7 +358,7 @@ function SyntaxHelpPopup({ onClose }) {
                 >{t('chat.prev_page')}</button>
 
                 <div className="flex gap-1.5">
-                    {HELP_PAGES.map((_, i) => (
+                    {helpPages.map((_, i) => (
                         <button
                             key={i}
                             onClick={() => setPage(i)}
@@ -365,8 +368,8 @@ function SyntaxHelpPopup({ onClose }) {
                 </div>
 
                 <button
-                    onClick={() => setPage(p => Math.min(HELP_PAGES.length - 1, p + 1))}
-                    disabled={page === HELP_PAGES.length - 1}
+                    onClick={() => setPage(p => Math.min(helpPages.length - 1, p + 1))}
+                    disabled={page === helpPages.length - 1}
                     className="text-xs text-gray-400 hover:text-gray-200 disabled:opacity-30 disabled:cursor-default px-2 py-1 rounded hover:bg-gray-700 transition-colors"
                 >{t('chat.next_page')}</button>
             </div>
@@ -1297,7 +1300,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                 setChannelMentionBadges((prev) => ({ ...prev, [e.channel_id]: (prev[e.channel_id] ?? 0) + 1 }));
             }
             if (document.hidden) {
-                notify(`${e.sender} te mencionó en #${e.channel}`, e.content);
+                notify(t('chat.mention_notify', { sender: e.sender, channel: e.channel }), e.content);
             } else {
                 const id = Date.now();
                 setToasts((prev) => [...prev, { id, type: 'mention', ...e }]);
@@ -1656,7 +1659,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
             setRecordingTime(0);
             recordingTimerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000);
         } catch {
-            alert('No se pudo acceder al micrófono.');
+            alert(t('chat.mic_error'));
         }
     }
 
@@ -1885,7 +1888,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
     }
 
     async function banMember(member) {
-        const reason = window.prompt(`Razón del ban para ${member.name} (opcional):`);
+        const reason = window.prompt(t('chat.ban_reason_prompt', { name: member.name }));
         if (reason === null) return; // cancelado
         try {
             await window.axios.post(route('bans.store', { server: channel.server.id, user: member.id }), { reason: reason || null });
@@ -2010,7 +2013,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                     className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-200 hover:bg-gray-700 transition-colors"
                                 >
                                     <span>🔗</span>
-                                    <span>{inviteCopied ? '¡Copiado!' : 'Copiar invitación'}</span>
+                                    <span>{inviteCopied ? t('chat.copied_invite') : t('chat.copy_invite')}</span>
                                 </button>
 
                                 {/* Cambiar nombre */}
@@ -2137,19 +2140,19 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                 {isOwner ? (
                                     confirmDeleteServer ? (
                                         <div className="px-3 py-2">
-                                            <p className="text-xs text-red-400 mb-2">¿Eliminar <strong>{serverName}</strong>? Esta acción es irreversible.</p>
+                                            <p className="text-xs text-red-400 mb-2">{t('chat.confirm_delete_server', { name: serverName })}</p>
                                             <div className="flex gap-2">
                                                 <button
                                                     onClick={() => router.delete(route('servers.destroy', channel.server.id))}
                                                     className="flex-1 bg-red-600 hover:bg-red-700 text-white text-xs px-2 py-1.5 rounded"
                                                 >
-                                                    Sí, eliminar
+                                                    {t('chat.confirm_delete_yes')}
                                                 </button>
                                                 <button
                                                     onClick={() => setConfirmDeleteServer(false)}
                                                     className="flex-1 text-gray-400 hover:text-gray-200 text-xs px-2 py-1.5 rounded hover:bg-gray-700"
                                                 >
-                                                    Cancelar
+                                                    {t('settings.cancel')}
                                                 </button>
                                             </div>
                                         </div>

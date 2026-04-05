@@ -3,14 +3,16 @@ import { Head, usePage } from '@inertiajs/react';
 import DeleteUserForm from './Partials/DeleteUserForm';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm';
+import { useTrans } from '@/Hooks/useTrans';
 
-const STATUS_CONFIG = {
-    online: { dot: 'bg-green-500', label: 'En línea' },
-    away:   { dot: 'bg-yellow-400', label: 'Ausente' },
-    dnd:    { dot: 'bg-red-500',   label: 'No molestar' },
+const STATUS_DOT = {
+    online: 'bg-green-500',
+    away:   'bg-yellow-400',
+    dnd:    'bg-red-500',
 };
 
 function ProfileCard({ user }) {
+    const t = useTrans();
     return (
         <div className="rounded-xl overflow-hidden shadow-lg w-72 bg-gray-800 text-white">
             {/* Banner */}
@@ -30,7 +32,7 @@ function ProfileCard({ user }) {
                             )
                         }
                         {/* Estado dot */}
-                        <span className={`absolute bottom-1 right-1 w-4 h-4 rounded-full ring-2 ring-gray-800 ${STATUS_CONFIG[user.status]?.dot ?? 'bg-gray-500'}`} />
+                        <span className={`absolute bottom-1 right-1 w-4 h-4 rounded-full ring-2 ring-gray-800 ${STATUS_DOT[user.status] ?? 'bg-gray-500'}`} />
                     </div>
                 </div>
 
@@ -39,12 +41,12 @@ function ProfileCard({ user }) {
                 {user.custom_status && (
                     <p className="text-sm text-gray-300 mt-0.5">{user.custom_status}</p>
                 )}
-                <p className="text-xs text-gray-400 mt-0.5">{STATUS_CONFIG[user.status]?.label ?? 'Desconectado'}</p>
+                <p className="text-xs text-gray-400 mt-0.5">{['online','away','dnd'].includes(user.status) ? t(`status.${user.status}`) : t('chat.offline_status')}</p>
 
                 {/* Bio */}
                 {user.bio && (
                     <div className="mt-3 pt-3 border-t border-gray-700">
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Sobre mí</p>
+                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">{t('chat.about_me')}</p>
                         <p className="text-sm text-gray-300 whitespace-pre-wrap">{user.bio}</p>
                     </div>
                 )}
@@ -55,12 +57,13 @@ function ProfileCard({ user }) {
 
 export default function Edit({ mustVerifyEmail, status }) {
     const { auth } = usePage().props;
+    const t = useTrans();
 
     return (
         <AuthenticatedLayout
-            header={<h2 className="text-xl font-semibold leading-tight text-gray-800">Mi perfil</h2>}
+            header={<h2 className="text-xl font-semibold leading-tight text-gray-800">{t('profile.my_profile')}</h2>}
         >
-            <Head title="Perfil" />
+            <Head title={t('profile.page_title')} />
 
             <div className="py-10">
                 <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
@@ -85,7 +88,7 @@ export default function Edit({ mustVerifyEmail, status }) {
 
                         {/* Preview fija en el lateral */}
                         <div className="lg:sticky lg:top-8 shrink-0">
-                            <p className="text-sm font-medium text-gray-500 mb-3">Vista previa</p>
+                            <p className="text-sm font-medium text-gray-500 mb-3">{t('profile.preview')}</p>
                             <ProfileCard user={auth.user} />
                         </div>
                     </div>

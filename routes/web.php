@@ -33,6 +33,16 @@ Route::get('/', function () {
     return inertia('Welcome', ['auth' => ['user' => Auth::user()]]);
 })->name('home');
 
+Route::get('/terms/{locale?}', function (string $locale = 'es') {
+    abort_unless(in_array($locale, ['es', 'en']), 404);
+    return inertia('Legal/Terms', ['locale' => $locale]);
+})->name('terms');
+
+Route::get('/privacy/{locale?}', function (string $locale = 'es') {
+    abort_unless(in_array($locale, ['es', 'en']), 404);
+    return inertia('Legal/Privacy', ['locale' => $locale]);
+})->name('privacy');
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/user/status', [UserStatusController::class, 'update'])->name('user.status');
 

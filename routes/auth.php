@@ -8,8 +8,18 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
+
+// OAuth — accessible before and after login (Socialite handles redirects back to app)
+Route::get('auth/{provider}/redirect', [SocialAuthController::class, 'redirect'])
+    ->middleware('guest')
+    ->name('oauth.redirect');
+
+Route::get('auth/{provider}/callback', [SocialAuthController::class, 'callback'])
+    ->middleware('guest')
+    ->name('oauth.callback');
 
 Route::middleware('guest')->group(function () {
     Route::get('register', [RegisteredUserController::class, 'create'])

@@ -338,7 +338,7 @@ export default function ServerRail({
 
                 <div className="relative flex items-center w-full px-1.5 group">
                     <div className="relative">
-                        <Link href={route('friends.index')} title="Amigos" prefetch
+                        <Link href={route('friends.index')} title={t('nav.friends')} prefetch
                             className="w-12 h-12 flex items-center justify-center text-xl text-indigo-300 bg-gray-700 rounded-full hover:rounded-2xl hover:bg-indigo-500 hover:text-white transition-all duration-150"
                         >👥</Link>
                         {pendingFriendRequests > 0 && (
@@ -352,7 +352,7 @@ export default function ServerRail({
                 <div className="mt-1 w-8 border-t border-gray-700" />
 
                 <div className="relative flex items-center w-full px-1.5 group">
-                    <button type="button" onClick={onAddServer} title="Añadir servidor"
+                    <button type="button" onClick={onAddServer} title={t('nav.add_server')}
                         className="w-12 h-12 flex items-center justify-center font-bold text-2xl text-green-400 bg-gray-700 rounded-full hover:rounded-2xl hover:bg-green-500 hover:text-white transition-all duration-150"
                     >+</button>
                 </div>

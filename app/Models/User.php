@@ -28,19 +28,25 @@ class User extends Authenticatable
         'password',
         'status',
         'avatar',
+        'avatar_external',
         'bio',
         'custom_status',
         'banner_color',
         'locale',
         'is_admin',
         'is_system',
+        'google_id',
+        'github_id',
     ];
 
     protected $appends = ['avatar_url'];
 
     public function getAvatarUrlAttribute(): ?string
     {
-        return $this->avatar ? Storage::disk('public')->url($this->avatar) : null;
+        if ($this->avatar) {
+            return Storage::disk('public')->url($this->avatar);
+        }
+        return $this->avatar_external ?: null;
     }
 
     /**

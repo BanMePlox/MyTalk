@@ -460,7 +460,7 @@ export default function Show({ conversation, other, members: initialMembers = nu
                         <button
                             type="button"
                             onClick={() => setServerModalOpen(true)}
-                            title="Añadir servidor"
+                            title={t('nav.add_server')}
                             className="w-12 h-12 flex items-center justify-center font-bold text-2xl text-green-400 bg-gray-700 rounded-full hover:rounded-2xl hover:bg-green-500 hover:text-white transition-all duration-150"
                         >+</button>
                     </div>
@@ -806,7 +806,7 @@ export default function Show({ conversation, other, members: initialMembers = nu
                                     <div className="flex items-center gap-1">
                                         <button
                                             onClick={voice.toggleMute}
-                                            title={voice.muted ? 'Activar micrófono' : 'Silenciar'}
+                                            title={voice.muted ? t('voice.unmute_title') : t('voice.mute_title')}
                                             className={`flex-1 flex items-center justify-center p-1.5 rounded-lg transition-colors ${voice.muted ? 'bg-red-600/20 text-red-400 hover:bg-red-600/30' : 'text-gray-400 hover:bg-gray-700 hover:text-gray-200'}`}
                                         >
                                             <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

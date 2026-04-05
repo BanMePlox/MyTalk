@@ -719,10 +719,10 @@ function EmojisTab({ server, initialEmojis, onEmojiAdded, onEmojiDeleted }) {
         e.preventDefault();
         setError('');
         const file = fileRef.current?.files[0];
-        if (!name.trim()) { setError('Introduce un nombre.'); return; }
-        if (!file) { setError('Selecciona un archivo.'); return; }
+        if (!name.trim()) { setError(t('settings.emoji_error_name')); return; }
+        if (!file) { setError(t('settings.emoji_error_file')); return; }
         if (!/^[a-z0-9_]+$/.test(name)) {
-            setError('Solo letras minúsculas, números y guiones bajos.');
+            setError(t('settings.emoji_error_format'));
             return;
         }
         setUploading(true);

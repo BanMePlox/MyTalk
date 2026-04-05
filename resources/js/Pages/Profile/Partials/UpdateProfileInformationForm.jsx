@@ -41,8 +41,8 @@ export default function UpdateProfileInformationForm({ className = '' }) {
     return (
         <section className={className}>
             <header>
-                <h2 className="text-lg font-medium text-gray-900">Información del perfil</h2>
-                <p className="mt-1 text-sm text-gray-600">Personaliza cómo te ven los demás.</p>
+                <h2 className="text-lg font-medium text-gray-900">{t('profile.info_title')}</h2>
+                <p className="mt-1 text-sm text-gray-600">{t('profile.info_subtitle')}</p>
             </header>
 
             <form onSubmit={submit} className="mt-6 space-y-6">
@@ -52,7 +52,7 @@ export default function UpdateProfileInformationForm({ className = '' }) {
                         type="button"
                         onClick={() => avatarInput.current.click()}
                         className="relative group shrink-0"
-                        title="Cambiar avatar"
+                        title={t('profile.change_avatar')}
                     >
                         {avatarPreview
                             ? <img src={avatarPreview} alt="avatar" className="w-16 h-16 rounded-full object-cover" />
@@ -64,20 +64,20 @@ export default function UpdateProfileInformationForm({ className = '' }) {
                             )
                         }
                         <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                            <span className="text-white text-xs font-medium">Cambiar</span>
+                            <span className="text-white text-xs font-medium">{t('profile.change')}</span>
                         </div>
                     </button>
                     <input ref={avatarInput} type="file" accept="image/*" className="hidden" onChange={onAvatarChange} />
                     <div className="text-sm text-gray-500">
-                        <p className="font-medium text-gray-700">Avatar</p>
-                        <p>JPG, PNG o GIF · Máx. 2 MB</p>
+                        <p className="font-medium text-gray-700">{t('profile.avatar')}</p>
+                        <p>{t('profile.avatar_hint')}</p>
                         <InputError message={errors.avatar} className="mt-1" />
                     </div>
                 </div>
 
                 {/* Nombre */}
                 <div>
-                    <InputLabel htmlFor="name" value="Nombre" />
+                    <InputLabel htmlFor="name" value={t('profile.name_label')} />
                     <TextInput
                         id="name"
                         className="mt-1 block w-full"
@@ -106,13 +106,13 @@ export default function UpdateProfileInformationForm({ className = '' }) {
 
                 {/* Estado personalizado */}
                 <div>
-                    <InputLabel htmlFor="custom_status" value="Estado personalizado" />
+                    <InputLabel htmlFor="custom_status" value={t('status.custom_status')} />
                     <TextInput
                         id="custom_status"
                         className="mt-1 block w-full"
                         value={data.custom_status}
                         onChange={(e) => setData('custom_status', e.target.value)}
-                        placeholder="¿En qué estás?"
+                        placeholder={t('profile.status_ph')}
                         maxLength={60}
                     />
                     <p className="mt-1 text-xs text-gray-400 text-right">{data.custom_status.length}/60</p>
@@ -121,14 +121,14 @@ export default function UpdateProfileInformationForm({ className = '' }) {
 
                 {/* Bio */}
                 <div>
-                    <InputLabel htmlFor="bio" value="Descripción" />
+                    <InputLabel htmlFor="bio" value={t('profile.bio_label')} />
                     <textarea
                         id="bio"
                         className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm"
                         rows={3}
                         value={data.bio}
                         onChange={(e) => setData('bio', e.target.value)}
-                        placeholder="Cuéntanos algo sobre ti..."
+                        placeholder={t('profile.bio_ph')}
                         maxLength={160}
                     />
                     <p className="mt-1 text-xs text-gray-400 text-right">{data.bio.length}/160</p>
@@ -137,7 +137,7 @@ export default function UpdateProfileInformationForm({ className = '' }) {
 
                 {/* Color de banner */}
                 <div>
-                    <InputLabel value="Color de banner" />
+                    <InputLabel value={t('profile.banner_color')} />
                     <div className="mt-2 flex items-center gap-3 flex-wrap">
                         {BANNER_PRESETS.map((color) => (
                             <button
@@ -154,7 +154,7 @@ export default function UpdateProfileInformationForm({ className = '' }) {
                             value={data.banner_color}
                             onChange={(e) => setData('banner_color', e.target.value)}
                             className="w-8 h-8 rounded-full border-0 cursor-pointer p-0"
-                            title="Color personalizado"
+                            title={t('profile.custom_color')}
                         />
                     </div>
                     <InputError className="mt-2" message={errors.banner_color} />
@@ -185,7 +185,7 @@ export default function UpdateProfileInformationForm({ className = '' }) {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <PrimaryButton disabled={processing}>Guardar</PrimaryButton>
+                    <PrimaryButton disabled={processing}>{t('profile.save')}</PrimaryButton>
                     <Transition
                         show={recentlySuccessful}
                         enter="transition ease-in-out"
@@ -193,7 +193,7 @@ export default function UpdateProfileInformationForm({ className = '' }) {
                         leave="transition ease-in-out"
                         leaveTo="opacity-0"
                     >
-                        <p className="text-sm text-gray-600">Guardado.</p>
+                        <p className="text-sm text-gray-600">{t('profile.saved_msg')}</p>
                     </Transition>
                 </div>
             </form>
