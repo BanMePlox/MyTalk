@@ -71,21 +71,16 @@ export default function Welcome({ auth }) {
                             </>
                         )}
                         {!isTauri && (
-                            <div className="flex flex-col items-center gap-1.5">
-                                <a
-                                    href="/downloads/MyTalk-setup.exe"
-                                    download
-                                    className="bg-white/10 hover:bg-white/20 px-6 py-3 rounded-lg font-medium text-base transition flex items-center gap-2"
-                                >
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    Descargar para Windows
-                                </a>
-                                <p className="text-white/25 text-xs">
-                                    Si Windows muestra un aviso, pulsa "Más información" → "Ejecutar de todas formas"
-                                </p>
-                            </div>
+                            <a
+                                href="/downloads/MyTalk-setup.exe"
+                                download
+                                className="bg-white/10 hover:bg-white/20 px-6 py-3 rounded-lg font-medium text-base transition flex items-center gap-2"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                Descargar para Windows
+                            </a>
                         )}
                     </div>
                 </main>
