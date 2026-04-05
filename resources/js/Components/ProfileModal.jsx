@@ -2,6 +2,75 @@ import { useRef, useState } from 'react';
 import { router, useForm, usePage } from '@inertiajs/react';
 import { useTrans } from '@/Hooks/useTrans';
 
+function DeleteAccountSection() {
+    const t = useTrans();
+    const { auth } = usePage().props;
+    const hasPassword = auth.user.has_password;
+    const [confirming, setConfirming] = useState(false);
+    const passwordRef = useRef();
+
+    const { data, setData, delete: destroy, processing, reset, errors } = useForm({ password: '' });
+
+    function submit(e) {
+        e.preventDefault();
+        destroy(route('profile.destroy'), {
+            onError: () => passwordRef.current?.focus(),
+            onFinish: () => reset(),
+        });
+    }
+
+    return (
+        <div className="border-t border-red-900/40 pt-4 mt-2">
+            <p className="text-xs font-semibold text-red-400 uppercase tracking-wide mb-2">{t('profile.delete_title')}</p>
+            <p className="text-xs text-gray-500 mb-3">{t('profile.delete_subtitle')}</p>
+
+            {!confirming ? (
+                <button
+                    type="button"
+                    onClick={() => setConfirming(true)}
+                    className="px-4 py-2 bg-red-600/20 hover:bg-red-600/40 border border-red-600/40 text-red-400 hover:text-red-300 text-sm font-medium rounded-md transition-colors"
+                >
+                    {t('profile.delete_btn')}
+                </button>
+            ) : (
+                <form onSubmit={submit} className="space-y-3 bg-red-950/30 border border-red-900/40 rounded-lg p-4">
+                    <p className="text-sm text-red-300 font-medium">{t('profile.delete_confirm_title')}</p>
+                    {hasPassword && (
+                        <div>
+                            <input
+                                type="password"
+                                ref={passwordRef}
+                                value={data.password}
+                                onChange={e => setData('password', e.target.value)}
+                                autoFocus
+                                placeholder={t('auth.password')}
+                                className="w-full bg-gray-900 border border-red-800/50 rounded-md px-3 py-2 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-red-500 transition-colors"
+                            />
+                            {errors.password && <p className="text-red-400 text-xs mt-1">{errors.password}</p>}
+                        </div>
+                    )}
+                    <div className="flex gap-2">
+                        <button
+                            type="button"
+                            onClick={() => { setConfirming(false); reset(); }}
+                            className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 text-sm rounded-md transition-colors"
+                        >
+                            {t('server.cancel')}
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={processing}
+                            className="px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-medium rounded-md transition-colors"
+                        >
+                            {t('profile.delete_btn')}
+                        </button>
+                    </div>
+                </form>
+            )}
+        </div>
+    );
+}
+
 const BANNER_PRESETS = ['#6366f1', '#8b5cf6', '#ec4899', '#ef4444', '#f97316', '#22c55e', '#0ea5e9', '#14b8a6'];
 
 function Field({ label, error, children }) {
@@ -163,6 +232,8 @@ function ProfileTab({ onClose }) {
                 </button>
                 {recentlySuccessful && <span className="text-green-400 text-sm">{t('profile.saved')}</span>}
             </div>
+
+            <DeleteAccountSection />
         </form>
     );
 }
