@@ -2,9 +2,12 @@ import InputError from '@/Components/InputError';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useTrans } from '@/Hooks/useTrans';
 import CookieBanner from '@/Components/CookieBanner';
+import LegalModal from '@/Components/LegalModal';
+import { useState } from 'react';
 
 export default function Login({ status, canResetPassword }) {
     const t = useTrans();
+    const [legalModal, setLegalModal] = useState(null);
     const { data, setData, post, processing, errors, reset } = useForm({
         email: '',
         password: '',
@@ -114,13 +117,14 @@ export default function Login({ status, canResetPassword }) {
                 </p>
 
                 <p className="text-center text-white/20 text-xs mt-4">
-                    <a href={route('terms')} target="_blank" rel="noopener noreferrer" className="hover:text-white/40 transition">{t('auth.terms')}</a>
+                    <button type="button" onClick={() => setLegalModal('terms')} className="hover:text-white/40 transition">{t('auth.terms')}</button>
                     {' · '}
-                    <a href={route('privacy')} target="_blank" rel="noopener noreferrer" className="hover:text-white/40 transition">{t('auth.privacy')}</a>
+                    <button type="button" onClick={() => setLegalModal('privacy')} className="hover:text-white/40 transition">{t('auth.privacy')}</button>
                 </p>
             </div>
         </div>
         <CookieBanner />
+        {legalModal && <LegalModal type={legalModal} onClose={() => setLegalModal(null)} />}
         </>
     );
 }
