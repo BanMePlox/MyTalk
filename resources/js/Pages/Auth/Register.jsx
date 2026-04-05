@@ -89,9 +89,9 @@ export default function Register() {
 
                     <p className="text-center text-white/30 text-xs">
                         {t('auth.accept_terms')}{' '}
-                        <Link href={route('terms')} className="underline hover:text-white/50 transition">{t('auth.terms')}</Link>
+                        <a href={route('terms')} target="_blank" rel="noopener noreferrer" className="underline hover:text-white/50 transition">{t('auth.terms')}</a>
                         {' '}{t('auth.and')}{' '}
-                        <Link href={route('privacy')} className="underline hover:text-white/50 transition">{t('auth.privacy')}</Link>.
+                        <a href={route('privacy')} target="_blank" rel="noopener noreferrer" className="underline hover:text-white/50 transition">{t('auth.privacy')}</a>.
                     </p>
                 </form>
 
@@ -123,9 +123,9 @@ export default function Register() {
                 </p>
 
                 <p className="text-center text-white/20 text-xs mt-4">
-                    <Link href={route('terms')} className="hover:text-white/40 transition">{t('auth.terms')}</Link>
+                    <a href={route('terms')} target="_blank" rel="noopener noreferrer" className="hover:text-white/40 transition">{t('auth.terms')}</a>
                     {' · '}
-                    <Link href={route('privacy')} className="hover:text-white/40 transition">{t('auth.privacy')}</Link>
+                    <a href={route('privacy')} target="_blank" rel="noopener noreferrer" className="hover:text-white/40 transition">{t('auth.privacy')}</a>
                 </p>
             </div>
         </div>

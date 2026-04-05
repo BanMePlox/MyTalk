@@ -114,9 +114,9 @@ export default function Login({ status, canResetPassword }) {
                 </p>
 
                 <p className="text-center text-white/20 text-xs mt-4">
-                    <Link href={route('terms')} className="hover:text-white/40 transition">{t('auth.terms')}</Link>
+                    <a href={route('terms')} target="_blank" rel="noopener noreferrer" className="hover:text-white/40 transition">{t('auth.terms')}</a>
                     {' · '}
-                    <Link href={route('privacy')} className="hover:text-white/40 transition">{t('auth.privacy')}</Link>
+                    <a href={route('privacy')} target="_blank" rel="noopener noreferrer" className="hover:text-white/40 transition">{t('auth.privacy')}</a>
                 </p>
             </div>
         </div>

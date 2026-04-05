@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from '@inertiajs/react';
+
 import { useTrans } from '@/Hooks/useTrans';
 
 const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
@@ -26,9 +26,9 @@ export default function CookieBanner() {
             <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center gap-4">
                 <p className="text-white/60 text-sm flex-1">
                     {t('cookie.message')}{' '}
-                    <Link href={route('privacy')} className="text-indigo-400 hover:text-indigo-300 transition underline">
+                    <a href={route('privacy')} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 transition underline">
                         {t('auth.privacy')}
-                    </Link>.
+                    </a>.
                 </p>
                 <button
                     onClick={accept}
