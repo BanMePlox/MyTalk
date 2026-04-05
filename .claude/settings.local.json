@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -n \"dashboard\" f:/Proyectos/Discord/app/Http/Controllers/Auth/*.php)",
+      "Bash(php artisan:*)",
+      "Bash(npm run:*)",
+      "Bash(npx vite:*)",
+      "Bash(npm install:*)",
+      "Bash(npx prisma:*)",
+      "Bash(node -e \"const Database = require\\(''better-sqlite3''\\); const db = new Database\\(''prisma/dev.db''\\); console.log\\(JSON.stringify\\(db.prepare\\(''SELECT id, username, createdAt FROM User''\\).all\\(\\), null, 2\\)\\); db.close\\(\\);\")",
+      "Read(//f/Proyectos/Fichajes/**)",
+      "Bash(xargs grep:*)",
+      "Bash(grep -r \"rate\\\\|throttle\\\\|limit\" /f/Proyectos/Discord/app/Http/Controllers/*.php)",
+      "Bash(find /f/Proyectos/Discord/app/Policies -type f -name *.php)",
+      "Bash(find /f/Proyectos/Discord/app/Http/Controllers -name *.php)",
+      "Bash(find /f/Proyectos/Discord -name .env* -o -name database.sqlite)",
+      "Bash(xargs ls:*)",
+      "Bash(head -20 echo \"---\" grep -n \"function updateName\\\\|return\\\\|redirect\\\\|json\" f:/Proyectos/Discord/app/Http/Controllers/ServerController.php)",
+      "Bash(head -15 echo \"---\" grep -n \"function leave\\\\|abort\\\\|owner\\\\|return\\\\|back\\\\|redirect\" f:/Proyectos/Discord/app/Http/Controllers/ServerController.php)",
+      "Bash(grep -A3 \"leave\" echo \"---\" grep -n \"function join\\\\|invite_code\\\\|code\\\\|validate\" f:/Proyectos/Discord/app/Http/Controllers/ServerController.php)",
+      "Bash(sort echo:*)"
+    ]
+  }
+}
