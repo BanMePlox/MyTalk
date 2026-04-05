@@ -7,7 +7,7 @@ export default function Welcome({ auth }) {
     return (
         <>
             <Head title="MyTalk — Chat en tiempo real" />
-            <div className="min-h-screen bg-gray-900 text-white flex flex-col">
+            <div className="min-h-screen bg-gray-900 text-white flex flex-col" style={isTauri ? { paddingTop: '2rem' } : {}}>
 
                 {/* Nav */}
                 <nav className="flex items-center justify-between px-8 py-5 border-b border-white/10">

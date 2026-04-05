@@ -1,5 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 
+const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+
 const content = {
     es: {
         title: 'Términos de Servicio',
@@ -78,7 +80,7 @@ export default function Terms({ locale = 'es' }) {
     return (
         <>
             <Head title={`${lang.title} — MyTalk`} />
-            <div className="min-h-screen bg-gray-900 text-white">
+            <div className="min-h-screen bg-gray-900 text-white overflow-y-auto" style={isTauri ? { paddingTop: '2rem' } : {}}>
                 {/* Nav */}
                 <nav className="flex items-center justify-between px-8 py-5 border-b border-white/10">
                     <Link href={route('home')} className="flex items-center gap-2">
