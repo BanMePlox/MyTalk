@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import { useTrans } from '@/Hooks/useTrans';
 
-const FOLDER_COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#ef4444', '#f97316', '#22c55e', '#0ea5e9', '#14b8a6'];
+const FOLDER_COLORS = ['#3F6F5B', '#8b5cf6', '#ec4899', '#ef4444', '#f97316', '#22c55e', '#0ea5e9', '#14b8a6'];
 
 // ── Module-level sub-components (outside ServerRail so identity is stable) ────
 
@@ -24,10 +24,10 @@ function ServerIcon({ srv, isCurrent, badge, dragOver, onDragStart, onDragEnd, o
                 draggable={false}
                 className={`w-12 h-12 flex items-center justify-center font-bold text-lg transition-all duration-150 shrink-0 overflow-hidden ${
                     isOver
-                        ? 'rounded-2xl ring-2 ring-white scale-110'
+                        ? 'rounded-2xl ring-2 ring-accent scale-110'
                         : isCurrent
-                            ? 'rounded-2xl bg-indigo-500 text-white'
-                            : 'rounded-full bg-gray-700 text-gray-300 hover:rounded-2xl hover:bg-indigo-500 hover:text-white'
+                            ? 'rounded-2xl bg-accent text-[#FFFCF7]'
+                            : 'rounded-full bg-bg-elevated text-text-secondary hover:rounded-2xl hover:bg-accent hover:text-[#FFFCF7] border border-border'
                 }`}
             >
                 {srv.icon_url
@@ -36,7 +36,7 @@ function ServerIcon({ srv, isCurrent, badge, dragOver, onDragStart, onDragEnd, o
                 }
             </Link>
             {badge > 0 && (
-                <span className="absolute -bottom-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 ring-2 ring-gray-950 pointer-events-none">
+                <span className="absolute -bottom-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] bg-red-500 text-text text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 ring-2 ring-bg-muted pointer-events-none">
                     {badge > 99 ? '99+' : badge}
                 </span>
             )}
@@ -59,7 +59,7 @@ function FolderIcon({
     return (
         <div className="flex flex-col items-center w-full gap-0.5">
             <div className="flex items-center w-full px-1.5 group">
-                <span className={`absolute left-0 w-1 rounded-r-full bg-white transition-all ${
+                <span className={`absolute left-0 w-1 rounded-r-full bg-accent transition-all ${
                     hasCurrentServer && isCollapsed ? 'h-8' : 'h-0 group-hover:h-5'
                 }`} />
                 <div
@@ -82,7 +82,7 @@ function FolderIcon({
                                 style={{ backgroundColor: folder.color }}>
                                 {srv.icon_url
                                     ? <img src={srv.icon_url} alt="" className="w-full h-full object-cover" />
-                                    : <span className="w-full h-full flex items-center justify-center text-[8px] font-bold text-white">
+                                    : <span className="w-full h-full flex items-center justify-center text-[8px] font-bold text-text">
                                         {srv.name[0].toUpperCase()}
                                       </span>
                                 }
@@ -90,7 +90,7 @@ function FolderIcon({
                         ))}
                     </button>
                     {totalBadge > 0 && isCollapsed && (
-                        <span className="absolute -bottom-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 ring-2 ring-gray-950 pointer-events-none">
+                        <span className="absolute -bottom-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] bg-red-500 text-text text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 ring-2 ring-bg-muted pointer-events-none">
                             {totalBadge > 99 ? '99+' : totalBadge}
                         </span>
                     )}
@@ -103,7 +103,7 @@ function FolderIcon({
                 return (
                     <div key={srv.id} className="flex items-center w-full px-1.5 group"
                         onContextMenu={e => onServerContextMenu(e, srv)}>
-                        <span className={`absolute left-0 w-1 rounded-r-full bg-white transition-all ${isCurrent ? 'h-8' : 'h-0 group-hover:h-5'}`} />
+                        <span className={`absolute left-0 w-1 rounded-r-full bg-accent transition-all ${isCurrent ? 'h-8' : 'h-0 group-hover:h-5'}`} />
                         <ServerIcon
                             srv={srv} isCurrent={isCurrent} badge={badge} dragOver={dragOver}
                             onDragStart={onDragStart} onDragEnd={onDragEnd}
@@ -114,7 +114,7 @@ function FolderIcon({
             })}
 
             {!isCollapsed && (
-                <p className="text-[9px] text-gray-500 truncate max-w-[60px] text-center leading-tight px-1">{folder.name}</p>
+                <p className="text-[9px] text-text-muted truncate max-w-[60px] text-center leading-tight px-1">{folder.name}</p>
             )}
         </div>
     );
@@ -245,7 +245,7 @@ export default function ServerRail({
         if (targetSrv.folder_id) {
             await addToFolder(targetSrv.folder_id, src.id);
         } else {
-            setFolderModal({ mode: 'create', serverId: src.id, targetServerId: targetSrv.id, name: t('folder.new'), color: '#6366f1' });
+            setFolderModal({ mode: 'create', serverId: src.id, targetServerId: targetSrv.id, name: t('folder.new'), color: '#3F6F5B' });
         }
     }
 
@@ -272,7 +272,7 @@ export default function ServerRail({
     return (
         <>
             <nav
-                className="hidden sm:flex w-[72px] bg-gray-950 flex-col items-center py-3 gap-1 shrink-0 overflow-y-auto"
+                className="hidden sm:flex w-[72px] bg-bg-muted border-r border-border flex-col items-center py-3 gap-1 shrink-0 overflow-y-auto"
                 onDragOver={onDragOverRail}
                 onDrop={onDropOnRail}
             >
@@ -282,7 +282,7 @@ export default function ServerRail({
                     return (
                         <div key={srv.id} className="flex items-center w-full px-1.5 group"
                             onContextMenu={e => openContextMenu(e, 'server', srv)}>
-                            <span className={`absolute left-0 w-1 rounded-r-full bg-white transition-all ${isCurrent ? 'h-8' : 'h-0 group-hover:h-5'}`} />
+                            <span className={`absolute left-0 w-1 rounded-r-full bg-accent transition-all ${isCurrent ? 'h-8' : 'h-0 group-hover:h-5'}`} />
                             <ServerIcon srv={srv} isCurrent={isCurrent} badge={badge} dragOver={dragOver} {...dndHandlers} />
                         </div>
                     );
@@ -310,7 +310,7 @@ export default function ServerRail({
                     );
                 })}
 
-                <div className="mt-1 w-8 border-t border-gray-700" />
+                <div className="mt-1 w-8 border-t border-border" />
 
                 {dmConversations.filter(c => c.unread > 0).map(conv => (
                     <div key={conv.id} className="flex items-center w-full px-1.5 group">
@@ -318,17 +318,17 @@ export default function ServerRail({
                             <Link href={route('conversations.show', conv.id)}
                                 title={conv.type === 'group' ? (conv.name ?? t('conv.group')) : conv.user?.name}
                                 prefetch
-                                className={`w-12 h-12 flex items-center justify-center font-bold text-sm bg-gray-700 hover:bg-indigo-500 text-white transition-all duration-150 overflow-hidden ${conv.type === 'group' ? 'rounded-2xl' : 'rounded-full hover:rounded-2xl'}`}
+                                className={`w-12 h-12 flex items-center justify-center font-bold text-sm bg-bg-muted hover:opacity-90 text-text transition-all duration-150 overflow-hidden ${conv.type === 'group' ? 'rounded-2xl' : 'rounded-full hover:rounded-2xl'}`}
                             >
                                 {conv.type === 'group'
-                                    ? <span style={{ backgroundColor: conv.icon_color ?? '#6366f1' }} className="w-full h-full flex items-center justify-center text-lg font-bold">{(conv.name ?? '#')[0].toUpperCase()}</span>
+                                    ? <span style={{ backgroundColor: conv.icon_color ?? '#3F6F5B' }} className="w-full h-full flex items-center justify-center text-lg font-bold">{(conv.name ?? '#')[0].toUpperCase()}</span>
                                     : conv.user?.avatar_url
                                         ? <img src={conv.user.avatar_url} alt={conv.user.name} className="w-full h-full object-cover" />
-                                        : <span style={{ backgroundColor: conv.user?.banner_color ?? '#6366f1' }} className="w-full h-full flex items-center justify-center text-lg font-bold">{conv.user?.name?.[0]?.toUpperCase()}</span>
+                                        : <span style={{ backgroundColor: conv.user?.banner_color ?? '#3F6F5B' }} className="w-full h-full flex items-center justify-center text-lg font-bold">{conv.user?.name?.[0]?.toUpperCase()}</span>
                                 }
                             </Link>
                             {conv.unread > 0 && (
-                                <span className="absolute -bottom-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 ring-2 ring-gray-950 pointer-events-none">
+                                <span className="absolute -bottom-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] bg-red-500 text-text text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 ring-2 ring-bg-muted pointer-events-none">
                                     {conv.unread > 99 ? '99+' : conv.unread}
                                 </span>
                             )}
@@ -339,34 +339,34 @@ export default function ServerRail({
                 <div className="relative flex items-center w-full px-1.5 group">
                     <div className="relative">
                         <Link href={route('friends.index')} title={t('nav.friends')} prefetch
-                            className="w-12 h-12 flex items-center justify-center text-xl text-indigo-300 bg-gray-700 rounded-full hover:rounded-2xl hover:bg-indigo-500 hover:text-white transition-all duration-150"
+                            className="w-12 h-12 flex items-center justify-center text-xl text-accent bg-bg-muted rounded-full hover:rounded-2xl hover:opacity-90 hover:text-text transition-all duration-150"
                         >👥</Link>
                         {pendingFriendRequests > 0 && (
-                            <span className="absolute -bottom-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 ring-2 ring-gray-950 pointer-events-none">
+                            <span className="absolute -bottom-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] bg-red-500 text-text text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 ring-2 ring-bg-muted pointer-events-none">
                                 {pendingFriendRequests > 9 ? '9+' : pendingFriendRequests}
                             </span>
                         )}
                     </div>
                 </div>
 
-                <div className="mt-1 w-8 border-t border-gray-700" />
+                <div className="mt-1 w-8 border-t border-border" />
 
                 <div className="relative flex items-center w-full px-1.5 group">
                     <button type="button" onClick={onAddServer} title={t('nav.add_server')}
-                        className="w-12 h-12 flex items-center justify-center font-bold text-2xl text-green-400 bg-gray-700 rounded-full hover:rounded-2xl hover:bg-green-500 hover:text-white transition-all duration-150"
+                        className="w-12 h-12 flex items-center justify-center font-bold text-2xl text-green-400 bg-bg-muted rounded-full hover:rounded-2xl hover:bg-green-500 hover:text-text transition-all duration-150"
                     >+</button>
                 </div>
 
                 {isAdmin && (
                     <div className="relative flex items-center w-full px-1.5 group">
                         <Link href={route('admin.index')} title={t('folder.admin_panel')}
-                            className="w-12 h-12 flex items-center justify-center bg-gray-700 rounded-full hover:rounded-2xl hover:bg-indigo-600 hover:text-white transition-all duration-150"
+                            className="w-12 h-12 flex items-center justify-center bg-bg-muted rounded-full hover:rounded-2xl hover:opacity-90 hover:text-text transition-all duration-150"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-indigo-400 group-hover:text-white" viewBox="0 0 24 24" fill="currentColor">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-accent group-hover:text-text" viewBox="0 0 24 24" fill="currentColor">
                                 <path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 1 0 0 10.5 5.25 5.25 0 0 0 0-10.5ZM9.75 6.75a2.25 2.25 0 1 1 4.5 0 2.25 2.25 0 0 1-4.5 0ZM9.25 13.5A6.75 6.75 0 0 0 2.5 20.25a.75.75 0 0 0 .75.75h17.5a.75.75 0 0 0 .75-.75A6.75 6.75 0 0 0 14.75 13.5h-5.5Z" clipRule="evenodd" />
                             </svg>
                         </Link>
-                        <div className="absolute left-full ml-3 px-2 py-1 bg-gray-900 text-white text-xs rounded shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">
+                        <div className="absolute left-full ml-3 px-2 py-1 bg-bg text-text text-xs rounded pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">
                             {t('folder.admin_panel')}
                         </div>
                     </div>
@@ -375,23 +375,23 @@ export default function ServerRail({
 
             {/* Context menu */}
             {contextMenu && (
-                <div ref={menuRef} className="fixed z-[600] bg-gray-900 border border-gray-700 rounded-lg shadow-xl py-1 w-52"
+                <div ref={menuRef} className="fixed z-[600] bg-bg border border-border rounded-lg py-1 w-52"
                     style={{ top: contextMenu.y, left: contextMenu.x }}>
                     {contextMenu.type === 'server' && (
                         <>
-                            <p className="px-3 py-1 text-xs text-gray-500 font-semibold truncate">{contextMenu.target.name}</p>
-                            <div className="border-t border-gray-700 my-1" />
-                            <button onClick={() => { setContextMenu(null); setFolderModal({ mode: 'create', serverId: contextMenu.target.id, name: t('folder.new'), color: '#6366f1' }); }}
-                                className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700">
+                            <p className="px-3 py-1 text-xs text-text-muted font-semibold truncate">{contextMenu.target.name}</p>
+                            <div className="border-t border-border my-1" />
+                            <button onClick={() => { setContextMenu(null); setFolderModal({ mode: 'create', serverId: contextMenu.target.id, name: t('folder.new'), color: '#3F6F5B' }); }}
+                                className="w-full text-left px-3 py-2 text-sm text-text-secondary hover:bg-bg-muted">
                                 {t('folder.new')}
                             </button>
                             {folders.length > 0 && (
                                 <>
-                                    <div className="border-t border-gray-700 my-1" />
-                                    <p className="px-3 py-1 text-xs text-gray-500">{t('folder.move_to')}</p>
+                                    <div className="border-t border-border my-1" />
+                                    <p className="px-3 py-1 text-xs text-text-muted">{t('folder.move_to')}</p>
                                     {folders.map(f => (
                                         <button key={f.id} onClick={() => { setContextMenu(null); addToFolder(f.id, contextMenu.target.id); }}
-                                            className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 flex items-center gap-2">
+                                            className="w-full text-left px-3 py-2 text-sm text-text-secondary hover:bg-bg-muted flex items-center gap-2">
                                             <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: f.color }} />
                                             {f.name}
                                         </button>
@@ -400,9 +400,9 @@ export default function ServerRail({
                             )}
                             {contextMenu.target.folder_id && (
                                 <>
-                                    <div className="border-t border-gray-700 my-1" />
+                                    <div className="border-t border-border my-1" />
                                     <button onClick={() => { setContextMenu(null); removeFromFolder(contextMenu.target.folder_id, contextMenu.target.id); }}
-                                        className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-gray-700">
+                                        className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-bg-muted">
                                         {t('folder.remove')}
                                     </button>
                                 </>
@@ -411,14 +411,14 @@ export default function ServerRail({
                     )}
                     {contextMenu.type === 'folder' && (
                         <>
-                            <p className="px-3 py-1 text-xs text-gray-500 font-semibold truncate">{contextMenu.target.name}</p>
-                            <div className="border-t border-gray-700 my-1" />
+                            <p className="px-3 py-1 text-xs text-text-muted font-semibold truncate">{contextMenu.target.name}</p>
+                            <div className="border-t border-border my-1" />
                             <button onClick={() => { setContextMenu(null); setFolderModal({ mode: 'edit', folderId: contextMenu.target.id, name: contextMenu.target.name, color: contextMenu.target.color }); }}
-                                className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-gray-700">
+                                className="w-full text-left px-3 py-2 text-sm text-text-secondary hover:bg-bg-muted">
                                 {t('folder.edit')}
                             </button>
                             <button onClick={() => { setContextMenu(null); deleteFolder(contextMenu.target.id); }}
-                                className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-gray-700">
+                                className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-bg-muted">
                                 {t('folder.delete')}
                             </button>
                         </>
@@ -430,19 +430,19 @@ export default function ServerRail({
             {folderModal && (
                 <div className="fixed inset-0 z-[700] flex items-center justify-center px-4" onClick={() => setFolderModal(null)}>
                     <div className="absolute inset-0 bg-black/60" />
-                    <div className="relative bg-gray-800 border border-gray-700 rounded-xl w-full max-w-xs p-5 shadow-2xl" onClick={e => e.stopPropagation()}>
-                        <h3 className="text-white font-semibold mb-4">
+                    <div className="relative bg-bg-elevated border border-border rounded-xl w-full max-w-xs p-5" onClick={e => e.stopPropagation()}>
+                        <h3 className="text-text font-semibold mb-4">
                             {folderModal.mode === 'create' ? t('folder.new') : t('folder.edit')}
                         </h3>
                         <div className="space-y-4">
                             <div>
-                                <label className="text-xs text-gray-400 font-semibold uppercase tracking-wide block mb-1">{t('folder.name_label')}</label>
+                                <label className="text-xs text-text-muted font-semibold uppercase tracking-wide block mb-1">{t('folder.name_label')}</label>
                                 <input autoFocus type="text" maxLength={50} value={folderModal.name}
                                     onChange={e => setFolderModal(prev => ({ ...prev, name: e.target.value }))}
-                                    className="w-full bg-gray-900 border border-gray-600 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500" />
+                                    className="w-full bg-bg border border-border rounded-md px-3 py-2 text-sm text-text focus:outline-none focus:border-accent" />
                             </div>
                             <div>
-                                <label className="text-xs text-gray-400 font-semibold uppercase tracking-wide block mb-2">{t('folder.color_label')}</label>
+                                <label className="text-xs text-text-muted font-semibold uppercase tracking-wide block mb-2">{t('folder.color_label')}</label>
                                 <div className="flex items-center gap-2 flex-wrap">
                                     {FOLDER_COLORS.map(c => (
                                         <button key={c} type="button" onClick={() => setFolderModal(prev => ({ ...prev, color: c }))}
@@ -454,7 +454,7 @@ export default function ServerRail({
                         </div>
                         <div className="flex gap-2 mt-5">
                             <button onClick={() => setFolderModal(null)}
-                                className="flex-1 px-3 py-2 text-sm text-gray-400 bg-gray-700 hover:bg-gray-600 rounded-md transition-colors">
+                                className="flex-1 px-3 py-2 text-sm text-text-muted bg-bg-muted hover:bg-border-strong rounded-md transition-colors">
                                 {t('folder.cancel')}
                             </button>
                             <button
@@ -472,7 +472,7 @@ export default function ServerRail({
                                     }
                                     setFolderModal(null);
                                 }}
-                                className="flex-1 px-3 py-2 text-sm text-white bg-indigo-600 hover:bg-indigo-500 rounded-md transition-colors">
+                                className="flex-1 px-3 py-2 text-sm text-text bg-accent hover:opacity-90 rounded-md transition-colors">
                                 {folderModal.mode === 'create' ? t('folder.create') : t('folder.save')}
                             </button>
                         </div>

@@ -14,7 +14,28 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+                sans: ['IBM Plex Sans', 'Source Sans 3', ...defaultTheme.fontFamily.sans],
+                mono: ['IBM Plex Mono', ...defaultTheme.fontFamily.mono],
+            },
+            colors: {
+                bg: 'var(--bg)',
+                'bg-elevated': 'var(--bg-elevated)',
+                'bg-muted': 'var(--bg-muted)',
+                text: 'var(--text)',
+                'text-secondary': 'var(--text-secondary)',
+                'text-muted': 'var(--text-muted)',
+                border: 'var(--border)',
+                'border-strong': 'var(--border-strong)',
+                accent: 'var(--accent)',
+                'accent-soft': 'var(--accent-soft)',
+                danger: 'var(--danger)',
+                success: 'var(--success)',
+                'bubble-me': 'var(--bubble-me)',
+                'bubble-them': 'var(--bubble-them)',
+            },
+            borderRadius: {
+                DEFAULT: 'var(--radius)',
+                sm: 'var(--radius-sm)',
             },
         },
     },

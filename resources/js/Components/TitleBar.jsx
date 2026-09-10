@@ -40,16 +40,16 @@ export default function TitleBar() {
     }
 
     return (
-        <div className="fixed top-0 left-0 right-0 z-[9999] flex items-center justify-between h-8 bg-gray-950 select-none" data-tauri-drag-region>
+        <div className="fixed top-0 left-0 right-0 z-[9999] flex items-center justify-between h-8 bg-bg-muted border-b border-border select-none" data-tauri-drag-region>
             <div className="flex items-center gap-2 px-3 pointer-events-none" data-tauri-drag-region>
-                <img src="/images/MyTalk.png" alt="MyTalk" className="w-4 h-4 rounded object-contain" />
-                <span className="text-white/50 text-xs">MyTalk {currentVersion && <span className="text-white/30">v{currentVersion}</span>}</span>
+                <img src="/images/MyTalk.png" alt="MyTalk" className="w-4 h-4 rounded-sm object-contain" />
+                <span className="text-text-muted text-xs">MyTalk {currentVersion && <span className="text-text-muted/70">v{currentVersion}</span>}</span>
             </div>
 
             {updateAvailable && (
                 <button
                     onClick={installUpdate}
-                    className="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-0.5 rounded transition"
+                    className="text-xs bg-accent hover:opacity-90 text-[#FFFCF7] px-3 py-0.5 rounded-sm transition"
                 >
                     {t('app.update_available')}
                 </button>
@@ -58,7 +58,7 @@ export default function TitleBar() {
             <div className="flex items-center h-full">
                 <button
                     onClick={() => invoke('plugin:window|minimize', { label })}
-                    className="w-10 h-full flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition"
+                    className="w-10 h-full flex items-center justify-center text-text-muted hover:text-text hover:bg-bg-elevated transition"
                     title={t('app.minimize')}
                 >
                     <svg className="w-3 h-3" viewBox="0 0 10 1" fill="currentColor">
@@ -68,7 +68,7 @@ export default function TitleBar() {
 
                 <button
                     onClick={() => invoke('plugin:window|toggle_maximize', { label })}
-                    className="w-10 h-full flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition"
+                    className="w-10 h-full flex items-center justify-center text-text-muted hover:text-text hover:bg-bg-elevated transition"
                     title={t('app.maximize')}
                 >
                     <svg className="w-3 h-3" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1">
@@ -78,7 +78,7 @@ export default function TitleBar() {
 
                 <button
                     onClick={() => invoke('plugin:window|hide', { label })}
-                    className="w-10 h-full flex items-center justify-center text-white/40 hover:text-white hover:bg-red-600 transition"
+                    className="w-10 h-full flex items-center justify-center text-text-muted hover:text-danger hover:bg-danger/10 transition"
                     title={t('app.minimize_tray')}
                 >
                     <svg className="w-3 h-3" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.2">
