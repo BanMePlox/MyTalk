@@ -49,7 +49,7 @@ export default function TitleBar() {
             {updateAvailable && (
                 <button
                     onClick={installUpdate}
-                    className="text-xs bg-accent hover:opacity-90 text-[#FFFCF7] px-3 py-0.5 rounded-sm transition"
+                    className="text-xs bg-accent hover:opacity-90 text-text-on-accent px-3 py-0.5 rounded-sm transition"
                 >
                     {t('app.update_available')}
                 </button>

@@ -32,6 +32,8 @@ export default {
                 success: 'var(--success)',
                 'bubble-me': 'var(--bubble-me)',
                 'bubble-them': 'var(--bubble-them)',
+                'text-on-accent': 'var(--text-on-accent)',
+                overlay: 'var(--overlay)',
             },
             borderRadius: {
                 DEFAULT: 'var(--radius)',

@@ -569,7 +569,7 @@ function Avatar({ user, size = 'md' }) {
         return <img src={user.avatar_url} alt={user.name} className={`${dims} rounded-full object-cover shrink-0`} />;
     }
     return (
-        <div className={`${dims} rounded-full bg-accent flex items-center justify-center font-bold shrink-0 text-[#FFFCF7]`}
+        <div className={`${dims} rounded-full bg-accent flex items-center justify-center font-bold shrink-0 text-text-on-accent`}
             style={{ backgroundColor: user?.banner_color ?? undefined }}>
             {user?.name?.[0]?.toUpperCase()}
         </div>
@@ -1961,7 +1961,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
 
                 {/* Llamada entrante DM */}
                 {voice.incomingCall && (
-                    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60">
+                    <div className="fixed inset-0 z-[200] flex items-center justify-center overlay-backdrop">
                         <div className="bg-bg border border-border rounded-2xl p-6 w-80 flex flex-col items-center gap-4">
                             <div className="w-16 h-16 rounded-full bg-accent flex items-center justify-center text-2xl font-bold text-text">
                                 {voice.incomingCall.fromUser?.name?.[0]?.toUpperCase()}
@@ -1990,7 +1990,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
 
                 {/* Sidebar izquierdo: canales — drawer en móvil, siempre visible en desktop */}
                 {mobileSidebar && (
-                    <div className="fixed inset-0 z-40 sm:hidden bg-black/50" onClick={() => setMobileSidebar(false)} />
+                    <div className="fixed inset-0 z-40 sm:hidden overlay-backdrop" onClick={() => setMobileSidebar(false)} />
                 )}
                 <aside className={`${mobileSidebar ? 'fixed inset-y-0 left-0 z-50 flex' : 'hidden sm:flex'} w-52 bg-bg border-r border-border flex-col shrink-0`}>
                     {/* Cabecera con dropdown */}
@@ -3352,7 +3352,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                 {/* Modal cambiar apodo */}
                 {nicknameOpen && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                        <div className="absolute inset-0 bg-black/60" onClick={() => setNicknameOpen(false)} />
+                        <div className="absolute inset-0 overlay-backdrop" onClick={() => setNicknameOpen(false)} />
                         <div className="relative bg-bg rounded-xl border border-border w-full max-w-sm p-5">
                             <h3 className="text-text font-semibold mb-1">Cambiar apodo</h3>
                             <p className="text-xs text-text-muted mb-3">Solo visible en <span className="text-text-secondary">{serverName}</span>. Déjalo vacío para usar tu nombre real.</p>
@@ -3377,7 +3377,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                 {/* Modal historial de ediciones */}
                 {editHistoryMsgId && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                        <div className="absolute inset-0 bg-black/60" onClick={() => setEditHistoryMsgId(null)} />
+                        <div className="absolute inset-0 overlay-backdrop" onClick={() => setEditHistoryMsgId(null)} />
                         <div className="relative bg-bg rounded-xl border border-border w-full max-w-md p-5">
                             <h3 className="text-text font-semibold mb-3">Historial de ediciones</h3>
                             {editHistoryLoading ? (

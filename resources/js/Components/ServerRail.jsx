@@ -26,8 +26,8 @@ function ServerIcon({ srv, isCurrent, badge, dragOver, onDragStart, onDragEnd, o
                     isOver
                         ? 'rounded-2xl ring-2 ring-accent scale-110'
                         : isCurrent
-                            ? 'rounded-2xl bg-accent text-[#FFFCF7]'
-                            : 'rounded-full bg-bg-elevated text-text-secondary hover:rounded-2xl hover:bg-accent hover:text-[#FFFCF7] border border-border'
+                            ? 'rounded-2xl bg-accent text-text-on-accent'
+                            : 'rounded-full bg-bg-elevated text-text-secondary hover:rounded-2xl hover:bg-accent hover:text-text-on-accent border border-border'
                 }`}
             >
                 {srv.icon_url
@@ -429,7 +429,7 @@ export default function ServerRail({
             {/* Folder modal */}
             {folderModal && (
                 <div className="fixed inset-0 z-[700] flex items-center justify-center px-4" onClick={() => setFolderModal(null)}>
-                    <div className="absolute inset-0 bg-black/60" />
+                    <div className="absolute inset-0 overlay-backdrop" />
                     <div className="relative bg-bg-elevated border border-border rounded-xl w-full max-w-xs p-5" onClick={e => e.stopPropagation()}>
                         <h3 className="text-text font-semibold mb-4">
                             {folderModal.mode === 'create' ? t('folder.new') : t('folder.edit')}

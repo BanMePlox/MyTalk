@@ -1,5 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import CookieBanner from '@/Components/CookieBanner';
+import ThemeToggle from '@/Components/ThemeToggle';
 
 const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
@@ -18,6 +19,7 @@ export default function Welcome({ auth }) {
                         <span className="font-semibold text-lg tracking-tight">MyTalk</span>
                     </div>
                     <div className="flex items-center gap-3">
+                        <ThemeToggle />
                         {!isTauri && (
                             <a
                                 href="/downloads/MyTalk-setup.exe"

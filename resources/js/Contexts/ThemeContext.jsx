@@ -5,7 +5,7 @@ const ThemeContext = createContext();
 export function ThemeProvider({ children }) {
     const [dark, setDark] = useState(() => {
         const saved = localStorage.getItem('theme');
-        return saved ? saved === 'dark' : false; // Papel (cream) by default; dark theme TBD
+        return saved ? saved === 'dark' : false; // Papel light by default; html.dark switches night tokens
     });
 
     const [compact, setCompact] = useState(() =>

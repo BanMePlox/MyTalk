@@ -3,6 +3,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import { useTrans } from '@/Hooks/useTrans';
 import CookieBanner from '@/Components/CookieBanner';
 import LegalModal from '@/Components/LegalModal';
+import ThemeToggle from '@/Components/ThemeToggle';
 import { useState } from 'react';
 
 export default function Register() {
@@ -22,8 +23,11 @@ export default function Register() {
 
     return (
         <>
-        <div className="min-h-screen bg-bg flex items-center justify-center px-4">
+        <div className="min-h-screen bg-bg flex items-center justify-center px-4 relative">
             <Head title={t('auth.register_title')} />
+            <div className="absolute top-4 right-4">
+                <ThemeToggle />
+            </div>
 
             <div className="w-full max-w-sm auth-card">
                 <div className="text-center mb-8">

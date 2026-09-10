@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Papel design tokens ── */
+/* ── Papel design tokens — light (day) ── */
 :root {
   --bg: #F4EFE6;
   --bg-elevated: #FAF7F2;
@@ -18,10 +18,32 @@
   --success: #3F6F5B;
   --bubble-me: var(--accent-soft);
   --bubble-them: #FFFCF7;
+  --text-on-accent: #FFFCF7;
+  --overlay: color-mix(in srgb, #1C1915 38%, transparent);
   --radius: 10px;
   --radius-sm: 6px;
   --font-sans: "IBM Plex Sans", "Source Sans 3", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+/* ── Papel design tokens — dark (night) ── */
+html.dark {
+  --bg: #1A1814;
+  --bg-elevated: #221F1A;
+  --bg-muted: #141210;
+  --text: #F2EDE4;
+  --text-secondary: #B5AEA3;
+  --text-muted: #8A8278;
+  --border: #3A342C;
+  --border-strong: #524A40;
+  --accent: #6F9B84;
+  --accent-soft: color-mix(in srgb, var(--accent) 22%, var(--bg-elevated));
+  --danger: #C45C5C;
+  --success: #6F9B84;
+  --bubble-me: var(--accent-soft);
+  --bubble-them: #2A2620;
+  --text-on-accent: #F2EDE4;
+  --overlay: color-mix(in srgb, #141210 82%, transparent);
 }
 
 @layer base {
@@ -54,7 +76,7 @@
   .btn-primary {
     @apply inline-flex items-center justify-center font-medium transition-opacity;
     background-color: var(--accent);
-    color: #FFFCF7;
+    color: var(--text-on-accent);
     border-radius: var(--radius-sm);
     padding: 0.625rem 1rem;
   }
@@ -149,6 +171,11 @@
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 1.5rem;
+  }
+
+  /* Warm overlay for modals/drawers — never pure black */
+  .overlay-backdrop {
+    background-color: var(--overlay);
   }
 }
 
