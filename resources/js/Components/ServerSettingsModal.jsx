@@ -17,9 +17,9 @@ function Avatar({ user, size = 8 }) {
         return <img src={user.avatar_url} alt={user.name} className={`w-${size} h-${size} rounded-full object-cover`} />;
     }
     const initials = user?.name?.[0]?.toUpperCase() ?? '?';
-    const color = user?.banner_color ?? '#6366f1';
+    const color = user?.banner_color ?? '#3F6F5B';
     return (
-        <div className={`w-${size} h-${size} rounded-full flex items-center justify-center text-white font-bold text-sm`}
+        <div className={`w-${size} h-${size} rounded-full flex items-center justify-center text-text font-bold text-sm`}
             style={{ backgroundColor: color }}>
             {initials}
         </div>
@@ -81,21 +81,21 @@ function RolesTab({ server, roles, setRoles, canManageRoles }) {
     return (
         <div className="space-y-3">
             {roles.length === 0 && (
-                <p className="text-gray-500 text-sm">{t('settings.no_roles')}</p>
+                <p className="text-text-muted text-sm">{t('settings.no_roles')}</p>
             )}
 
             {roles.map(role => (
-                <div key={role.id} className="bg-gray-800 rounded-lg p-3">
+                <div key={role.id} className="bg-bg-elevated rounded-lg p-3">
                     {editingId === role.id ? (
                         <div className="space-y-2">
                             <input
                                 type="text"
                                 value={editForm.name}
                                 onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))}
-                                className="w-full bg-gray-700 border border-gray-600 text-gray-100 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                className="w-full bg-bg-muted border border-border text-text rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-accent"
                             />
                             <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-xs text-gray-400">{t('settings.color')}</span>
+                                <span className="text-xs text-text-secondary">{t('settings.color')}</span>
                                 {DEFAULT_COLORS.map(c => (
                                     <button key={c} onClick={() => setEditForm(f => ({ ...f, color: c }))}
                                         className="w-5 h-5 rounded-full border-2 transition-transform hover:scale-110"
@@ -107,22 +107,22 @@ function RolesTab({ server, roles, setRoles, canManageRoles }) {
                             </div>
                             <div className="space-y-1">
                                 {PERMISSIONS.map(p => (
-                                    <label key={p.key} className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+                                    <label key={p.key} className="flex items-center gap-2 text-sm text-text-secondary cursor-pointer">
                                         <input type="checkbox"
                                             checked={editForm.permissions.includes(p.key)}
                                             onChange={() => setEditForm(f => ({ ...f, permissions: togglePerm(f.permissions, p.key) }))}
-                                            className="accent-indigo-500" />
+                                            className="accent-accent" />
                                         {t(p.label)}
                                     </label>
                                 ))}
                             </div>
                             <div className="flex gap-2 pt-1">
                                 <button onClick={saveEdit}
-                                    className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-3 py-1.5 rounded">
+                                    className="bg-accent hover:opacity-90 text-text-on-accent text-xs px-3 py-1.5 rounded">
                                     {t('settings.save')}
                                 </button>
                                 <button onClick={() => setEditingId(null)}
-                                    className="text-gray-400 hover:text-gray-200 text-xs px-3 py-1.5 rounded hover:bg-gray-700">
+                                    className="text-text-secondary hover:text-text text-xs px-3 py-1.5 rounded hover:bg-bg-muted">
                                     {t('settings.cancel')}
                                 </button>
                             </div>
@@ -130,10 +130,10 @@ function RolesTab({ server, roles, setRoles, canManageRoles }) {
                     ) : (
                         <div className="flex items-center gap-2">
                             <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: role.color }} />
-                            <span className="font-medium text-gray-100 text-sm flex-1">{role.name}</span>
-                            <div className="flex gap-1 text-xs text-gray-500 mr-2">
+                            <span className="font-medium text-text text-sm flex-1">{role.name}</span>
+                            <div className="flex gap-1 text-xs text-text-muted mr-2">
                                 {(role.permissions ?? []).map(p => (
-                                    <span key={p} className="bg-gray-700 px-1.5 py-0.5 rounded text-gray-400">
+                                    <span key={p} className="bg-bg-muted px-1.5 py-0.5 rounded text-text-secondary">
                                         {t(PERMISSIONS.find(x => x.key === p)?.label ?? p)}
                                     </span>
                                 ))}
@@ -141,21 +141,21 @@ function RolesTab({ server, roles, setRoles, canManageRoles }) {
                             {canManageRoles && (
                                 <>
                                     <button onClick={() => startEdit(role)}
-                                        className="text-gray-400 hover:text-gray-200 text-xs px-2 py-1 rounded hover:bg-gray-700">
+                                        className="text-text-secondary hover:text-text text-xs px-2 py-1 rounded hover:bg-bg-muted">
                                         ✏️
                                     </button>
                                     {confirmDelete === role.id ? (
                                         <div className="flex items-center gap-1">
                                             <button onClick={() => deleteRole(role.id)}
-                                                className="text-xs bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded">
+                                                className="text-xs bg-red-600 hover:bg-red-700 text-text-on-accent px-2 py-1 rounded">
                                                 {t('settings.delete')}
                                             </button>
                                             <button onClick={() => setConfirmDelete(null)}
-                                                className="text-xs text-gray-400 hover:text-gray-200 px-1">✕</button>
+                                                className="text-xs text-text-secondary hover:text-text px-1">✕</button>
                                         </div>
                                     ) : (
                                         <button onClick={() => setConfirmDelete(role.id)}
-                                            className="text-gray-500 hover:text-red-400 text-xs px-2 py-1 rounded hover:bg-gray-700">
+                                            className="text-text-muted hover:text-red-400 text-xs px-2 py-1 rounded hover:bg-bg-muted">
                                             🗑
                                         </button>
                                     )}
@@ -167,17 +167,17 @@ function RolesTab({ server, roles, setRoles, canManageRoles }) {
             ))}
 
             {canManageRoles && (
-                <form onSubmit={createRole} className="bg-gray-800 rounded-lg p-3 space-y-2 border border-dashed border-gray-600">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{t('settings.new_role')}</p>
+                <form onSubmit={createRole} className="bg-bg-elevated rounded-lg p-3 space-y-2 border border-dashed border-border">
+                    <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide">{t('settings.new_role')}</p>
                     <input
                         type="text"
                         value={newRole.name}
                         onChange={e => setNewRole(f => ({ ...f, name: e.target.value }))}
                         placeholder={t('settings.role_name_ph')}
-                        className="w-full bg-gray-700 border border-gray-600 text-gray-100 placeholder-gray-500 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                        className="w-full bg-bg-muted border border-border text-text placeholder-text-muted rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-accent"
                     />
                     <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs text-gray-400">{t('settings.color')}</span>
+                        <span className="text-xs text-text-secondary">{t('settings.color')}</span>
                         {DEFAULT_COLORS.map(c => (
                             <button type="button" key={c} onClick={() => setNewRole(f => ({ ...f, color: c }))}
                                 className="w-5 h-5 rounded-full border-2 transition-transform hover:scale-110"
@@ -189,17 +189,17 @@ function RolesTab({ server, roles, setRoles, canManageRoles }) {
                     </div>
                     <div className="space-y-1">
                         {PERMISSIONS.map(p => (
-                            <label key={p.key} className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+                            <label key={p.key} className="flex items-center gap-2 text-sm text-text-secondary cursor-pointer">
                                 <input type="checkbox"
                                     checked={newRole.permissions.includes(p.key)}
                                     onChange={() => setNewRole(f => ({ ...f, permissions: togglePerm(f.permissions, p.key) }))}
-                                    className="accent-indigo-500" />
+                                    className="accent-accent" />
                                 {t(p.label)}
                             </label>
                         ))}
                     </div>
                     <button type="submit" disabled={creating}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-1.5 rounded disabled:opacity-50">
+                        className="bg-accent hover:opacity-90 text-text-on-accent text-sm px-4 py-1.5 rounded disabled:opacity-50">
                         {creating ? t('settings.creating') : t('settings.create_role')}
                     </button>
                 </form>
@@ -247,12 +247,12 @@ function MembersTab({ server, roles, canManageRoles, canKickMembers, isOwner, re
                 const canKickThis = canKickMembers && !isThisOwner;
 
                 return (
-                    <div key={member.id} className="bg-gray-800 rounded-lg p-3">
+                    <div key={member.id} className="bg-bg-elevated rounded-lg p-3">
                         <div className="flex items-center gap-2 mb-2">
                             <Avatar user={member} size={8} />
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                    <span className="font-medium text-gray-100 text-sm">{member.name}</span>
+                                    <span className="font-medium text-text text-sm">{member.name}</span>
                                     {isThisOwner && (
                                         <span className="text-xs bg-yellow-600/30 text-yellow-400 px-1.5 py-0.5 rounded">
                                             {t('settings.owner')}
@@ -270,15 +270,15 @@ function MembersTab({ server, roles, canManageRoles, canKickMembers, isOwner, re
                                 confirmKick === member.id ? (
                                     <div className="flex items-center gap-1 shrink-0">
                                         <button onClick={() => kickMember(member.id)}
-                                            className="text-xs bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded">
+                                            className="text-xs bg-red-600 hover:bg-red-700 text-text-on-accent px-2 py-1 rounded">
                                             {t('settings.kick')}
                                         </button>
                                         <button onClick={() => setConfirmKick(null)}
-                                            className="text-xs text-gray-400 px-1">✕</button>
+                                            className="text-xs text-text-secondary px-1">✕</button>
                                     </div>
                                 ) : (
                                     <button onClick={() => setConfirmKick(member.id)}
-                                        className="text-xs text-gray-500 hover:text-red-400 px-2 py-1 rounded hover:bg-gray-700 shrink-0">
+                                        className="text-xs text-text-muted hover:text-red-400 px-2 py-1 rounded hover:bg-bg-muted shrink-0">
                                         {t('settings.kick')}
                                     </button>
                                 )
@@ -287,7 +287,7 @@ function MembersTab({ server, roles, canManageRoles, canKickMembers, isOwner, re
 
                         {canManageRoles && !isThisOwner && roles.length > 0 && (
                             <div className="flex items-center gap-1.5 flex-wrap pl-10">
-                                <span className="text-xs text-gray-500">{t('settings.roles_label')}</span>
+                                <span className="text-xs text-text-muted">{t('settings.roles_label')}</span>
                                 {roles.map(role => {
                                     const hasRole = memberRoles.some(r => r.id === role.id);
                                     const key = `${member.id}-${role.id}`;
@@ -297,8 +297,8 @@ function MembersTab({ server, roles, canManageRoles, canKickMembers, isOwner, re
                                             disabled={assigningRole[key]}
                                             className={`text-xs px-2 py-0.5 rounded border transition-colors ${
                                                 hasRole
-                                                    ? 'text-white border-transparent'
-                                                    : 'text-gray-400 border-gray-600 hover:border-gray-400'
+                                                    ? 'text-text border-transparent'
+                                                    : 'text-text-secondary border-border hover:border-border-strong'
                                             }`}
                                             style={hasRole ? { backgroundColor: role.color, borderColor: role.color } : {}}>
                                             {hasRole ? '✓ ' : '+ '}{role.name}
@@ -373,10 +373,10 @@ function CategoriesTab({ server, canManageChannels, onChannelAssign, onCategoryC
         <div className="space-y-4">
             {/* Lista de categorías */}
             {categories.length === 0 && (
-                <p className="text-gray-500 text-sm">{t('settings.no_categories')}</p>
+                <p className="text-text-muted text-sm">{t('settings.no_categories')}</p>
             )}
             {categories.map(cat => (
-                <div key={cat.id} className="bg-gray-800 rounded-lg p-3">
+                <div key={cat.id} className="bg-bg-elevated rounded-lg p-3">
                     {editingId === cat.id ? (
                         <div className="flex gap-2 items-center">
                             <input
@@ -384,28 +384,28 @@ function CategoriesTab({ server, canManageChannels, onChannelAssign, onCategoryC
                                 value={editName}
                                 onChange={e => setEditName(e.target.value)}
                                 onKeyDown={e => { if (e.key === 'Enter') saveEdit(cat); if (e.key === 'Escape') setEditingId(null); }}
-                                className="flex-1 bg-gray-700 border border-gray-600 text-gray-100 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                className="flex-1 bg-bg-muted border border-border text-text rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-accent"
                             />
-                            <button onClick={() => saveEdit(cat)} className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-1 rounded">{t('settings.save')}</button>
-                            <button onClick={() => setEditingId(null)} className="text-xs text-gray-400 hover:text-gray-200 px-1">✕</button>
+                            <button onClick={() => saveEdit(cat)} className="text-xs bg-accent hover:opacity-90 text-text-on-accent px-2 py-1 rounded">{t('settings.save')}</button>
+                            <button onClick={() => setEditingId(null)} className="text-xs text-text-secondary hover:text-text px-1">✕</button>
                         </div>
                     ) : (
                         <div className="flex items-center gap-2">
-                            <span className="font-medium text-gray-100 text-sm flex-1">{cat.name}</span>
+                            <span className="font-medium text-text text-sm flex-1">{cat.name}</span>
                             {canManageChannels && (
                                 <>
                                     <button onClick={() => { setEditingId(cat.id); setEditName(cat.name); }}
-                                        className="text-gray-400 hover:text-gray-200 text-xs px-2 py-1 rounded hover:bg-gray-700">✏️</button>
+                                        className="text-text-secondary hover:text-text text-xs px-2 py-1 rounded hover:bg-bg-muted">✏️</button>
                                     {confirmDelete === cat.id ? (
                                         <div className="flex items-center gap-1">
                                             <button onClick={() => deleteCategory(cat.id)}
-                                                className="text-xs bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded">{t('settings.delete')}</button>
+                                                className="text-xs bg-red-600 hover:bg-red-700 text-text-on-accent px-2 py-1 rounded">{t('settings.delete')}</button>
                                             <button onClick={() => setConfirmDelete(null)}
-                                                className="text-xs text-gray-400 hover:text-gray-200 px-1">✕</button>
+                                                className="text-xs text-text-secondary hover:text-text px-1">✕</button>
                                         </div>
                                     ) : (
                                         <button onClick={() => setConfirmDelete(cat.id)}
-                                            className="text-gray-500 hover:text-red-400 text-xs px-2 py-1 rounded hover:bg-gray-700">🗑</button>
+                                            className="text-text-muted hover:text-red-400 text-xs px-2 py-1 rounded hover:bg-bg-muted">🗑</button>
                                     )}
                                 </>
                             )}
@@ -416,16 +416,16 @@ function CategoriesTab({ server, canManageChannels, onChannelAssign, onCategoryC
 
             {/* Asignar canales a categorías */}
             {channels.length > 0 && (
-                <div className="bg-gray-800 rounded-lg p-3 space-y-2">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{t('settings.assign_channels')}</p>
+                <div className="bg-bg-elevated rounded-lg p-3 space-y-2">
+                    <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide">{t('settings.assign_channels')}</p>
                     {channels.map(ch => (
                         <div key={ch.id} className="flex items-center gap-2">
-                            <span className="text-xs text-gray-300 flex-1">#{ch.name}</span>
+                            <span className="text-xs text-text-secondary flex-1">#{ch.name}</span>
                             <select
                                 value={ch.category_id ?? ''}
                                 onChange={e => assignChannel(ch.id, e.target.value)}
                                 disabled={!canManageChannels}
-                                className="bg-gray-700 border border-gray-600 text-gray-100 rounded px-2 py-0.5 text-xs focus:outline-none"
+                                className="bg-bg-muted border border-border text-text rounded px-2 py-0.5 text-xs focus:outline-none"
                             >
                                 <option value="">{t('settings.no_category_option')}</option>
                                 {categories.map(cat => (
@@ -439,18 +439,18 @@ function CategoriesTab({ server, canManageChannels, onChannelAssign, onCategoryC
 
             {/* Crear categoría */}
             {canManageChannels && (
-                <form onSubmit={createCategory} className="bg-gray-800 rounded-lg p-3 space-y-2 border border-dashed border-gray-600">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{t('settings.new_category')}</p>
+                <form onSubmit={createCategory} className="bg-bg-elevated rounded-lg p-3 space-y-2 border border-dashed border-border">
+                    <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide">{t('settings.new_category')}</p>
                     <div className="flex gap-2">
                         <input
                             type="text"
                             value={newName}
                             onChange={e => setNewName(e.target.value)}
                             placeholder={t('settings.category_name_ph')}
-                            className="flex-1 bg-gray-700 border border-gray-600 text-gray-100 placeholder-gray-500 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                            className="flex-1 bg-bg-muted border border-border text-text placeholder-text-muted rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-accent"
                         />
                         <button type="submit" disabled={creating}
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-3 py-1 rounded disabled:opacity-50">
+                            className="bg-accent hover:opacity-90 text-text-on-accent text-sm px-3 py-1 rounded disabled:opacity-50">
                             {creating ? '...' : t('settings.create')}
                         </button>
                     </div>
@@ -491,38 +491,38 @@ function BansTab({ server }) {
     if (bans === null && !loading) {
         return (
             <div className="flex items-center justify-center py-8">
-                <button onClick={load} className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-2 rounded">
+                <button onClick={load} className="bg-accent hover:opacity-90 text-text-on-accent text-sm px-4 py-2 rounded">
                     {t('settings.load_bans')}
                 </button>
             </div>
         );
     }
 
-    if (loading) return <p className="text-gray-400 text-sm py-4">{t('settings.loading')}</p>;
+    if (loading) return <p className="text-text-secondary text-sm py-4">{t('settings.loading')}</p>;
 
     return (
         <div className="space-y-2">
-            {bans.length === 0 && <p className="text-gray-500 text-sm">{t('settings.no_bans')}</p>}
+            {bans.length === 0 && <p className="text-text-muted text-sm">{t('settings.no_bans')}</p>}
             {bans.map(ban => (
-                <div key={ban.id} className="bg-gray-800 rounded-lg p-3 flex items-center gap-3">
+                <div key={ban.id} className="bg-bg-elevated rounded-lg p-3 flex items-center gap-3">
                     <Avatar user={ban.user} size={8} />
                     <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-100">{ban.user.name}</p>
-                        {ban.reason && <p className="text-xs text-gray-400 truncate">{t('settings.reason')} {ban.reason}</p>}
-                        <p className="text-xs text-gray-500">{t('settings.banned_by')} {ban.banned_by.name}</p>
+                        <p className="text-sm font-medium text-text">{ban.user.name}</p>
+                        {ban.reason && <p className="text-xs text-text-secondary truncate">{t('settings.reason')} {ban.reason}</p>}
+                        <p className="text-xs text-text-muted">{t('settings.banned_by')} {ban.banned_by.name}</p>
                     </div>
                     {confirmUnban === ban.user.id ? (
                         <div className="flex items-center gap-1 shrink-0">
                             <button onClick={() => unban(ban.user.id)}
-                                className="text-xs bg-green-700 hover:bg-green-600 text-white px-2 py-1 rounded">
+                                className="text-xs bg-green-700 hover:bg-green-600 text-text-on-accent px-2 py-1 rounded">
                                 {t('settings.unban')}
                             </button>
                             <button onClick={() => setConfirmUnban(null)}
-                                className="text-xs text-gray-400 px-1">✕</button>
+                                className="text-xs text-text-secondary px-1">✕</button>
                         </div>
                     ) : (
                         <button onClick={() => setConfirmUnban(ban.user.id)}
-                            className="text-xs text-gray-500 hover:text-green-400 px-2 py-1 rounded hover:bg-gray-700 shrink-0">
+                            className="text-xs text-text-muted hover:text-green-400 px-2 py-1 rounded hover:bg-bg-muted shrink-0">
                             {t('settings.unban')}
                         </button>
                     )}
@@ -597,38 +597,38 @@ function ChannelsTab({ server, roles, canManageChannels }) {
 
     return (
         <div className="space-y-2">
-            {channels.length === 0 && <p className="text-gray-500 text-sm">{t('settings.no_channels')}</p>}
+            {channels.length === 0 && <p className="text-text-muted text-sm">{t('settings.no_channels')}</p>}
             {channels.map(ch => {
                 const chPerms = perms[ch.id] ?? {};
                 const isOpen = expanded === ch.id;
                 const hasOverrides = Object.keys(chPerms).length > 0;
 
                 return (
-                    <div key={ch.id} className="bg-gray-800 rounded-lg overflow-hidden">
+                    <div key={ch.id} className="bg-bg-elevated rounded-lg overflow-hidden">
                         {/* Channel header */}
                         <button
                             onClick={() => setExpanded(isOpen ? null : ch.id)}
-                            className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-gray-750 transition-colors text-left"
+                            className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-bg-muted transition-colors text-left"
                         >
-                            <span className="text-gray-500 text-sm">{channelTypes[ch.id] === 'announcement' ? '📢' : channelTypes[ch.id] === 'voice' ? '🔊' : '#'}</span>
-                            <span className="flex-1 text-sm font-medium text-gray-100">{ch.name}</span>
+                            <span className="text-text-muted text-sm">{channelTypes[ch.id] === 'announcement' ? '📢' : channelTypes[ch.id] === 'voice' ? '🔊' : '#'}</span>
+                            <span className="flex-1 text-sm font-medium text-text">{ch.name}</span>
                             {hasOverrides && (
-                                <span className="text-xs bg-indigo-600/40 text-indigo-300 px-1.5 py-0.5 rounded">
+                                <span className="text-xs bg-accent-soft text-accent px-1.5 py-0.5 rounded">
                                     {Object.keys(chPerms).length} override{Object.keys(chPerms).length > 1 ? 's' : ''}
                                 </span>
                             )}
-                            <span className={`text-gray-400 text-xs transition-transform ${isOpen ? 'rotate-90' : ''}`}>›</span>
+                            <span className={`text-text-secondary text-xs transition-transform ${isOpen ? 'rotate-90' : ''}`}>›</span>
                         </button>
 
                         {/* Permissions panel */}
                         {isOpen && (
-                            <div className="border-t border-gray-700 px-3 py-3 space-y-3">
+                            <div className="border-t border-border px-3 py-3 space-y-3">
                                 <div className="flex items-center gap-3">
-                                    <span className="text-xs text-gray-400">{t('settings.channel_type')}</span>
+                                    <span className="text-xs text-text-secondary">{t('settings.channel_type')}</span>
                                     <select
                                         value={channelTypes[ch.id] ?? 'text'}
                                         onChange={e => changeType(ch.id, e.target.value)}
-                                        className="bg-gray-700 text-gray-200 text-xs rounded px-2 py-1 border border-gray-600 outline-none"
+                                        className="bg-bg-muted text-text text-xs rounded px-2 py-1 border border-border outline-none"
                                     >
                                         <option value="text">{t('settings.type_text')}</option>
                                         <option value="announcement">{t('settings.type_announcement')}</option>
@@ -636,7 +636,7 @@ function ChannelsTab({ server, roles, canManageChannels }) {
                                     </select>
                                 </div>
                                 {roles.length === 0 && (
-                                    <p className="text-xs text-gray-500">{t('settings.no_roles_server')}</p>
+                                    <p className="text-xs text-text-muted">{t('settings.no_roles_server')}</p>
                                 )}
                                 {roles.map(role => {
                                     const override = chPerms[role.id];
@@ -648,29 +648,29 @@ function ChannelsTab({ server, roles, canManageChannels }) {
                                             {/* Role badge */}
                                             <div className="flex items-center gap-1.5 w-28 shrink-0">
                                                 <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: role.color }} />
-                                                <span className="text-xs text-gray-200 truncate">{role.name}</span>
+                                                <span className="text-xs text-text truncate">{role.name}</span>
                                             </div>
 
                                             {/* Toggles or "default" label */}
                                             {override ? (
                                                 <div className="flex items-center gap-3 flex-1">
-                                                    <label className="flex items-center gap-1.5 text-xs text-gray-300 cursor-pointer">
+                                                    <label className="flex items-center gap-1.5 text-xs text-text-secondary cursor-pointer">
                                                         <input
                                                             type="checkbox"
                                                             checked={override.can_view}
                                                             disabled={isSaving || !canManageChannels}
                                                             onChange={e => save(ch.id, role.id, { ...override, can_view: e.target.checked })}
-                                                            className="accent-indigo-500"
+                                                            className="accent-accent"
                                                         />
                                                         {t('settings.view_channel')}
                                                     </label>
-                                                    <label className="flex items-center gap-1.5 text-xs text-gray-300 cursor-pointer">
+                                                    <label className="flex items-center gap-1.5 text-xs text-text-secondary cursor-pointer">
                                                         <input
                                                             type="checkbox"
                                                             checked={override.can_send}
                                                             disabled={isSaving || !canManageChannels}
                                                             onChange={e => save(ch.id, role.id, { ...override, can_send: e.target.checked })}
-                                                            className="accent-indigo-500"
+                                                            className="accent-accent"
                                                         />
                                                         {t('settings.send_messages')}
                                                     </label>
@@ -678,18 +678,18 @@ function ChannelsTab({ server, roles, canManageChannels }) {
                                                         <button
                                                             onClick={() => remove(ch.id, role.id)}
                                                             disabled={isSaving}
-                                                            className="text-xs text-gray-500 hover:text-red-400 transition-colors ml-auto"
+                                                            className="text-xs text-text-muted hover:text-red-400 transition-colors ml-auto"
                                                             title="Quitar override"
                                                         >{t('settings.remove_override')}</button>
                                                     )}
                                                 </div>
                                             ) : (
                                                 <div className="flex items-center gap-2 flex-1">
-                                                    <span className="text-xs text-gray-500 italic">{t('settings.default_allowed')}</span>
+                                                    <span className="text-xs text-text-muted italic">{t('settings.default_allowed')}</span>
                                                     {canManageChannels && (
                                                         <button
                                                             onClick={() => save(ch.id, role.id, { can_view: true, can_send: true })}
-                                                            className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+                                                            className="text-xs text-accent hover:text-accent transition-colors"
                                                         >{t('settings.add_override')}</button>
                                                     )}
                                                 </div>
@@ -754,45 +754,45 @@ function EmojisTab({ server, initialEmojis, onEmojiAdded, onEmojiDeleted }) {
     return (
         <div className="space-y-4">
             <form onSubmit={upload} className="flex flex-col gap-2">
-                <p className="text-xs text-gray-400">{t('settings.emoji_hint')} <code className="bg-gray-700 text-pink-300 rounded px-1">:nombre:</code></p>
+                <p className="text-xs text-text-secondary">{t('settings.emoji_hint')} <code className="bg-bg-muted text-pink-300 rounded px-1">:nombre:</code></p>
                 <div className="flex gap-2">
                     <input
                         type="text"
                         placeholder={t('settings.emoji_name_ph')}
                         value={name}
                         onChange={e => setName(e.target.value.toLowerCase())}
-                        className="flex-1 bg-gray-700 text-gray-100 rounded px-3 py-1.5 text-sm border border-gray-600 focus:outline-none focus:border-indigo-500"
+                        className="flex-1 bg-bg-muted text-text rounded px-3 py-1.5 text-sm border border-border focus:outline-none focus:border-accent"
                     />
                     <input
                         ref={fileRef}
                         type="file"
                         accept="image/*"
-                        className="text-xs text-gray-300 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer"
+                        className="text-xs text-text-secondary file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:bg-accent file:text-text-on-accent hover:file:bg-accent cursor-pointer"
                     />
                     <button
                         type="submit"
                         disabled={uploading}
-                        className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm rounded disabled:opacity-50"
+                        className="px-3 py-1.5 bg-accent hover:bg-accent text-text-on-accent text-sm rounded disabled:opacity-50"
                     >{uploading ? '...' : t('settings.emoji_upload')}</button>
                 </div>
                 {error && <p className="text-xs text-red-400">{error}</p>}
             </form>
 
             {emojis.length === 0 ? (
-                <p className="text-sm text-gray-500">{t('settings.emoji_no_emojis')}</p>
+                <p className="text-sm text-text-muted">{t('settings.emoji_no_emojis')}</p>
             ) : (
                 <div className="grid grid-cols-2 gap-2">
                     {emojis.map(emoji => (
-                        <div key={emoji.id} className="flex items-center gap-3 bg-gray-800 rounded-lg px-3 py-2">
+                        <div key={emoji.id} className="flex items-center gap-3 bg-bg-elevated rounded-lg px-3 py-2">
                             <img src={emoji.url} alt={emoji.name} className="w-8 h-8 object-contain" />
-                            <span className="text-sm text-gray-200 flex-1 font-mono">:{emoji.name}:</span>
+                            <span className="text-sm text-text flex-1 font-mono">:{emoji.name}:</span>
                             {confirmDelete === emoji.id ? (
                                 <div className="flex gap-1">
-                                    <button onClick={() => remove(emoji)} className="text-xs bg-red-600 hover:bg-red-700 text-white px-2 py-0.5 rounded">{t('settings.emoji_delete')}</button>
-                                    <button onClick={() => setConfirmDelete(null)} className="text-xs text-gray-400 hover:text-gray-200">✕</button>
+                                    <button onClick={() => remove(emoji)} className="text-xs bg-red-600 hover:bg-red-700 text-text-on-accent px-2 py-0.5 rounded">{t('settings.emoji_delete')}</button>
+                                    <button onClick={() => setConfirmDelete(null)} className="text-xs text-text-secondary hover:text-text">✕</button>
                                 </div>
                             ) : (
-                                <button onClick={() => setConfirmDelete(emoji.id)} className="text-gray-500 hover:text-red-400 text-sm">🗑️</button>
+                                <button onClick={() => setConfirmDelete(emoji.id)} className="text-text-muted hover:text-red-400 text-sm">🗑️</button>
                             )}
                         </div>
                     ))}
@@ -811,12 +811,12 @@ export default function ServerSettingsModal({ show, onClose, server, roles: init
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-            <div className="relative bg-gray-900 rounded-xl border border-gray-700 w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl">
+            <div className="absolute inset-0 overlay-backdrop" onClick={onClose} aria-hidden />
+            <div className="relative modal-panel w-full max-w-2xl max-h-[80vh] flex flex-col">
                 {/* Header */}
-                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-700 shrink-0">
-                    <h2 className="text-gray-100 font-semibold">{t('settings.server_settings', { name: server.name })}</h2>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-200 text-xl leading-none">&times;</button>
+                <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+                    <h2 className="text-text font-semibold">{t('settings.server_settings', { name: server.name })}</h2>
+                    <button onClick={onClose} className="text-text-secondary hover:text-text text-xl leading-none">&times;</button>
                 </div>
 
                 {/* Tabs */}
@@ -831,7 +831,7 @@ export default function ServerSettingsModal({ show, onClose, server, roles: init
                     ].filter(item => item.show).map(item => (
                         <button key={item.key} onClick={() => setTab(item.key)}
                             className={`px-4 py-2 text-sm font-medium rounded-t transition-colors ${
-                                tab === item.key ? 'bg-gray-800 text-white' : 'text-gray-400 hover:text-gray-200'
+                                tab === item.key ? 'bg-bg-elevated text-text' : 'text-text-secondary hover:text-text'
                             }`}>
                             {item.label}
                         </button>

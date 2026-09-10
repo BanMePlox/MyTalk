@@ -30,24 +30,24 @@ export default function ServerModal({ onClose }) {
     return (
         <div
             className="fixed inset-0 z-[400] flex items-center justify-center px-4"
-            style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
             onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
         >
-            <div className="bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="absolute inset-0 overlay-backdrop" aria-hidden />
+            <div className="relative modal-panel w-full max-w-md overflow-hidden">
                 {/* Header */}
-                <div className="px-6 pt-6 pb-4 text-center border-b border-gray-700">
-                    <h2 className="text-lg font-bold text-white">{t('server.add')}</h2>
-                    <p className="text-sm text-gray-400 mt-1">{t('server.subtitle')}</p>
+                <div className="px-6 pt-6 pb-4 text-center border-b border-border">
+                    <h2 className="text-lg font-bold text-text-on-accent">{t('server.add')}</h2>
+                    <p className="text-sm text-text-secondary mt-1">{t('server.subtitle')}</p>
                 </div>
 
                 {/* Tabs */}
-                <div className="flex border-b border-gray-700">
+                <div className="flex border-b border-border">
                     <button
                         onClick={() => setTab('create')}
                         className={`flex-1 py-3 text-sm font-medium transition-colors ${
                             tab === 'create'
-                                ? 'text-white border-b-2 border-indigo-500'
-                                : 'text-gray-400 hover:text-gray-200'
+                                ? 'text-text border-b-2 border-accent'
+                                : 'text-text-secondary hover:text-text'
                         }`}
                     >
                         {t('server.create')}
@@ -56,8 +56,8 @@ export default function ServerModal({ onClose }) {
                         onClick={() => setTab('join')}
                         className={`flex-1 py-3 text-sm font-medium transition-colors ${
                             tab === 'join'
-                                ? 'text-white border-b-2 border-green-500'
-                                : 'text-gray-400 hover:text-gray-200'
+                                ? 'text-text border-b-2 border-green-500'
+                                : 'text-text-secondary hover:text-text'
                         }`}
                     >
                         {t('server.join_code')}
@@ -69,13 +69,13 @@ export default function ServerModal({ onClose }) {
                         <form onSubmit={submitCreate} className="space-y-4">
                             <div className="flex justify-center">
                                 <label className="cursor-pointer group">
-                                    <div className="w-20 h-20 rounded-full bg-gray-700 border-2 border-dashed border-gray-600 group-hover:border-indigo-400 flex items-center justify-center overflow-hidden transition-colors">
+                                    <div className="w-20 h-20 rounded-full bg-bg-muted border-2 border-dashed border-border group-hover:border-accent flex items-center justify-center overflow-hidden transition-colors">
                                         {iconPreview
                                             ? <img src={iconPreview} className="w-full h-full object-cover" />
-                                            : <span className="text-3xl text-gray-500 group-hover:text-indigo-400 transition-colors">🖼️</span>
+                                            : <span className="text-3xl text-text-muted group-hover:text-accent transition-colors">🖼️</span>
                                         }
                                     </div>
-                                    <p className="text-xs text-gray-500 text-center mt-1.5">{t('server.icon_label')}</p>
+                                    <p className="text-xs text-text-muted text-center mt-1.5">{t('server.icon_label')}</p>
                                     <input
                                         type="file"
                                         accept="image/*"
@@ -92,7 +92,7 @@ export default function ServerModal({ onClose }) {
                             </div>
 
                             <div>
-                                <label className="block text-xs text-gray-400 mb-1.5 uppercase tracking-wide font-semibold">
+                                <label className="block text-xs text-text-secondary mb-1.5 uppercase tracking-wide font-semibold">
                                     {t('server.name_label')}
                                 </label>
                                 <input
@@ -102,7 +102,7 @@ export default function ServerModal({ onClose }) {
                                     autoFocus
                                     value={createForm.data.name}
                                     onChange={(e) => createForm.setData('name', e.target.value)}
-                                    className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-indigo-500"
+                                    className="w-full bg-bg-elevated border border-border rounded-lg px-3 py-2.5 text-sm text-text placeholder-text-muted outline-none focus:border-accent"
                                 />
                                 {createForm.errors.name && (
                                     <p className="text-red-400 text-xs mt-1">{createForm.errors.name}</p>
@@ -113,14 +113,14 @@ export default function ServerModal({ onClose }) {
                                 <button
                                     type="button"
                                     onClick={onClose}
-                                    className="flex-1 py-2.5 text-sm text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
+                                    className="flex-1 py-2.5 text-sm text-text-secondary hover:text-text bg-bg-elevated hover:bg-bg-muted rounded-lg transition-colors"
                                 >
                                     {t('chat.cancel')}
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={createForm.processing || !createForm.data.name.trim()}
-                                    className="flex-1 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg disabled:opacity-50 transition-colors"
+                                    className="flex-1 py-2.5 text-sm font-medium text-text bg-accent hover:bg-accent rounded-lg disabled:opacity-50 transition-colors"
                                 >
                                     {createForm.processing ? t('server.creating') : t('server.create')}
                                 </button>
@@ -132,7 +132,7 @@ export default function ServerModal({ onClose }) {
                                 <span className="text-5xl">🔗</span>
                             </div>
                             <div>
-                                <label className="block text-xs text-gray-400 mb-1.5 uppercase tracking-wide font-semibold">
+                                <label className="block text-xs text-text-secondary mb-1.5 uppercase tracking-wide font-semibold">
                                     {t('server.invite_label')}
                                 </label>
                                 <input
@@ -141,7 +141,7 @@ export default function ServerModal({ onClose }) {
                                     autoFocus
                                     value={joinForm.data.invite_code}
                                     onChange={(e) => joinForm.setData('invite_code', e.target.value)}
-                                    className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-green-500 font-mono tracking-widest"
+                                    className="w-full bg-bg-elevated border border-border rounded-lg px-3 py-2.5 text-sm text-text placeholder-text-muted outline-none focus:border-green-500 font-mono tracking-widest"
                                 />
                                 {joinForm.errors.invite_code && (
                                     <p className="text-red-400 text-xs mt-1">{joinForm.errors.invite_code}</p>
@@ -152,14 +152,14 @@ export default function ServerModal({ onClose }) {
                                 <button
                                     type="button"
                                     onClick={onClose}
-                                    className="flex-1 py-2.5 text-sm text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
+                                    className="flex-1 py-2.5 text-sm text-text-secondary hover:text-text bg-bg-elevated hover:bg-bg-muted rounded-lg transition-colors"
                                 >
                                     {t('chat.cancel')}
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={joinForm.processing || !joinForm.data.invite_code.trim()}
-                                    className="flex-1 py-2.5 text-sm font-medium text-white bg-green-600 hover:bg-green-500 rounded-lg disabled:opacity-50 transition-colors"
+                                    className="flex-1 py-2.5 text-sm font-medium text-text bg-green-600 hover:bg-green-500 rounded-lg disabled:opacity-50 transition-colors"
                                 >
                                     {joinForm.processing ? t('server.joining') : t('server.join')}
                                 </button>

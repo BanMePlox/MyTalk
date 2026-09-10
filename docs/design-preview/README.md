@@ -1,20 +1,28 @@
 # Papel UI — design preview screenshots
 
-Captured from a running local instance (`php artisan serve` + `npm run dev`) on branch `cursor/papel-ui-redesign-56ed`.
+Captured from a running local instance (`php8.4 artisan serve` + `npm run dev`) on branch `cursor/papel-ui-redesign-56ed`.
+
+Run `node scripts/capture-design-preview.mjs` to regenerate.
+
+## Core surfaces (light + dark)
 
 | File | Screen |
 |------|--------|
-| `01-welcome.png` | Landing `/` — cream hero, olive CTAs, feature cards |
-| `02-login.png` | Login `/login` — auth card, input fields, GitHub OAuth |
-| `03-chat-layout.png` | Main chat `/channels/1` — rail, sidebar, messages, members, input |
-| `04-chat-messages.png` | Same channel, scrolled to show message bubbles |
-| `05-welcome-dark.png` | Landing `/` — warm charcoal night (Papel dark) |
-| `06-login-dark.png` | Login `/login` — dark auth card |
-| `07-chat-layout-dark.png` | Full chat layout in dark mode |
-| `08-chat-messages-dark.png` | Dark mode message bubbles |
+| `welcome-light.png` / `welcome-dark.png` | Landing `/` |
+| `login-light.png` / `login-dark.png` | Login `/login` |
+| `chat-layout-light.png` / `chat-layout-dark.png` | Main chat `/channels/1` |
+| `friends-light.png` / `friends-dark.png` | Friends `/friends` |
+| `dm-light.png` / `dm-dark.png` | Direct message `/conversations/1` |
+| `settings-light.png` / `settings-dark.png` | Server settings modal |
+| `profile-modal-light.png` / `profile-modal-dark.png` | Profile modal |
+| `legal-light.png` / `legal-dark.png` | Terms `/terms` |
 
-Demo data seeded for chat preview: server **Estudio Papel**, channel **#general**, users `test@example.com` / `password`.
+## Legacy numbered set (earlier pass)
+
+| File | Screen |
+|------|--------|
+| `01-welcome.png` … `08-chat-messages-dark.png` | Initial welcome/login/chat captures |
+
+Demo data: server **Estudio Papel**, channel **#general**, DM with **Ana García**, login `test@example.com` / `password`.
 
 Dark captures use `localStorage.theme = 'dark'` (same as the in-app theme toggle).
-
-Dark mode uses quiet mark `public/images/logo-dark.svg` (cream/olive geometric) instead of colorful `MyTalk.png`.

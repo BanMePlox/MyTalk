@@ -21,7 +21,7 @@ export default function AdminIndex({ stats }) {
     }
 
     return (
-        <div className="min-h-screen bg-gray-900 text-white">
+        <div className="min-h-screen bg-bg text-text">
             <Head title="Panel de administración" />
 
             <div className="max-w-3xl mx-auto px-6 py-12">
@@ -32,21 +32,21 @@ export default function AdminIndex({ stats }) {
 
                 {/* Stats */}
                 <div className="grid grid-cols-2 gap-4 mb-10">
-                    <div className="bg-gray-800 rounded-xl p-5">
-                        <p className="text-3xl font-bold text-indigo-400">{stats.users}</p>
-                        <p className="text-sm text-gray-400 mt-1">Usuarios registrados</p>
+                    <div className="bg-bg-elevated rounded-xl p-5">
+                        <p className="text-3xl font-bold text-accent">{stats.users}</p>
+                        <p className="text-sm text-text-secondary mt-1">Usuarios registrados</p>
                     </div>
-                    <div className="bg-gray-800 rounded-xl p-5">
-                        <p className="text-3xl font-bold text-indigo-400">{stats.conversations}</p>
-                        <p className="text-sm text-gray-400 mt-1">Conversaciones</p>
+                    <div className="bg-bg-elevated rounded-xl p-5">
+                        <p className="text-3xl font-bold text-accent">{stats.conversations}</p>
+                        <p className="text-sm text-text-secondary mt-1">Conversaciones</p>
                     </div>
                 </div>
 
                 {/* Broadcast */}
-                <div className="bg-gray-800 rounded-xl p-6">
+                <div className="bg-bg-elevated rounded-xl p-6">
                     <h2 className="text-lg font-semibold mb-1">Enviar mensaje a todos los usuarios</h2>
-                    <p className="text-sm text-gray-400 mb-4">
-                        El mensaje se enviará como DM desde la cuenta <span className="text-white font-medium">MyTalk</span> a cada usuario.
+                    <p className="text-sm text-text-secondary mb-4">
+                        El mensaje se enviará como DM desde la cuenta <span className="text-text font-medium">MyTalk</span> a cada usuario.
                     </p>
 
                     <form onSubmit={submit} className="flex flex-col gap-3">
@@ -56,17 +56,17 @@ export default function AdminIndex({ stats }) {
                             placeholder="Escribe el mensaje del sistema..."
                             rows={4}
                             maxLength={4000}
-                            className="bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-indigo-500 resize-none"
+                            className="bg-bg border border-border rounded-lg px-4 py-3 text-sm text-text placeholder-text-muted outline-none focus:border-accent resize-none"
                         />
                         {errors.message && (
                             <p className="text-red-400 text-sm">{errors.message}</p>
                         )}
                         <div className="flex items-center justify-between">
-                            <span className="text-xs text-gray-500">{data.message.length}/4000</span>
+                            <span className="text-xs text-text-muted">{data.message.length}/4000</span>
                             <button
                                 type="submit"
                                 disabled={processing || !data.message.trim()}
-                                className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium px-5 py-2 rounded-lg transition"
+                                className="bg-accent hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed text-text-on-accent text-sm font-medium px-5 py-2 rounded-lg transition"
                             >
                                 {processing ? 'Enviando...' : 'Enviar broadcast'}
                             </button>

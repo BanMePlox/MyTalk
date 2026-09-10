@@ -36,10 +36,10 @@ export default function Show({ server, channel, canManageChannels, canManageRole
     return (
         <AuthenticatedLayout header={
             <div className="flex items-center gap-3">
-                <h2 className="text-xl font-semibold text-gray-100">{server.name}</h2>
+                <h2 className="text-xl font-semibold text-text">{server.name}</h2>
                 {(canManageRoles || canKickMembers || isOwner) && (
                     <button onClick={() => setSettingsOpen(true)}
-                        className="text-sm text-gray-400 hover:text-white px-2 py-1 rounded hover:bg-gray-700 transition-colors"
+                        className="text-sm text-text-secondary hover:text-text px-2 py-1 rounded hover:bg-bg-muted transition-colors"
                         title={t('settings.server_settings', { name: server.name })}>
                         ⚙️ {t('server.settings')}
                     </button>
@@ -50,8 +50,8 @@ export default function Show({ server, channel, canManageChannels, canManageRole
 
             <div className="py-8 max-w-2xl mx-auto px-4 space-y-4">
                 {/* Canales */}
-                <div className="bg-gray-900 rounded-xl border border-gray-700 p-5 space-y-3">
-                    <h3 className="font-semibold text-gray-300 text-sm uppercase tracking-wide">{t('server.channels_title')}</h3>
+                <div className="bg-bg rounded-xl border border-border p-5 space-y-3">
+                    <h3 className="font-semibold text-text-secondary text-sm uppercase tracking-wide">{t('server.channels_title')}</h3>
 
                     {errors.channel && <p className="text-red-400 text-xs">{errors.channel}</p>}
 
@@ -60,9 +60,9 @@ export default function Show({ server, channel, canManageChannels, canManageRole
                             <div key={ch.id} className="flex items-center gap-1 group">
                                 <Link
                                     href={route('channels.show', ch.id)}
-                                    className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-800 text-gray-300 hover:text-white transition-colors"
+                                    className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-bg-elevated text-text-secondary hover:text-text transition-colors"
                                 >
-                                    <span className="text-gray-500">#</span> {ch.name}
+                                    <span className="text-text-muted">#</span> {ch.name}
                                 </Link>
 
                                 {canManageChannels && (
@@ -70,13 +70,13 @@ export default function Show({ server, channel, canManageChannels, canManageRole
                                         <div className="flex items-center gap-1 shrink-0">
                                             <button
                                                 onClick={() => handleDeleteChannel(ch.id)}
-                                                className="text-xs bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded"
+                                                className="text-xs bg-red-600 hover:bg-red-700 text-text-on-accent px-2 py-1 rounded"
                                             >
                                                 {t('server.delete_channel')}
                                             </button>
                                             <button
                                                 onClick={() => setConfirmDeleteChannel(null)}
-                                                className="text-xs text-gray-400 hover:text-gray-200 px-2 py-1 rounded hover:bg-gray-800"
+                                                className="text-xs text-text-secondary hover:text-text px-2 py-1 rounded hover:bg-bg-elevated"
                                             >
                                                 ✕
                                             </button>
@@ -84,7 +84,7 @@ export default function Show({ server, channel, canManageChannels, canManageRole
                                     ) : (
                                         <button
                                             onClick={() => setConfirmDeleteChannel(ch.id)}
-                                            className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 px-2 py-1 rounded transition-all text-sm"
+                                            className="opacity-0 group-hover:opacity-100 text-text-muted hover:text-red-400 px-2 py-1 rounded transition-all text-sm"
                                             title={t('server.delete_channel_title')}
                                         >
                                             🗑
@@ -102,12 +102,12 @@ export default function Show({ server, channel, canManageChannels, canManageRole
                                 value={data.name}
                                 onChange={e => setData('name', e.target.value)}
                                 placeholder={t('server.channel_ph')}
-                                className="flex-1 bg-gray-800 border border-gray-600 text-gray-200 placeholder-gray-500 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                className="flex-1 bg-bg-elevated border border-border text-text placeholder-text-muted rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
                             />
                             <button
                                 type="submit"
                                 disabled={processing}
-                                className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 disabled:opacity-50"
+                                className="bg-accent text-text-on-accent px-4 py-2 rounded-lg text-sm hover:opacity-90 disabled:opacity-50"
                             >
                                 {t('server.add_channel')}
                             </button>
@@ -118,7 +118,7 @@ export default function Show({ server, channel, canManageChannels, canManageRole
                     {channel && (
                         <Link
                             href={route('channels.show', channel.id)}
-                            className="inline-block mt-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm"
+                            className="inline-block mt-2 bg-accent text-text-on-accent px-4 py-2 rounded-lg hover:opacity-90 text-sm"
                         >
                             {t('server.enter_general')}
                         </Link>
@@ -127,25 +127,25 @@ export default function Show({ server, channel, canManageChannels, canManageRole
 
                 {/* Abandonar servidor */}
                 {!isOwner && (
-                    <div className="bg-gray-900 rounded-xl border border-red-900/40 p-5">
+                    <div className="bg-bg rounded-xl border border-red-900/40 p-5">
                         <h3 className="font-semibold text-red-400 text-sm uppercase tracking-wide mb-1">{t('server.danger_zone')}</h3>
-                        <p className="text-gray-500 text-xs mb-3">{t('server.leave_warning')}</p>
+                        <p className="text-text-muted text-xs mb-3">{t('server.leave_warning')}</p>
                         {leaveForm.errors.leave && (
                             <p className="text-red-400 text-sm mb-2">{leaveForm.errors.leave}</p>
                         )}
                         {confirmLeave ? (
                             <div className="flex items-center gap-3">
-                                <span className="text-sm text-gray-300">{t('server.are_you_sure')}</span>
+                                <span className="text-sm text-text-secondary">{t('server.are_you_sure')}</span>
                                 <button
                                     onClick={handleLeave}
                                     disabled={leaveForm.processing}
-                                    className="bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-1.5 rounded-lg disabled:opacity-50"
+                                    className="bg-red-600 hover:bg-red-700 text-text-on-accent text-sm px-4 py-1.5 rounded-lg disabled:opacity-50"
                                 >
                                     {t('server.confirm_leave')}
                                 </button>
                                 <button
                                     onClick={() => setConfirmLeave(false)}
-                                    className="text-gray-400 hover:text-gray-200 text-sm px-3 py-1.5 rounded-lg hover:bg-gray-800"
+                                    className="text-text-secondary hover:text-text text-sm px-3 py-1.5 rounded-lg hover:bg-bg-elevated"
                                 >
                                     {t('settings.cancel')}
                                 </button>
@@ -162,28 +162,28 @@ export default function Show({ server, channel, canManageChannels, canManageRole
                 )}
 
                 {/* Invitación */}
-                <div className="bg-gray-900 rounded-xl border border-gray-700 p-5 space-y-3">
+                <div className="bg-bg rounded-xl border border-border p-5 space-y-3">
                     <div>
-                        <h3 className="font-semibold text-gray-300 text-sm uppercase tracking-wide">{t('server.invite_people')}</h3>
-                        <p className="text-gray-500 text-xs mt-0.5">{t('server.invite_description')}</p>
+                        <h3 className="font-semibold text-text-secondary text-sm uppercase tracking-wide">{t('server.invite_people')}</h3>
+                        <p className="text-text-muted text-xs mt-0.5">{t('server.invite_description')}</p>
                     </div>
 
-                    <div className="flex items-center gap-2 bg-gray-800 border border-gray-600 rounded-lg px-3 py-2">
-                        <span className="flex-1 text-sm text-gray-300 font-mono truncate">{inviteUrl}</span>
+                    <div className="flex items-center gap-2 bg-bg-elevated border border-border rounded-lg px-3 py-2">
+                        <span className="flex-1 text-sm text-text-secondary font-mono truncate">{inviteUrl}</span>
                         <button
                             onClick={copyInvite}
                             className={`shrink-0 text-xs font-medium px-3 py-1.5 rounded-md transition-all ${
                                 copied
-                                    ? 'bg-green-600 text-white'
-                                    : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                                    ? 'bg-green-600 text-text-on-accent'
+                                    : 'bg-accent hover:opacity-90 text-text-on-accent'
                             }`}
                         >
                             {copied ? t('server.copied') : t('server.copy')}
                         </button>
                     </div>
 
-                    <p className="text-gray-600 text-xs">
-                        {t('server.code')} <span className="font-mono text-gray-400">{server.invite_code}</span>
+                    <p className="text-text-muted text-xs">
+                        {t('server.code')} <span className="font-mono text-text-secondary">{server.invite_code}</span>
                     </p>
                 </div>
             </div>

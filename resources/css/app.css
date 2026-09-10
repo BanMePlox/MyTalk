@@ -242,6 +242,31 @@ html.dark {
     color: var(--text-muted);
     letter-spacing: 0.06em;
   }
+
+  /* Modal / drawer panel */
+  .modal-panel {
+    background-color: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 8px 32px color-mix(in srgb, var(--text) 12%, transparent);
+  }
+
+  /* Sidebar in chat/DM layout */
+  .sidebar-panel {
+    background-color: var(--bg);
+    border-color: var(--border);
+  }
+
+  /* Tab active indicator */
+  .tab-active {
+    border-bottom: 2px solid var(--accent);
+    color: var(--text);
+  }
+
+  /* Range sliders — olive accent */
+  .accent-range {
+    accent-color: var(--accent);
+  }
 }
 
 /* Tauri desktop app — compensate for custom title bar (2rem = 32px) */

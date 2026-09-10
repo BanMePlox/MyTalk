@@ -1,3 +1,4 @@
+import AppLogo from '@/Components/AppLogo';
 import { Head, Link } from '@inertiajs/react';
 
 const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
@@ -104,40 +105,39 @@ export default function Privacy({ locale = 'es' }) {
     return (
         <>
             <Head title={`${lang.title} — MyTalk`} />
-            <div className="min-h-screen bg-gray-900 text-white overflow-y-auto" style={isTauri ? { paddingTop: '2rem' } : {}}>
+            <div className="min-h-screen bg-bg text-text overflow-y-auto" style={isTauri ? { paddingTop: '2rem' } : {}}>
                 {/* Nav */}
-                <nav className="flex items-center justify-between px-8 py-5 border-b border-white/10">
+                <nav className="flex items-center justify-between px-8 py-5 border-b border-border">
                     <Link href={route('home')} className="flex items-center gap-2">
-                        <img src="/images/MyTalk.png" alt="MyTalk" className="w-8 h-8 rounded-lg object-contain" />
+                        <AppLogo className="h-8 w-8 object-contain" />
                         <span className="font-semibold text-lg">MyTalk</span>
                     </Link>
                     <a
                         href={route('privacy', other)}
-                        className="text-white/40 hover:text-white/70 text-sm transition"
+                        className="text-text-muted hover:text-text text-sm transition"
                     >
                         {other === 'en' ? 'English' : 'Español'}
                     </a>
                 </nav>
 
-                {/* Content */}
                 <div className="max-w-2xl mx-auto px-6 py-12">
                     <h1 className="text-3xl font-bold mb-2">{lang.title}</h1>
-                    <p className="text-white/40 text-sm mb-10">{lang.updated}</p>
+                    <p className="text-text-muted text-sm mb-10">{lang.updated}</p>
 
                     <div className="space-y-8">
                         {lang.sections.map((s) => (
                             <section key={s.heading}>
                                 <h2 className="text-lg font-semibold mb-2">{s.heading}</h2>
-                                <p className="text-white/60 leading-relaxed">{s.body}</p>
+                                <p className="text-text-secondary leading-relaxed">{s.body}</p>
                             </section>
                         ))}
                     </div>
 
-                    <div className="mt-12 pt-8 border-t border-white/10 flex gap-6 text-sm text-white/40">
-                        <Link href={route('terms', locale)} className="hover:text-white/70 transition">
+                    <div className="mt-12 pt-8 border-t border-border flex gap-6 text-sm text-text-muted">
+                        <Link href={route('terms', locale)} className="hover:text-text transition">
                             {locale === 'es' ? 'Términos de servicio' : 'Terms of Service'}
                         </Link>
-                        <Link href={route('login')} className="hover:text-white/70 transition">
+                        <Link href={route('login')} className="hover:text-text transition">
                             {locale === 'es' ? 'Volver al inicio' : 'Back to login'}
                         </Link>
                     </div>
