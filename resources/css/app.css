@@ -61,7 +61,7 @@ html.dark {
     color: var(--text);
   }
 
-  /* Focus ring — single accent, no rainbow shadows */
+  /* Focus ring — single accent olive, never browser/forms default blue */
   :focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
@@ -69,8 +69,26 @@ html.dark {
 
   input:focus:not(:focus-visible),
   textarea:focus:not(:focus-visible),
-  button:focus:not(:focus-visible) {
+  button:focus:not(:focus-visible),
+  select:focus:not(:focus-visible) {
     outline: none;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    --tw-ring-color: var(--accent);
+    --tw-ring-shadow: 0 0 #0000;
+    box-shadow: none;
+  }
+
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    border-color: var(--accent);
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    box-shadow: none;
   }
 }
 
@@ -117,10 +135,21 @@ html.dark {
   .input-field::placeholder {
     color: var(--text-muted);
   }
-  .input-field:focus {
+  .input-field:focus,
+  .input-field:focus-visible {
     border-color: var(--accent);
     outline: 2px solid var(--accent);
     outline-offset: 2px;
+    box-shadow: none;
+  }
+
+  .chat-input-bar textarea:focus,
+  .chat-input-bar textarea:focus-visible,
+  .chat-input-bar input:focus,
+  .chat-input-bar input:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    box-shadow: none;
   }
 
   /* Chat message input bar */

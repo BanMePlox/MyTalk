@@ -43,5 +43,8 @@ export default {
         },
     },
 
-    plugins: [forms],
+    plugins: [
+        // 'class' strategy: only form-* utilities get defaults; .input-field uses Papel tokens
+        forms({ strategy: 'class' }),
+    ],
 };

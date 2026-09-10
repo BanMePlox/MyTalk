@@ -2027,7 +2027,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                 onChange={e => setServerNameInput(e.target.value)}
                                                 onKeyDown={e => { if (e.key === 'Enter') saveServerName(); if (e.key === 'Escape') setServerNameEdit(false); }}
                                                 placeholder="Nuevo nombre..."
-                                                className="w-full bg-bg-elevated border border-border text-text-secondary placeholder:text-text-muted rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:border-accent mb-1.5"
+                                                className="w-full bg-bg-elevated border border-border text-text-secondary placeholder:text-text-muted rounded px-2 py-1 text-xs focus:outline-none focus:border-accent mb-1.5"
                                             />
                                             <div className="flex gap-2">
                                                 <button onClick={saveServerName} className="flex-1 bg-accent hover:opacity-90 text-text text-xs px-2 py-1 rounded">Guardar</button>
@@ -2122,7 +2122,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                 value={newChannelName}
                                                 onChange={e => setNewChannelName(e.target.value)}
                                                 placeholder="nombre-canal"
-                                                className="flex-1 min-w-0 bg-bg-elevated border border-border text-text-secondary placeholder:text-text-muted rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:border-accent"
+                                                className="flex-1 min-w-0 bg-bg-elevated border border-border text-text-secondary placeholder:text-text-muted rounded px-2 py-1 text-xs focus:outline-none focus:border-accent"
                                             />
                                             <button
                                                 type="submit"
@@ -3364,7 +3364,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                 onKeyDown={e => { if (e.key === 'Enter') saveNickname(); if (e.key === 'Escape') setNicknameOpen(false); }}
                                 placeholder={auth.user.name}
                                 maxLength={32}
-                                className="w-full bg-bg-elevated border border-border text-text placeholder:text-text-muted rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:border-accent mb-4"
+                                className="w-full bg-bg-elevated border border-border text-text placeholder:text-text-muted rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent mb-4"
                             />
                             <div className="flex gap-2 justify-end">
                                 <button onClick={() => setNicknameOpen(false)} className="px-4 py-2 text-sm text-text-muted hover:text-text-secondary rounded-lg hover:bg-bg-elevated">Cancelar</button>

@@ -74,7 +74,7 @@ export default function Login({ status, canResetPassword }) {
                                 type="checkbox"
                                 checked={data.remember}
                                 onChange={e => setData('remember', e.target.checked)}
-                                className="rounded-sm border-border text-accent focus:ring-accent"
+                                className="rounded-sm border-border text-accent accent-accent"
                             />
                             {t('auth.remember')}
                         </label>
