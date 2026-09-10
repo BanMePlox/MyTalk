@@ -24,3 +24,10 @@ Homestead.yaml
 Thumbs.db
 /src-tauri/target
 /src-tauri/mytalk.key
+/src-tauri/*.key
+!src-tauri/*.key.pub
+# Never commit home-style paths or private Tauri updater keys
+/~/
+**/.tauri/mytalk.key
+**/.tauri/*.key
+!**/.tauri/*.key.pub
