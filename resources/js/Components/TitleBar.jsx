@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTrans } from '@/Hooks/useTrans';
+import AppLogo from '@/Components/AppLogo';
 
 async function invoke(cmd, args = {}) {
     try {
@@ -42,7 +43,7 @@ export default function TitleBar() {
     return (
         <div className="fixed top-0 left-0 right-0 z-[9999] flex items-center justify-between h-8 bg-bg-muted border-b border-border select-none" data-tauri-drag-region>
             <div className="flex items-center gap-2 px-3 pointer-events-none" data-tauri-drag-region>
-                <img src="/images/MyTalk.png" alt="MyTalk" className="w-4 h-4 rounded-sm object-contain" />
+                <AppLogo className="w-4 h-4 rounded-sm object-contain" />
                 <span className="text-text-muted text-xs">MyTalk {currentVersion && <span className="text-text-muted/70">v{currentVersion}</span>}</span>
             </div>
 

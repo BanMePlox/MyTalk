@@ -28,6 +28,7 @@ export default {
                 'border-strong': 'var(--border-strong)',
                 accent: 'var(--accent)',
                 'accent-soft': 'var(--accent-soft)',
+                'accent-chip': 'var(--accent-chip)',
                 danger: 'var(--danger)',
                 success: 'var(--success)',
                 'bubble-me': 'var(--bubble-me)',

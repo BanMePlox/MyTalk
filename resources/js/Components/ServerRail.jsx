@@ -36,7 +36,7 @@ function ServerIcon({ srv, isCurrent, badge, dragOver, onDragStart, onDragEnd, o
                 }
             </Link>
             {badge > 0 && (
-                <span className="absolute -bottom-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] bg-red-500 text-text text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 ring-2 ring-bg-muted pointer-events-none">
+                <span className="absolute -bottom-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] bg-accent text-text-on-accent text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 ring-2 ring-bg-muted pointer-events-none">
                     {badge > 99 ? '99+' : badge}
                 </span>
             )}
@@ -90,7 +90,7 @@ function FolderIcon({
                         ))}
                     </button>
                     {totalBadge > 0 && isCollapsed && (
-                        <span className="absolute -bottom-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] bg-red-500 text-text text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 ring-2 ring-bg-muted pointer-events-none">
+                        <span className="absolute -bottom-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] bg-accent text-text-on-accent text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 ring-2 ring-bg-muted pointer-events-none">
                             {totalBadge > 99 ? '99+' : totalBadge}
                         </span>
                     )}
@@ -328,7 +328,7 @@ export default function ServerRail({
                                 }
                             </Link>
                             {conv.unread > 0 && (
-                                <span className="absolute -bottom-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] bg-red-500 text-text text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 ring-2 ring-bg-muted pointer-events-none">
+                                <span className="absolute -bottom-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] bg-accent text-text-on-accent text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 ring-2 ring-bg-muted pointer-events-none">
                                     {conv.unread > 99 ? '99+' : conv.unread}
                                 </span>
                             )}
@@ -342,7 +342,7 @@ export default function ServerRail({
                             className="w-12 h-12 flex items-center justify-center text-xl text-accent bg-bg-muted rounded-full hover:rounded-2xl hover:opacity-90 hover:text-text transition-all duration-150"
                         >👥</Link>
                         {pendingFriendRequests > 0 && (
-                            <span className="absolute -bottom-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] bg-red-500 text-text text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 ring-2 ring-bg-muted pointer-events-none">
+                            <span className="absolute -bottom-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] bg-accent text-text-on-accent text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 ring-2 ring-bg-muted pointer-events-none">
                                 {pendingFriendRequests > 9 ? '9+' : pendingFriendRequests}
                             </span>
                         )}

@@ -1,6 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 import CookieBanner from '@/Components/CookieBanner';
 import ThemeToggle from '@/Components/ThemeToggle';
+import AppLogo from '@/Components/AppLogo';
 
 const isTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
@@ -15,7 +16,7 @@ export default function Welcome({ auth }) {
                 {/* Nav */}
                 <nav className="flex items-center justify-between px-8 py-5 border-b border-border">
                     <div className="flex items-center gap-2.5">
-                        <img src="/images/MyTalk.png" alt="MyTalk" className="w-8 h-8 rounded-sm object-contain" />
+                        <AppLogo className="w-8 h-8 rounded-sm object-contain" />
                         <span className="font-semibold text-lg tracking-tight">MyTalk</span>
                     </div>
                     <div className="flex items-center gap-3">
@@ -51,7 +52,7 @@ export default function Welcome({ auth }) {
 
                 {/* Hero */}
                 <main className="flex-1 flex flex-col items-center justify-center text-center px-6 py-24">
-                    <img src="/images/MyTalk.png" alt="MyTalk" className="w-16 h-16 rounded object-contain mb-8" />
+                    <AppLogo className="w-16 h-16 rounded object-contain mb-8" />
                     <h1 className="text-4xl sm:text-5xl font-bold mb-4 leading-tight tracking-tight text-text">
                         Tu espacio para<br />
                         <span className="text-accent">hablar en tiempo real</span>

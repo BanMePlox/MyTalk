@@ -4,6 +4,7 @@ import { useTrans } from '@/Hooks/useTrans';
 import CookieBanner from '@/Components/CookieBanner';
 import LegalModal from '@/Components/LegalModal';
 import ThemeToggle from '@/Components/ThemeToggle';
+import AppLogo from '@/Components/AppLogo';
 import { useState } from 'react';
 
 export default function Register() {
@@ -31,7 +32,7 @@ export default function Register() {
 
             <div className="w-full max-w-sm auth-card">
                 <div className="text-center mb-8">
-                    <img src="/images/MyTalk.png" alt="MyTalk" className="w-12 h-12 rounded-sm object-contain mx-auto mb-4" />
+                    <AppLogo className="w-12 h-12 rounded-sm object-contain mx-auto mb-4" />
                     <h1 className="text-text text-2xl font-bold">{t('auth.register_title')}</h1>
                     <p className="text-text-muted text-sm mt-1">{t('auth.register_subtitle')}</p>
                 </div>

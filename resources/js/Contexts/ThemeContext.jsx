@@ -17,6 +17,9 @@ export function ThemeProvider({ children }) {
         if (dark) root.classList.add('dark');
         else       root.classList.remove('dark');
         localStorage.setItem('theme', dark ? 'dark' : 'light');
+
+        const favicon = document.querySelector('link[rel="icon"]');
+        if (favicon) favicon.href = dark ? '/icon-dark.svg' : '/icon.svg';
     }, [dark]);
 
     useEffect(() => {

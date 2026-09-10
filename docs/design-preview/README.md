@@ -16,3 +16,5 @@ Captured from a running local instance (`php artisan serve` + `npm run dev`) on 
 Demo data seeded for chat preview: server **Estudio Papel**, channel **#general**, users `test@example.com` / `password`.
 
 Dark captures use `localStorage.theme = 'dark'` (same as the in-app theme toggle).
+
+Dark mode uses quiet mark `public/images/logo-dark.svg` (cream/olive geometric) instead of colorful `MyTalk.png`.

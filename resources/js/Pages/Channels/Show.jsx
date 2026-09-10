@@ -2204,8 +2204,8 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                             prefetch
                                             className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm ${
                                                 ch.id === channel.id
-                                                    ? 'bg-bg-muted text-text'
-                                                    : 'text-text-muted hover:bg-bg-muted hover:text-text'
+                                                    ? 'channel-active font-medium'
+                                                    : 'text-text-muted hover:bg-accent-chip/60 hover:text-text-secondary'
                                             } ${(canManageChannels || isOwner) ? 'cursor-grab active:cursor-grabbing' : ''}`}
                                         >
                                             {ch.type === 'announcement'
@@ -2216,7 +2216,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                             }
                                             <span className="flex-1 truncate">{ch.name}</span>
                                             {channelMentionBadges[ch.id] > 0 && (
-                                                <span className="ml-auto min-w-[1.1rem] h-[1.1rem] bg-red-500 text-text text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 shrink-0">
+                                                <span className="ml-auto min-w-[1.1rem] h-[1.1rem] bg-accent text-text-on-accent text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 shrink-0">
                                                     {channelMentionBadges[ch.id] > 9 ? '9+' : channelMentionBadges[ch.id]}
                                                 </span>
                                             )}
@@ -2651,7 +2651,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                 type="button"
                                                 onClick={submitThreadReply}
                                                 disabled={threadSending || !threadContent.trim()}
-                                                className="text-accent hover:opacity-80 disabled:opacity-40 text-sm shrink-0"
+                                                className="btn-send disabled:opacity-40"
                                             >Enviar</button>
                                         </div>
                                     </div>
@@ -3092,7 +3092,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                             className="absolute bottom-24 right-6 flex items-center gap-2 bg-accent hover:opacity-90 text-text text-xs font-medium px-3 py-1.5 rounded-full transition-colors z-10"
                         >
                             {newMsgCount > 0 && (
-                                <span className="bg-white text-accent font-bold rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
+                                <span className="bg-bg-elevated text-accent font-bold rounded-full w-4 h-4 flex items-center justify-center text-[10px] border border-border">
                                     {newMsgCount > 9 ? '9+' : newMsgCount}
                                 </span>
                             )}
@@ -3181,7 +3181,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                     </span>
                                     <span className="text-text-muted text-xs flex-1">Grabando...</span>
                                     <button type="button" onClick={cancelRecording} className="text-text-muted hover:text-red-400 text-sm px-2">✕ Cancelar</button>
-                                    <button type="button" onClick={stopRecording} className="bg-accent hover:opacity-90 text-text text-xs px-3 py-1 rounded-lg">Enviar</button>
+                                    <button type="button" onClick={stopRecording} className="btn-send text-xs">Enviar</button>
                                 </div>
                             ) : (<>
                             <button
@@ -3297,7 +3297,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                             <button
                                 type="submit"
                                 disabled={sending || (!content.trim() && !attachmentFile)}
-                                className="text-accent hover:opacity-80 disabled:opacity-40"
+                                className="btn-send"
                             >
                                 Enviar
                             </button>
@@ -3493,7 +3493,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
 
                     return (
                         <aside className="hidden md:flex w-48 bg-bg flex-col shrink-0 border-l border-border shrink-0">
-                            <div className="px-3 py-3 border-b border-border text-xs font-semibold text-text-muted uppercase tracking-wide">
+                            <div className="px-3 py-3 border-b border-border text-xs font-semibold section-label uppercase">
                                 Miembros &mdash; {allMembers.length}
                             </div>
                             <div className="flex-1 overflow-y-auto p-2">
@@ -3509,7 +3509,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                 {noRoleSlice.length > 0 && (
                                     <div className={buckets.length > 0 ? 'mt-1' : ''}>
                                         {buckets.length > 0 && (
-                                            <p className="px-2 mb-1 text-xs font-semibold text-text-muted uppercase tracking-wide">
+                                            <p className="px-2 mb-1 text-xs font-semibold section-label uppercase">
                                                 Miembros &mdash; {noRoleMembers.length}
                                             </p>
                                         )}

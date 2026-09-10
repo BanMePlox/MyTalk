@@ -14,6 +14,7 @@
   --border-strong: #C4BAA8;
   --accent: #3F6F5B;
   --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--bg-elevated));
+  --accent-chip: color-mix(in srgb, var(--accent) 12%, var(--bg));
   --danger: #A63D3D;
   --success: #3F6F5B;
   --bubble-me: var(--accent-soft);
@@ -26,24 +27,26 @@
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 }
 
-/* ── Papel design tokens — dark (night) ── */
+/* ── Papel design tokens — dark (night / Papel de noche) ── */
 html.dark {
-  --bg: #1A1814;
-  --bg-elevated: #221F1A;
-  --bg-muted: #141210;
-  --text: #F2EDE4;
-  --text-secondary: #B5AEA3;
-  --text-muted: #8A8278;
-  --border: #3A342C;
-  --border-strong: #524A40;
-  --accent: #6F9B84;
-  --accent-soft: color-mix(in srgb, var(--accent) 22%, var(--bg-elevated));
+  /* Panel hierarchy: rail darkest → sidebar mid → main thread lighter */
+  --bg-muted: #120F0C;
+  --bg: #1A1611;
+  --bg-elevated: #242017;
+  --text: #F2EADF;
+  --text-secondary: #C8BFB2;
+  --text-muted: #6E665C;
+  --border: #3A332A;
+  --border-strong: #50463C;
+  --accent: #7BA894;
+  --accent-soft: color-mix(in srgb, var(--accent) 34%, var(--bg-elevated));
+  --accent-chip: color-mix(in srgb, var(--accent) 24%, var(--bg));
   --danger: #C45C5C;
-  --success: #6F9B84;
+  --success: #7BA894;
   --bubble-me: var(--accent-soft);
-  --bubble-them: #2A2620;
-  --text-on-accent: #F2EDE4;
-  --overlay: color-mix(in srgb, #141210 82%, transparent);
+  --bubble-them: #2C2720;
+  --text-on-accent: #F2EADF;
+  --overlay: color-mix(in srgb, #120F0C 86%, transparent);
 }
 
 @layer base {
@@ -176,6 +179,39 @@ html.dark {
   /* Warm overlay for modals/drawers — never pure black */
   .overlay-backdrop {
     background-color: var(--overlay);
+  }
+
+  /* Active channel / selection chip — olive readable at a glance */
+  .channel-active {
+    background-color: var(--accent-chip);
+    color: var(--text);
+    border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  }
+  html:not(.dark) .channel-active {
+    background-color: var(--accent-soft);
+    border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+  }
+
+  /* Send / primary inline action in chat input */
+  .btn-send {
+    @apply shrink-0 font-medium transition-opacity;
+    background-color: var(--accent);
+    color: var(--text-on-accent);
+    border-radius: var(--radius-sm);
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+  }
+  .btn-send:hover:not(:disabled) {
+    opacity: 0.92;
+  }
+  .btn-send:disabled {
+    opacity: 0.4;
+  }
+
+  /* Section labels (MIEMBROS, etc.) — extra muted in dark */
+  html.dark .section-label {
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
   }
 }
 

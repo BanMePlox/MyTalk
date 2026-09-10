@@ -45,24 +45,28 @@ Diseñado desde cero. **No** es una inversión naïve del crema.
 
 ```css
 html.dark {
-  --bg: #1A1814;
-  --bg-elevated: #221F1A;
-  --bg-muted: #141210;
-  --text: #F2EDE4;
-  --text-secondary: #B5AEA3;
-  --text-muted: #8A8278;
-  --border: #3A342C;
-  --border-strong: #524A40;
-  --accent: #6F9B84; /* oliva elevado para contraste en oscuro */
-  --accent-soft: color-mix(in srgb, var(--accent) 22%, var(--bg-elevated));
+  /* Jerarquía: rail (--bg-muted) → sidebar (--bg) → hilo (--bg-elevated) */
+  --bg-muted: #120F0C;
+  --bg: #1A1611;
+  --bg-elevated: #242017;
+  --text: #F2EADF;
+  --text-secondary: #C8BFB2;
+  --text-muted: #6E665C;
+  --border: #3A332A;
+  --border-strong: #50463C;
+  --accent: #7BA894;
+  --accent-soft: color-mix(in srgb, var(--accent) 34%, var(--bg-elevated));
+  --accent-chip: color-mix(in srgb, var(--accent) 24%, var(--bg));
   --danger: #C45C5C;
-  --success: #6F9B84;
+  --success: #7BA894;
   --bubble-me: var(--accent-soft);
-  --bubble-them: #2A2620;
-  --text-on-accent: #F2EDE4;
-  --overlay: color-mix(in srgb, #141210 82%, transparent);
+  --bubble-them: #2C2720;
+  --text-on-accent: #F2EADF;
+  --overlay: color-mix(in srgb, #120F0C 86%, transparent);
 }
 ```
+
+Logo oscuro: `public/images/logo-dark.svg` (marca geométrica crema/oliva). Favicon: `public/icon-dark.svg`. Componente `AppLogo` intercambia en `html.dark`.
 
 Implementación: `resources/css/app.css` (variables) + `tailwind.config.js` (utilidades semánticas).
 
@@ -153,6 +157,7 @@ Clases utilitarias: `.input-field`, `.chat-input-bar`, `.btn-primary`, `.overlay
 |------------|------------|
 | Welcome / landing | `resources/js/Pages/Welcome.jsx` |
 | Login / Register | `resources/js/Pages/Auth/*.jsx` |
+| Brand logo (light/dark) | `resources/js/Components/AppLogo.jsx` |
 | Theme toggle | `resources/js/Components/ThemeToggle.jsx` |
 | Layout autenticado | `resources/js/Layouts/AuthenticatedLayout.jsx` |
 | Rail + sidebar + canal | `ServerRail.jsx`, `Channels/Show.jsx` |
