@@ -14,10 +14,37 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+                sans: ['IBM Plex Sans', 'Source Sans 3', ...defaultTheme.fontFamily.sans],
+                mono: ['IBM Plex Mono', ...defaultTheme.fontFamily.mono],
+            },
+            colors: {
+                bg: 'var(--bg)',
+                'bg-elevated': 'var(--bg-elevated)',
+                'bg-muted': 'var(--bg-muted)',
+                text: 'var(--text)',
+                'text-secondary': 'var(--text-secondary)',
+                'text-muted': 'var(--text-muted)',
+                border: 'var(--border)',
+                'border-strong': 'var(--border-strong)',
+                accent: 'var(--accent)',
+                'accent-soft': 'var(--accent-soft)',
+                'accent-chip': 'var(--accent-chip)',
+                danger: 'var(--danger)',
+                success: 'var(--success)',
+                'bubble-me': 'var(--bubble-me)',
+                'bubble-them': 'var(--bubble-them)',
+                'text-on-accent': 'var(--text-on-accent)',
+                overlay: 'var(--overlay)',
+            },
+            borderRadius: {
+                DEFAULT: 'var(--radius)',
+                sm: 'var(--radius-sm)',
             },
         },
     },
 
-    plugins: [forms],
+    plugins: [
+        // 'class' strategy: only form-* utilities get defaults; .input-field uses Papel tokens
+        forms({ strategy: 'class' }),
+    ],
 };

@@ -62,7 +62,7 @@ const STATUS_CONFIG = {
 };
 
 const ROLE_TRANS_KEY = { owner: 'chat.role_owner', admin: 'chat.role_admin' };
-const ROLE_COLOR = { owner: 'text-yellow-400', admin: 'text-indigo-400' };
+const ROLE_COLOR = { owner: 'text-yellow-400', admin: 'text-accent' };
 
 function formatTyping(names, t) {
     if (names.length === 1) return t('chat.typing_one', { name: names[0] });
@@ -76,7 +76,7 @@ function TypingDots() {
             {[0, 1, 2].map((i) => (
                 <span
                     key={i}
-                    className="w-1 h-1 rounded-full bg-gray-400 inline-block animate-bounce"
+                    className="w-1 h-1 rounded-full bg-text-muted inline-block animate-bounce"
                     style={{ animationDelay: `${i * 0.15}s` }}
                 />
             ))}
@@ -105,12 +105,12 @@ function CodeBlock({ lang, code }) {
     }
 
     return (
-        <div className="my-1 rounded-lg overflow-hidden border border-gray-700 text-sm">
-            <div className="flex items-center justify-between px-3 py-1 bg-gray-800 border-b border-gray-700">
-                <span className="text-xs text-gray-400 font-mono">{lang || t('chat.code_label')}</span>
+        <div className="my-1 rounded-lg overflow-hidden border border-border text-sm">
+            <div className="flex items-center justify-between px-3 py-1 bg-bg-elevated border-b border-border">
+                <span className="text-xs text-text-muted font-mono">{lang || t('chat.code_label')}</span>
                 <button
                     onClick={copy}
-                    className="text-xs text-gray-400 hover:text-gray-200 transition-colors flex items-center gap-1"
+                    className="text-xs text-text-muted hover:text-text-secondary transition-colors flex items-center gap-1"
                 >
                     {copied ? t('chat.copied_code') : t('chat.copy_code')}
                 </button>
@@ -158,7 +158,7 @@ function renderContent(text, members = [], selfName = '', selfNickname = '', cus
         while ((m = MD_RE.exec(str)) !== null) {
             if (m.index > last) parts.push(str.slice(last, m.index));
             if (m[1] !== undefined)
-                parts.push(<strong key={`${baseKey}-b${k++}`} className="font-bold text-white">{m[1]}</strong>);
+                parts.push(<strong key={`${baseKey}-b${k++}`} className="font-bold text-text">{m[1]}</strong>);
             else if (m[2] !== undefined)
                 parts.push(<em key={`${baseKey}-i${k++}`} className="italic">{m[2]}</em>);
             else if (m[3] !== undefined)
@@ -166,7 +166,7 @@ function renderContent(text, members = [], selfName = '', selfNickname = '', cus
             else if (m[4] !== undefined)
                 parts.push(
                     <a key={`${baseKey}-u${k++}`} href={m[4]} target="_blank" rel="noopener noreferrer"
-                        className="text-indigo-400 hover:text-indigo-300 hover:underline break-all">
+                        className="text-accent hover:opacity-80 hover:underline break-all">
                         {m[4]}
                     </a>
                 );
@@ -198,7 +198,7 @@ function renderContent(text, members = [], selfName = '', selfNickname = '', cus
                 const isSelf = tag === selfNickname || tag === selfName;
                 return (
                     <span key={`m${i}`} className={`rounded px-0.5 font-medium ${
-                        isSelf ? 'bg-yellow-500/20 text-yellow-300' : 'bg-indigo-500/20 text-indigo-300'
+                        isSelf ? 'bg-yellow-500/20 text-yellow-300' : 'bg-accent/20 text-accent'
                     }`}>{part}</span>
                 );
             }
@@ -219,7 +219,7 @@ function renderContent(text, members = [], selfName = '', selfNickname = '', cus
         } else {
             // Inline code: `code`
             nodes.push(
-                <code key={keyCounter++} className="bg-gray-800 text-pink-300 font-mono text-[0.85em] rounded px-1 py-0.5">
+                <code key={keyCounter++} className="bg-bg-elevated text-pink-300 font-mono text-[0.85em] rounded px-1 py-0.5">
                     {match[3]}
                 </code>
             );
@@ -283,22 +283,22 @@ function SyntaxHelpPopup({ onClose }) {
     return (
         <div
             ref={ref}
-            className="absolute bottom-full right-0 mb-2 w-80 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl z-30 overflow-hidden"
+            className="absolute bottom-full right-0 mb-2 w-80 bg-bg border border-border rounded-xl z-30 overflow-hidden"
         >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700 bg-gray-800">
-                <span className="text-sm font-semibold text-gray-100">{t('chat.format_guide')}</span>
-                <button onClick={onClose} className="text-gray-400 hover:text-gray-200 text-lg leading-none">×</button>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-bg-elevated">
+                <span className="text-sm font-semibold text-text">{t('chat.format_guide')}</span>
+                <button onClick={onClose} className="text-text-muted hover:text-text-secondary text-lg leading-none">×</button>
             </div>
 
             {/* Body */}
             <div className="px-4 py-4 min-h-[180px]">
-                <p className="text-xs font-semibold text-indigo-400 uppercase tracking-wide mb-1">{current.title}</p>
-                <p className="text-xs text-gray-400 mb-3">{current.description}</p>
+                <p className="text-xs font-semibold text-accent uppercase tracking-wide mb-1">{current.title}</p>
+                <p className="text-xs text-text-muted mb-3">{current.description}</p>
 
                 {current.code && (
-                    <div className="rounded-lg overflow-hidden border border-gray-700 text-xs">
-                        <div className="px-3 py-1 bg-gray-800 border-b border-gray-700 text-gray-500 font-mono">{current.lang}</div>
+                    <div className="rounded-lg overflow-hidden border border-border text-xs">
+                        <div className="px-3 py-1 bg-bg-elevated border-b border-border text-text-muted font-mono">{current.lang}</div>
                         <pre className="bg-[#0d1117] p-3 m-0 overflow-x-auto">
                             <code
                                 className="hljs font-mono text-xs leading-relaxed"
@@ -309,10 +309,10 @@ function SyntaxHelpPopup({ onClose }) {
                                 }}
                             />
                         </pre>
-                        <div className="px-3 py-1.5 bg-gray-800 border-t border-gray-700 font-mono text-gray-500 text-xs">
+                        <div className="px-3 py-1.5 bg-bg-elevated border-t border-border font-mono text-text-muted text-xs">
                             <span className="text-yellow-500">```</span>
-                            <span className="text-indigo-400">{current.lang}</span>
-                            <span className="text-gray-400"> …código… </span>
+                            <span className="text-accent">{current.lang}</span>
+                            <span className="text-text-muted"> …código… </span>
                             <span className="text-yellow-500">```</span>
                         </div>
                     </div>
@@ -320,11 +320,11 @@ function SyntaxHelpPopup({ onClose }) {
 
                 {current.inline && (
                     <div className="space-y-2">
-                        <div className="bg-gray-800 rounded-lg px-3 py-2 font-mono text-xs text-gray-300">
+                        <div className="bg-bg-elevated rounded-lg px-3 py-2 font-mono text-xs text-text-secondary">
                             Usa <span className="text-yellow-400">`</span>console.log()<span className="text-yellow-400">`</span> para depurar.
                         </div>
-                        <div className="bg-gray-800 rounded-lg px-3 py-2 text-xs text-gray-300">
-                            Resultado: Usa <code className="bg-gray-700 text-pink-300 font-mono rounded px-1 py-0.5">console.log()</code> para depurar.
+                        <div className="bg-bg-elevated rounded-lg px-3 py-2 text-xs text-text-secondary">
+                            Resultado: Usa <code className="bg-bg-muted text-pink-300 font-mono rounded px-1 py-0.5">console.log()</code> para depurar.
                         </div>
                     </div>
                 )}
@@ -332,29 +332,29 @@ function SyntaxHelpPopup({ onClose }) {
                 {current.langs && (
                     <div className="flex flex-wrap gap-1.5">
                         {current.langs.map(l => (
-                            <span key={l} className="bg-gray-800 text-indigo-300 font-mono text-xs px-2 py-0.5 rounded border border-gray-700">{l}</span>
+                            <span key={l} className="bg-bg-elevated text-accent font-mono text-xs px-2 py-0.5 rounded border border-border">{l}</span>
                         ))}
                     </div>
                 )}
 
                 {current.mention && (
                     <div className="space-y-2">
-                        <div className="bg-gray-800 rounded-lg px-3 py-2 font-mono text-xs text-gray-300">
+                        <div className="bg-bg-elevated rounded-lg px-3 py-2 font-mono text-xs text-text-secondary">
                             <span className="text-yellow-400">@</span>Pedro echa un vistazo a esto 👆
                         </div>
-                        <div className="bg-gray-800 rounded-lg px-3 py-2 text-xs text-gray-300">
-                            Resultado: <span className="bg-indigo-500/20 text-indigo-300 rounded px-0.5 font-medium">@Pedro</span> echa un vistazo a esto 👆
+                        <div className="bg-bg-elevated rounded-lg px-3 py-2 text-xs text-text-secondary">
+                            Resultado: <span className="bg-accent/20 text-accent rounded px-0.5 font-medium">@Pedro</span> echa un vistazo a esto 👆
                         </div>
                     </div>
                 )}
             </div>
 
             {/* Footer: paginación */}
-            <div className="flex items-center justify-between px-4 py-3 border-t border-gray-700 bg-gray-800">
+            <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-bg-elevated">
                 <button
                     onClick={() => setPage(p => Math.max(0, p - 1))}
                     disabled={page === 0}
-                    className="text-xs text-gray-400 hover:text-gray-200 disabled:opacity-30 disabled:cursor-default px-2 py-1 rounded hover:bg-gray-700 transition-colors"
+                    className="text-xs text-text-muted hover:text-text-secondary disabled:opacity-30 disabled:cursor-default px-2 py-1 rounded hover:bg-bg-muted transition-colors"
                 >{t('chat.prev_page')}</button>
 
                 <div className="flex gap-1.5">
@@ -362,7 +362,7 @@ function SyntaxHelpPopup({ onClose }) {
                         <button
                             key={i}
                             onClick={() => setPage(i)}
-                            className={`w-1.5 h-1.5 rounded-full transition-colors ${i === page ? 'bg-indigo-400' : 'bg-gray-600 hover:bg-gray-400'}`}
+                            className={`w-1.5 h-1.5 rounded-full transition-colors ${i === page ? 'bg-accent' : 'bg-border-strong hover:bg-border-strong'}`}
                         />
                     ))}
                 </div>
@@ -370,7 +370,7 @@ function SyntaxHelpPopup({ onClose }) {
                 <button
                     onClick={() => setPage(p => Math.min(helpPages.length - 1, p + 1))}
                     disabled={page === helpPages.length - 1}
-                    className="text-xs text-gray-400 hover:text-gray-200 disabled:opacity-30 disabled:cursor-default px-2 py-1 rounded hover:bg-gray-700 transition-colors"
+                    className="text-xs text-text-muted hover:text-text-secondary disabled:opacity-30 disabled:cursor-default px-2 py-1 rounded hover:bg-bg-muted transition-colors"
                 >{t('chat.next_page')}</button>
             </div>
         </div>
@@ -395,7 +395,7 @@ function YouTubeEmbed({ url }) {
     const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
 
     return (
-        <div className="mt-2 max-w-sm rounded-lg overflow-hidden border border-gray-700 bg-black">
+        <div className="mt-2 max-w-sm rounded-lg overflow-hidden border border-border bg-black">
             {playing ? (
                 <iframe
                     src={embedUrl}
@@ -416,8 +416,8 @@ function YouTubeEmbed({ url }) {
                     />
                     {/* Play button overlay */}
                     <span className="absolute inset-0 flex items-center justify-center">
-                        <span className="w-14 h-14 bg-red-600 group-hover:bg-red-500 rounded-full flex items-center justify-center shadow-lg transition-colors">
-                            <svg className="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                        <span className="w-14 h-14 bg-red-600 group-hover:bg-red-500 rounded-full flex items-center justify-center transition-colors">
+                            <svg className="w-6 h-6 text-text ml-1" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M8 5v14l11-7z" />
                             </svg>
                         </span>
@@ -438,15 +438,15 @@ function TwitterCard({ url }) {
     const username = m[3];
     return (
         <a href={url} target="_blank" rel="noopener noreferrer"
-            className="mt-2 flex items-center gap-3 max-w-sm bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 hover:border-gray-500 transition-colors">
-            <svg className="w-5 h-5 text-white shrink-0" viewBox="0 0 24 24" fill="currentColor">
+            className="mt-2 flex items-center gap-3 max-w-sm bg-bg-elevated border border-border rounded-xl px-4 py-3 hover:border-border-strong transition-colors">
+            <svg className="w-5 h-5 text-text shrink-0" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.253 5.622 5.911-5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
             </svg>
             <div className="min-w-0">
-                <p className="text-xs text-gray-400">@{username} en X</p>
-                <p className="text-sm text-gray-200 truncate">{t('chat.view_tweet')}</p>
+                <p className="text-xs text-text-muted">@{username} en X</p>
+                <p className="text-sm text-text-secondary truncate">{t('chat.view_tweet')}</p>
             </div>
-            <svg className="w-4 h-4 text-gray-500 ml-auto shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-text-muted ml-auto shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
             </svg>
         </a>
@@ -476,7 +476,7 @@ function LinkPreviewCard({ url }) {
                 <img
                     src={url}
                     alt=""
-                    className="max-w-sm max-h-64 rounded-lg border border-gray-700 object-contain"
+                    className="max-w-sm max-h-64 rounded-lg border border-border object-contain"
                     onError={(e) => { e.target.parentElement.style.display = 'none'; }}
                 />
             </a>
@@ -514,7 +514,7 @@ function LinkPreviewCard({ url }) {
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-2 flex gap-3 max-w-lg bg-gray-800 border border-gray-700 rounded-lg overflow-hidden hover:border-gray-500 transition-colors group"
+            className="mt-2 flex gap-3 max-w-lg bg-bg-elevated border border-border rounded-lg overflow-hidden hover:border-border-strong transition-colors group"
         >
             {data.image && (
                 <img
@@ -526,16 +526,16 @@ function LinkPreviewCard({ url }) {
             )}
             <div className="flex flex-col justify-center px-3 py-2.5 min-w-0">
                 {data.site_name && (
-                    <p className="text-[10px] text-indigo-400 uppercase tracking-wide font-semibold mb-0.5 truncate">{data.site_name}</p>
+                    <p className="text-[10px] text-accent uppercase tracking-wide font-semibold mb-0.5 truncate">{data.site_name}</p>
                 )}
                 {!data.site_name && (
-                    <p className="text-[10px] text-gray-500 mb-0.5 truncate">{domain}</p>
+                    <p className="text-[10px] text-text-muted mb-0.5 truncate">{domain}</p>
                 )}
                 {data.title && (
-                    <p className="text-sm font-semibold text-gray-100 group-hover:text-white truncate leading-snug">{data.title}</p>
+                    <p className="text-sm font-semibold text-text group-hover:text-text truncate leading-snug">{data.title}</p>
                 )}
                 {data.description && (
-                    <p className="text-xs text-gray-400 mt-0.5 line-clamp-2 leading-snug">{data.description}</p>
+                    <p className="text-xs text-text-muted mt-0.5 line-clamp-2 leading-snug">{data.description}</p>
                 )}
             </div>
         </a>
@@ -559,8 +559,8 @@ function LinkPreviewList({ content }) {
 function StatusDot({ status, size = 'md' }) {
     const cfg = STATUS_CONFIG[status];
     const ring = size === 'sm' ? 'w-2.5 h-2.5 ring-1' : 'w-3 h-3 ring-2';
-    if (!cfg) return <span className={`${ring} rounded-full bg-gray-600 ring-gray-900 inline-block`} />;
-    return <span className={`${ring} rounded-full ${cfg.dot} ring-gray-900 inline-block`} />;
+    if (!cfg) return <span className={`${ring} rounded-full bg-border-strong ring-bg-muted inline-block`} />;
+    return <span className={`${ring} rounded-full ${cfg.dot} ring-bg-muted inline-block`} />;
 }
 
 function Avatar({ user, size = 'md' }) {
@@ -569,7 +569,7 @@ function Avatar({ user, size = 'md' }) {
         return <img src={user.avatar_url} alt={user.name} className={`${dims} rounded-full object-cover shrink-0`} />;
     }
     return (
-        <div className={`${dims} rounded-full bg-indigo-500 flex items-center justify-center font-bold shrink-0`}
+        <div className={`${dims} rounded-full bg-accent flex items-center justify-center font-bold shrink-0 text-text-on-accent`}
             style={{ backgroundColor: user?.banner_color ?? undefined }}>
             {user?.name?.[0]?.toUpperCase()}
         </div>
@@ -579,8 +579,8 @@ function Avatar({ user, size = 'md' }) {
 function PollCard({ poll, messageId, authId, onVote }) {
     const totalVotes = poll.total_votes ?? 0;
     return (
-        <div className="mt-2 bg-gray-800/60 border border-gray-700 rounded-xl p-3 max-w-sm">
-            <p className="text-sm font-semibold text-gray-100 mb-2.5">{poll.question}</p>
+        <div className="mt-2 bg-bg-muted/80 border border-border rounded-xl p-3 max-w-sm">
+            <p className="text-sm font-semibold text-text mb-2.5">{poll.question}</p>
             <div className="space-y-2">
                 {poll.options.map((opt, i) => {
                     const votes = poll.vote_counts?.[i] ?? 0;
@@ -593,24 +593,24 @@ function PollCard({ poll, messageId, authId, onVote }) {
                             onClick={() => onVote(poll.id, i)}
                             className={`relative w-full text-left rounded-lg overflow-hidden border transition-colors ${
                                 isMyVote
-                                    ? 'border-indigo-500 bg-indigo-600/20'
-                                    : 'border-gray-600 bg-gray-700/40 hover:border-gray-500'
+                                    ? 'border-accent bg-accent-soft'
+                                    : 'border-border bg-bg-muted/40 hover:border-border-strong'
                             }`}
                         >
                             {/* Progress bar */}
                             <div
-                                className={`absolute inset-0 rounded-lg transition-all duration-500 ${isMyVote ? 'bg-indigo-600/30' : 'bg-gray-600/30'}`}
+                                className={`absolute inset-0 rounded-lg transition-all duration-500 ${isMyVote ? 'bg-accent/30' : 'bg-border-strong/30'}`}
                                 style={{ width: `${pct}%` }}
                             />
                             <div className="relative flex items-center justify-between px-3 py-2">
-                                <span className="text-sm text-gray-200">{opt}</span>
-                                <span className="text-xs text-gray-400 shrink-0 ml-2">{pct}%</span>
+                                <span className="text-sm text-text-secondary">{opt}</span>
+                                <span className="text-xs text-text-muted shrink-0 ml-2">{pct}%</span>
                             </div>
                         </button>
                     );
                 })}
             </div>
-            <p className="text-xs text-gray-500 mt-2">{totalVotes} {totalVotes === 1 ? 'voto' : 'votos'}</p>
+            <p className="text-xs text-text-muted mt-2">{totalVotes} {totalVotes === 1 ? 'voto' : 'votos'}</p>
         </div>
     );
 }
@@ -621,7 +621,7 @@ function ContextMenuItem({ onClick, danger, children }) {
             type="button"
             onClick={onClick}
             className={`w-full flex items-center gap-2 text-left px-3 py-1.5 text-sm rounded transition-colors ${
-                danger ? 'text-red-400 hover:bg-red-500/20' : 'text-gray-200 hover:bg-gray-700'
+                danger ? 'text-red-400 hover:bg-red-500/20' : 'text-text-secondary hover:bg-bg-muted'
             }`}
         >
             {children}
@@ -660,7 +660,7 @@ function ContextMenu({ menu, onClose, authId, canManageMessages, canManageRoles,
         <div
             ref={ref}
             style={{ top: fromBottom ? undefined : menu.y, bottom: fromBottom ? window.innerHeight - menu.y : undefined, left }}
-            className="fixed z-[200] w-52 bg-gray-900 border border-gray-700 rounded-lg shadow-2xl py-1"
+            className="fixed z-[200] w-52 bg-bg border border-border rounded-lg py-1"
         >
             {menu.type === 'message' && (
                 <>
@@ -702,8 +702,8 @@ function ContextMenu({ menu, onClose, authId, canManageMessages, canManageRoles,
                     )}
                     {canManageRoles && member.id !== authId && serverRoles.length > 0 && (
                         <>
-                            <div className="border-t border-gray-700 mx-2 my-1" />
-                            <p className="px-3 py-1 text-xs text-gray-500 uppercase tracking-wide">{t('chat.roles_label')}</p>
+                            <div className="border-t border-border mx-2 my-1" />
+                            <p className="px-3 py-1 text-xs text-text-muted uppercase tracking-wide">{t('chat.roles_label')}</p>
                             {serverRoles.map(role => {
                                 const hasRole = memberRoles.some(r => r.id === role.id);
                                 return (
@@ -719,7 +719,7 @@ function ContextMenu({ menu, onClose, authId, canManageMessages, canManageRoles,
                     )}
                     {canBanMembers && member.id !== authId && (
                         <>
-                            <div className="border-t border-gray-700 mx-2 my-1" />
+                            <div className="border-t border-border mx-2 my-1" />
                             <ContextMenuItem danger onClick={() => { onBan(member); onClose(); }}>
                                 <span>🔨</span> Banear
                             </ContextMenuItem>
@@ -763,10 +763,10 @@ function ProfilePopover({ member, status, anchorX, anchorY, onClose, authId }) {
         <div
             ref={ref}
             style={{ top, left }}
-            className="fixed z-50 w-72 bg-gray-800 rounded-xl overflow-hidden shadow-2xl border border-gray-700 animate-fade-in"
+            className="fixed z-50 w-72 bg-bg-elevated rounded-xl overflow-hidden border border-border animate-fade-in"
         >
             {/* Banner */}
-            <div className="h-16" style={{ backgroundColor: member.banner_color ?? '#6366f1' }} />
+            <div className="h-16" style={{ backgroundColor: member.banner_color ?? '#3F6F5B' }} />
 
             {/* Avatar + cierre */}
             <div className="px-4 pb-4">
@@ -777,30 +777,30 @@ function ProfilePopover({ member, status, anchorX, anchorY, onClose, authId }) {
                             <StatusDot status={status} />
                         </span>
                     </div>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-200 mb-1 text-lg leading-none">&times;</button>
+                    <button onClick={onClose} className="text-text-muted hover:text-text-secondary mb-1 text-lg leading-none">&times;</button>
                 </div>
 
                 {/* Nombre y rol */}
-                <p className="font-bold text-white text-lg leading-tight">{member.nickname ?? member.name}</p>
-                {member.nickname && <p className="text-xs text-gray-400">{member.name}</p>}
+                <p className="font-bold text-text text-lg leading-tight">{member.nickname ?? member.name}</p>
+                {member.nickname && <p className="text-xs text-text-muted">{member.name}</p>}
                 {ROLE_TRANS_KEY[member.pivot?.role] && (
                     <p className={`text-xs font-medium ${ROLE_COLOR[member.pivot?.role]}`}>{t(ROLE_TRANS_KEY[member.pivot?.role])}</p>
                 )}
 
                 {/* Estado de conexión */}
-                <p className="text-xs text-gray-400 mt-0.5">
+                <p className="text-xs text-text-muted mt-0.5">
                     {status ? STATUS_CONFIG[status]?.label : t('chat.offline_status')}
                 </p>
 
                 {/* Estado personalizado */}
                 {member.custom_status && (
-                    <p className="text-sm text-gray-300 mt-1 italic">"{member.custom_status}"</p>
+                    <p className="text-sm text-text-secondary mt-1 italic">"{member.custom_status}"</p>
                 )}
 
                 {/* Roles del servidor */}
                 {(member.server_roles?.length > 0) && (
-                    <div className="mt-3 pt-3 border-t border-gray-700">
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">{t('chat.roles_label')}</p>
+                    <div className="mt-3 pt-3 border-t border-border">
+                        <p className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-1.5">{t('chat.roles_label')}</p>
                         <div className="flex flex-wrap gap-1.5">
                             {member.server_roles.map(role => (
                                 <span key={role.id}
@@ -815,18 +815,18 @@ function ProfilePopover({ member, status, anchorX, anchorY, onClose, authId }) {
 
                 {/* Bio */}
                 {member.bio && (
-                    <div className="mt-3 pt-3 border-t border-gray-700">
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">{t('chat.about_me')}</p>
-                        <p className="text-sm text-gray-300 whitespace-pre-wrap">{member.bio}</p>
+                    <div className="mt-3 pt-3 border-t border-border">
+                        <p className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-1">{t('chat.about_me')}</p>
+                        <p className="text-sm text-text-secondary whitespace-pre-wrap">{member.bio}</p>
                     </div>
                 )}
 
                 {/* Botón DM — no se muestra si es el propio usuario */}
                 {member.id !== authId && (
-                    <div className="mt-3 pt-3 border-t border-gray-700">
+                    <div className="mt-3 pt-3 border-t border-border">
                         <button
                             onClick={() => router.post(route('conversations.open', member.id))}
-                            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium py-1.5 rounded-lg transition-colors"
+                            className="w-full bg-accent hover:opacity-90 text-text text-sm font-medium py-1.5 rounded-lg transition-colors"
                         >
                             {t('chat.direct_message')}
                         </button>
@@ -1945,7 +1945,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
         <AuthenticatedLayout>
             <Head title={`#${channel.name}`} />
 
-            <div className="flex h-screen bg-gray-800 text-gray-100">
+            <div className="flex h-screen bg-bg text-text">
 
                 <ServerRail
                     userServers={userServers}
@@ -1961,25 +1961,25 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
 
                 {/* Llamada entrante DM */}
                 {voice.incomingCall && (
-                    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60">
-                        <div className="bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl p-6 w-80 flex flex-col items-center gap-4">
-                            <div className="w-16 h-16 rounded-full bg-indigo-600 flex items-center justify-center text-2xl font-bold text-white">
+                    <div className="fixed inset-0 z-[200] flex items-center justify-center overlay-backdrop">
+                        <div className="bg-bg border border-border rounded-2xl p-6 w-80 flex flex-col items-center gap-4">
+                            <div className="w-16 h-16 rounded-full bg-accent flex items-center justify-center text-2xl font-bold text-text">
                                 {voice.incomingCall.fromUser?.name?.[0]?.toUpperCase()}
                             </div>
                             <div className="text-center">
-                                <p className="text-white font-semibold">{voice.incomingCall.fromUser?.name}</p>
-                                <p className="text-sm text-gray-400">Llamada de voz entrante</p>
+                                <p className="text-text font-semibold">{voice.incomingCall.fromUser?.name}</p>
+                                <p className="text-sm text-text-muted">Llamada de voz entrante</p>
                             </div>
                             <div className="flex gap-4 w-full">
                                 <button
                                     onClick={() => voice.declineDmCall(voice.incomingCall.conversationId)}
-                                    className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-medium transition-colors"
+                                    className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-text font-medium transition-colors"
                                 >
                                     Rechazar
                                 </button>
                                 <button
                                     onClick={() => voice.joinDm({ id: voice.incomingCall.conversationId }, auth.user)}
-                                    className="flex-1 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white font-medium transition-colors"
+                                    className="flex-1 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-text font-medium transition-colors"
                                 >
                                     Aceptar
                                 </button>
@@ -1990,27 +1990,27 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
 
                 {/* Sidebar izquierdo: canales — drawer en móvil, siempre visible en desktop */}
                 {mobileSidebar && (
-                    <div className="fixed inset-0 z-40 sm:hidden bg-black/50" onClick={() => setMobileSidebar(false)} />
+                    <div className="fixed inset-0 z-40 sm:hidden overlay-backdrop" onClick={() => setMobileSidebar(false)} />
                 )}
-                <aside className={`${mobileSidebar ? 'fixed inset-y-0 left-0 z-50 flex' : 'hidden sm:flex'} w-52 bg-gray-900 flex-col shrink-0`}>
+                <aside className={`${mobileSidebar ? 'fixed inset-y-0 left-0 z-50 flex' : 'hidden sm:flex'} w-52 bg-bg border-r border-border flex-col shrink-0`}>
                     {/* Cabecera con dropdown */}
-                    <div className="relative border-b border-gray-700" ref={serverDropdownRef}>
+                    <div className="relative border-b border-border" ref={serverDropdownRef}>
                         <button
                             onClick={() => setServerDropdownOpen(o => !o)}
-                            className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-800 transition-colors group"
+                            className="w-full flex items-center justify-between px-4 py-3 hover:bg-bg-elevated transition-colors group"
                         >
-                            <span className="font-bold text-white truncate">{serverName}</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${serverDropdownOpen ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
+                            <span className="font-bold text-text truncate">{serverName}</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" className={`w-4 h-4 text-text-muted shrink-0 transition-transform ${serverDropdownOpen ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
                                 <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                             </svg>
                         </button>
 
                         {serverDropdownOpen && (
-                            <div className="absolute top-full left-0 right-0 z-50 bg-gray-900 border border-gray-700 rounded-b-lg shadow-2xl py-1">
+                            <div className="absolute top-full left-0 right-0 z-50 bg-bg border border-border rounded-b-lg py-1">
                                 {/* Copiar invitación */}
                                 <button
                                     onClick={() => { copyInvite(); setServerDropdownOpen(false); }}
-                                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-200 hover:bg-gray-700 transition-colors"
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:bg-bg-muted transition-colors"
                                 >
                                     <span>🔗</span>
                                     <span>{inviteCopied ? t('chat.copied_invite') : t('chat.copy_invite')}</span>
@@ -2027,17 +2027,17 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                 onChange={e => setServerNameInput(e.target.value)}
                                                 onKeyDown={e => { if (e.key === 'Enter') saveServerName(); if (e.key === 'Escape') setServerNameEdit(false); }}
                                                 placeholder="Nuevo nombre..."
-                                                className="w-full bg-gray-800 border border-gray-600 text-gray-200 placeholder-gray-500 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 mb-1.5"
+                                                className="w-full bg-bg-elevated border border-border text-text-secondary placeholder:text-text-muted rounded px-2 py-1 text-xs focus:outline-none focus:border-accent mb-1.5"
                                             />
                                             <div className="flex gap-2">
-                                                <button onClick={saveServerName} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-2 py-1 rounded">Guardar</button>
-                                                <button onClick={() => setServerNameEdit(false)} className="text-gray-400 hover:text-gray-200 text-xs px-2 py-1 rounded hover:bg-gray-700">Cancelar</button>
+                                                <button onClick={saveServerName} className="flex-1 bg-accent hover:opacity-90 text-text text-xs px-2 py-1 rounded">Guardar</button>
+                                                <button onClick={() => setServerNameEdit(false)} className="text-text-muted hover:text-text-secondary text-xs px-2 py-1 rounded hover:bg-bg-muted">Cancelar</button>
                                             </div>
                                         </div>
                                     ) : (
                                         <button
                                             onClick={() => { setServerNameInput(channel.server?.name ?? ''); setServerNameEdit(true); }}
-                                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-200 hover:bg-gray-700 transition-colors"
+                                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:bg-bg-muted transition-colors"
                                         >
                                             <span>✏️</span> Cambiar nombre
                                         </button>
@@ -2046,7 +2046,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
 
                                 {/* Cambiar icono */}
                                 {isOwner && (
-                                    <label className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-200 hover:bg-gray-700 transition-colors cursor-pointer">
+                                    <label className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:bg-bg-muted transition-colors cursor-pointer">
                                         <span>🖼️</span> Cambiar icono
                                         <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
                                             const file = e.target.files[0];
@@ -2068,7 +2068,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                 {/* Cambiar fondo */}
                                 {isOwner && (
                                     <>
-                                        <label className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-200 hover:bg-gray-700 transition-colors cursor-pointer">
+                                        <label className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:bg-bg-muted transition-colors cursor-pointer">
                                             <span>🌄</span> Cambiar fondo del chat
                                             <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
                                                 const file = e.target.files[0];
@@ -2094,7 +2094,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                     } catch { /* ignore */ }
                                                     setServerDropdownOpen(false);
                                                 }}
-                                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-gray-700 transition-colors"
+                                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-bg-muted transition-colors"
                                             >
                                                 <span>🗑️</span> Quitar fondo del chat
                                             </button>
@@ -2106,7 +2106,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                 {(canManageRoles || canKickMembers || isOwner) && (
                                     <button
                                         onClick={() => { setServerSettingsOpen(true); setServerDropdownOpen(false); }}
-                                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-200 hover:bg-gray-700 transition-colors"
+                                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:bg-bg-muted transition-colors"
                                     >
                                         <span>⚙️</span> Ajustes del servidor
                                     </button>
@@ -2114,27 +2114,27 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
 
                                 {/* Crear canal */}
                                 {canManageChannels && (
-                                    <form onSubmit={createChannel} className="px-3 py-2 border-t border-gray-700">
-                                        <p className="text-xs text-gray-500 mb-1.5 uppercase tracking-wide font-semibold">Nuevo canal</p>
+                                    <form onSubmit={createChannel} className="px-3 py-2 border-t border-border">
+                                        <p className="text-xs text-text-muted mb-1.5 uppercase tracking-wide font-semibold">Nuevo canal</p>
                                         <div className="flex gap-1.5">
                                             <input
                                                 type="text"
                                                 value={newChannelName}
                                                 onChange={e => setNewChannelName(e.target.value)}
                                                 placeholder="nombre-canal"
-                                                className="flex-1 min-w-0 bg-gray-800 border border-gray-600 text-gray-200 placeholder-gray-500 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                                className="flex-1 min-w-0 bg-bg-elevated border border-border text-text-secondary placeholder:text-text-muted rounded px-2 py-1 text-xs focus:outline-none focus:border-accent"
                                             />
                                             <button
                                                 type="submit"
                                                 disabled={creatingChannel}
-                                                className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-2 py-1 rounded disabled:opacity-50"
+                                                className="bg-accent hover:opacity-90 text-text text-xs px-2 py-1 rounded disabled:opacity-50"
                                             >+</button>
                                         </div>
                                     </form>
                                 )}
 
                                 {/* Separador zona peligro */}
-                                <div className="border-t border-gray-700 my-1" />
+                                <div className="border-t border-border my-1" />
 
                                 {/* Abandonar / Eliminar */}
                                 {isOwner ? (
@@ -2144,13 +2144,13 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                             <div className="flex gap-2">
                                                 <button
                                                     onClick={() => router.delete(route('servers.destroy', channel.server.id))}
-                                                    className="flex-1 bg-red-600 hover:bg-red-700 text-white text-xs px-2 py-1.5 rounded"
+                                                    className="flex-1 bg-red-600 hover:bg-red-700 text-text text-xs px-2 py-1.5 rounded"
                                                 >
                                                     {t('chat.confirm_delete_yes')}
                                                 </button>
                                                 <button
                                                     onClick={() => setConfirmDeleteServer(false)}
-                                                    className="flex-1 text-gray-400 hover:text-gray-200 text-xs px-2 py-1.5 rounded hover:bg-gray-700"
+                                                    className="flex-1 text-text-muted hover:text-text-secondary text-xs px-2 py-1.5 rounded hover:bg-bg-muted"
                                                 >
                                                     {t('settings.cancel')}
                                                 </button>
@@ -2197,26 +2197,26 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                         onDragOver={(e) => handleDragOver(e, ch)}
                                         onDrop={(e) => handleDrop(e, ch.category_id)}
                                         onDragLeave={() => setDragOverId(null)}
-                                        className={`transition-all ${isOver ? 'border-t-2 border-indigo-400' : 'border-t-2 border-transparent'}`}
+                                        className={`transition-all ${isOver ? 'border-t-2 border-accent' : 'border-t-2 border-transparent'}`}
                                     >
                                         <Link
                                             href={route('channels.show', ch.id)}
                                             prefetch
                                             className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm ${
                                                 ch.id === channel.id
-                                                    ? 'bg-gray-700 text-white'
-                                                    : 'text-gray-400 hover:bg-gray-700 hover:text-white'
+                                                    ? 'channel-active font-medium'
+                                                    : 'text-text-muted hover:bg-accent-chip/60 hover:text-text-secondary'
                                             } ${(canManageChannels || isOwner) ? 'cursor-grab active:cursor-grabbing' : ''}`}
                                         >
                                             {ch.type === 'announcement'
-                                                ? <span className="text-gray-500" title="Canal de anuncios">📢</span>
+                                                ? <span className="text-text-muted" title="Canal de anuncios">📢</span>
                                                 : ch.type === 'voice'
-                                                    ? <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-gray-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
-                                                    : <span className="text-gray-500">#</span>
+                                                    ? <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-text-muted shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
+                                                    : <span className="text-text-muted">#</span>
                                             }
                                             <span className="flex-1 truncate">{ch.name}</span>
                                             {channelMentionBadges[ch.id] > 0 && (
-                                                <span className="ml-auto min-w-[1.1rem] h-[1.1rem] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 shrink-0">
+                                                <span className="ml-auto min-w-[1.1rem] h-[1.1rem] bg-accent text-text-on-accent text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 shrink-0">
                                                     {channelMentionBadges[ch.id] > 9 ? '9+' : channelMentionBadges[ch.id]}
                                                 </span>
                                             )}
@@ -2224,17 +2224,17 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                         {participants.length > 0 && (
                                             <div className="ml-6 mb-1 space-y-0.5">
                                                 {participants.map(u => (
-                                                    <div key={u.id} className="flex items-center gap-1.5 px-2 py-0.5 rounded text-xs text-gray-400 hover:bg-gray-700 hover:text-gray-200 transition-colors">
-                                                        <div className={`shrink-0 rounded-full ${voice.speakingUsers[String(u.id)] ? 'ring-1 ring-green-400 ring-offset-1 ring-offset-gray-900' : ''}`}>
+                                                    <div key={u.id} className="flex items-center gap-1.5 px-2 py-0.5 rounded text-xs text-text-muted hover:bg-bg-muted hover:text-text-secondary transition-colors">
+                                                        <div className={`shrink-0 rounded-full ${voice.speakingUsers[String(u.id)] ? 'ring-1 ring-green-400 ring-offset-1 ring-offset-bg' : ''}`}>
                                                             {u.avatar_url
                                                                 ? <img src={u.avatar_url} alt={u.name} className="w-4 h-4 rounded-full object-cover block" />
-                                                                : <span className="w-4 h-4 rounded-full bg-indigo-500 flex items-center justify-center text-[9px] font-bold text-white">{u.name?.[0]?.toUpperCase()}</span>
+                                                                : <span className="w-4 h-4 rounded-full bg-accent flex items-center justify-center text-[9px] font-bold text-text">{u.name?.[0]?.toUpperCase()}</span>
                                                             }
                                                         </div>
                                                         <span className="truncate">{u.name}</span>
                                                         <span className="ml-auto shrink-0 flex items-center gap-1">
                                                             {screenSharerIds.has(String(u.id)) && (
-                                                                <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                                <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                                                     <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                                                                 </svg>
                                                             )}
@@ -2264,7 +2264,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                             <div key={cat.id} className="mt-2">
                                                 <button
                                                     onClick={() => setCollapsedCategories(prev => ({ ...prev, [cat.id]: !collapsed }))}
-                                                    className="flex items-center gap-1 w-full px-2 py-0.5 text-xs font-semibold text-gray-400 hover:text-gray-200 uppercase tracking-wide transition-colors"
+                                                    className="flex items-center gap-1 w-full px-2 py-0.5 text-xs font-semibold text-text-muted hover:text-text-secondary uppercase tracking-wide transition-colors"
                                                 >
                                                     <span className={`transition-transform ${collapsed ? '' : 'rotate-90'}`}>›</span>
                                                     {cat.name}
@@ -2281,7 +2281,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                     <VoiceMiniBar />
 
                     {/* Usuario actual + selector de estado */}
-                    <div className="p-3 border-t border-gray-700 relative" ref={statusMenuRef}>
+                    <div className="p-3 border-t border-border relative" ref={statusMenuRef}>
                         {channel.server && (
                             <button
                                 onClick={() => {
@@ -2289,7 +2289,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                     setNicknameInput(me?.nickname ?? '');
                                     setNicknameOpen(true);
                                 }}
-                                className="w-full text-left text-xs text-gray-500 hover:text-gray-300 px-1 mb-1 transition-colors truncate"
+                                className="w-full text-left text-xs text-text-muted hover:text-text-secondary px-1 mb-1 transition-colors truncate"
                                 title="Cambiar apodo en este servidor"
                             >
                                 {(() => { const me = members.find(m => m.id === auth.user.id); return me?.nickname ? `${t('status.nickname')}: ${me.nickname}` : t('status.add_nickname'); })()}
@@ -2297,7 +2297,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                         )}
                         <button
                             onClick={() => setStatusOpen((o) => !o)}
-                            className="flex items-center gap-2 w-full hover:bg-gray-800 rounded px-1 py-1 transition-colors"
+                            className="flex items-center gap-2 w-full hover:bg-bg-elevated rounded px-1 py-1 transition-colors"
                         >
                             <div className="relative shrink-0">
                                 <Avatar user={auth.user} size="sm" />
@@ -2306,17 +2306,17 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                 </span>
                             </div>
                             <div className="text-left min-w-0">
-                                <p className="text-sm text-gray-200 truncate leading-tight">{auth.user.name}</p>
-                                <p className="text-xs text-gray-400 truncate leading-tight">
+                                <p className="text-sm text-text-secondary truncate leading-tight">{auth.user.name}</p>
+                                <p className="text-xs text-text-muted truncate leading-tight">
                                     {myCustomStatus || t('status.' + myStatus)}
                                 </p>
                             </div>
                         </button>
 
                         {statusOpen && (
-                            <div className="absolute bottom-full left-2 mb-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl w-56 py-1 z-10">
-                                <div className="px-3 py-2 border-b border-gray-700">
-                                    <p className="text-xs text-gray-400 mb-1">{t('status.custom_status')}</p>
+                            <div className="absolute bottom-full left-2 mb-1 bg-bg-elevated border border-border rounded-lg w-56 py-1 z-10">
+                                <div className="px-3 py-2 border-b border-border">
+                                    <p className="text-xs text-text-muted mb-1">{t('status.custom_status')}</p>
                                     <div className="flex gap-1">
                                         <input
                                             type="text"
@@ -2325,30 +2325,30 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                             onKeyDown={(e) => e.key === 'Enter' && saveCustomStatus()}
                                             placeholder={t('status.what_doing')}
                                             maxLength={60}
-                                            className="flex-1 bg-gray-900 text-white text-xs rounded px-2 py-1 outline-none placeholder-gray-500"
+                                            className="flex-1 bg-bg text-text text-xs rounded px-2 py-1 outline-none placeholder:text-text-muted"
                                         />
-                                        <button onClick={saveCustomStatus} className="text-xs bg-indigo-600 hover:bg-indigo-500 text-white rounded px-2 py-1">✓</button>
+                                        <button onClick={saveCustomStatus} className="text-xs bg-accent hover:opacity-90 text-text rounded px-2 py-1">✓</button>
                                     </div>
                                 </div>
                                 {Object.entries(STATUS_CONFIG).map(([key, { dot }]) => (
                                     <button
                                         key={key}
                                         onClick={() => changeStatus(key)}
-                                        className={`flex items-center gap-3 w-full px-3 py-2 text-sm hover:bg-gray-700 transition-colors ${myStatus === key ? 'text-white' : 'text-gray-300'}`}
+                                        className={`flex items-center gap-3 w-full px-3 py-2 text-sm hover:bg-bg-muted transition-colors ${myStatus === key ? 'text-text' : 'text-text-secondary'}`}
                                     >
                                         <span className={`w-2.5 h-2.5 rounded-full ${dot} shrink-0`} />
                                         {t('status.' + key)}
-                                        {myStatus === key && <span className="ml-auto text-indigo-400">✓</span>}
+                                        {myStatus === key && <span className="ml-auto text-accent">✓</span>}
                                     </button>
                                 ))}
-                                <div className="border-t border-gray-700 mt-1 pt-1">
-                                    <button onClick={toggleTheme} className="flex items-center gap-3 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors">
+                                <div className="border-t border-border mt-1 pt-1">
+                                    <button onClick={toggleTheme} className="flex items-center gap-3 w-full px-3 py-2 text-sm text-text-secondary hover:bg-bg-muted transition-colors">
                                         {dark ? t('status.light_mode') : t('status.dark_mode')}
                                     </button>
-                                    <button onClick={() => { setStatusOpen(false); setProfileModalOpen(true); }} className="flex items-center gap-3 w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors">
+                                    <button onClick={() => { setStatusOpen(false); setProfileModalOpen(true); }} className="flex items-center gap-3 w-full px-3 py-2 text-sm text-text-secondary hover:bg-bg-muted transition-colors">
                                         {t('status.my_profile')}
                                     </button>
-                                    <Link href={route('logout')} method="post" as="button" className="flex items-center gap-3 w-full px-3 py-2 text-sm text-red-400 hover:bg-gray-700 transition-colors">
+                                    <Link href={route('logout')} method="post" as="button" className="flex items-center gap-3 w-full px-3 py-2 text-sm text-red-400 hover:bg-bg-muted transition-colors">
                                         {t('status.logout')}
                                     </Link>
                                 </div>
@@ -2359,7 +2359,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
 
                 {/* Área principal: mensajes */}
                 <div
-                    className="flex-1 flex flex-col overflow-hidden pb-[3.5rem] sm:pb-0 relative"
+                    className="flex-1 flex flex-col overflow-hidden pb-[3.5rem] sm:pb-0 relative bg-bg-elevated border-x border-border"
                     style={{
                         position: 'relative',
                         ...(serverBackground ? {
@@ -2370,11 +2370,11 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                         } : {}),
                     }}
                 >
-                    <header className="px-4 py-3 border-b border-gray-700 font-semibold shrink-0 flex items-center gap-3">
+                    <header className="px-4 py-3 border-b border-border font-semibold shrink-0 flex items-center gap-3">
                         <button
                             type="button"
                             onClick={() => setMobileSidebar((v) => !v)}
-                            className="sm:hidden text-gray-400 hover:text-white"
+                            className="sm:hidden text-text-muted hover:text-text"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
@@ -2384,16 +2384,16 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                             {channel.type === 'announcement'
                                 ? '📢'
                                 : channel.type === 'voice'
-                                    ? <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
+                                    ? <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-text-muted shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
                                     : '#'
                             }
                             {channel.name}
-                            {channel.type === 'announcement' && <span className="ml-2 text-xs font-normal text-gray-400">Solo administradores pueden publicar</span>}
+                            {channel.type === 'announcement' && <span className="ml-2 text-xs font-normal text-text-muted">Solo administradores pueden publicar</span>}
                         </span>
                         <button
                             type="button"
                             onClick={openThreadList}
-                            className={`text-gray-400 hover:text-white transition-colors ${threadListOpen ? 'text-white' : ''}`}
+                            className={`text-text-muted hover:text-text transition-colors ${threadListOpen ? 'text-text' : ''}`}
                             title="Hilos del canal"
                         >
                             <span className="text-base leading-none">💬</span>
@@ -2402,7 +2402,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                             <button
                                 type="button"
                                 onClick={() => setPinnedPanelOpen((v) => !v)}
-                                className={`text-gray-400 hover:text-white transition-colors ${pinnedPanelOpen ? 'text-white' : ''}`}
+                                className={`text-text-muted hover:text-text transition-colors ${pinnedPanelOpen ? 'text-text' : ''}`}
                                 title="Mensajes fijados"
                             >
                                 <span className="text-base leading-none">📌</span>
@@ -2414,7 +2414,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                         <button
                             type="button"
                             onClick={() => { setGlobalSearchOpen(true); setGlobalQuery(''); setGlobalResults(null); }}
-                            className="text-gray-400 hover:text-white transition-colors"
+                            className="text-text-muted hover:text-text transition-colors"
                             title="Búsqueda global (Ctrl+K)"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -2424,7 +2424,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                         <button
                             type="button"
                             onClick={() => { setSearchOpen((v) => !v); setSearchQuery(''); setSearchResults(null); }}
-                            className={`text-gray-400 hover:text-white transition-colors ${searchOpen ? 'text-white' : ''}`}
+                            className={`text-text-muted hover:text-text transition-colors ${searchOpen ? 'text-text' : ''}`}
                             title="Buscar en este canal"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -2434,7 +2434,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                         <button
                             type="button"
                             onClick={toggleCompact}
-                            className={`text-gray-400 hover:text-white transition-colors ${compact ? 'text-white' : ''}`}
+                            className={`text-text-muted hover:text-text transition-colors ${compact ? 'text-text' : ''}`}
                             title={compact ? 'Vista normal' : 'Modo compacto'}
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -2445,36 +2445,36 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
 
                     {/* Panel de mensajes fijados — lateral derecho flotante */}
                     {pinnedPanelOpen && (
-                        <div className="absolute top-0 right-0 h-full w-80 bg-gray-900 border-l border-gray-700 shadow-2xl z-20 flex flex-col">
-                            <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-700 shrink-0">
+                        <div className="absolute top-0 right-0 h-full w-80 bg-bg border-l border-border z-20 flex flex-col">
+                            <div className="flex items-center gap-2 px-4 py-3 border-b border-border shrink-0">
                                 <span className="text-yellow-400 text-base">📌</span>
-                                <p className="text-sm font-semibold text-gray-200 flex-1">Mensajes fijados</p>
-                                <span className="text-xs text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded-full">{pinnedMessages.length}</span>
-                                <button onClick={() => setPinnedPanelOpen(false)} className="text-gray-500 hover:text-gray-300 text-lg leading-none ml-1">&times;</button>
+                                <p className="text-sm font-semibold text-text-secondary flex-1">Mensajes fijados</p>
+                                <span className="text-xs text-text-muted bg-bg-elevated px-1.5 py-0.5 rounded-full">{pinnedMessages.length}</span>
+                                <button onClick={() => setPinnedPanelOpen(false)} className="text-text-muted hover:text-text-secondary text-lg leading-none ml-1">&times;</button>
                             </div>
                             <div className="flex-1 overflow-y-auto p-3 space-y-2">
                                 {pinnedMessages.length === 0
-                                    ? <p className="text-xs text-gray-500 px-1 py-2">No hay mensajes fijados.</p>
+                                    ? <p className="text-xs text-text-muted px-1 py-2">No hay mensajes fijados.</p>
                                     : pinnedMessages.map((msg) => (
-                                        <div key={msg.id} className="bg-gray-800 rounded-lg p-3 border border-gray-700/60 hover:border-gray-600 transition-colors group">
+                                        <div key={msg.id} className="bg-bg-elevated rounded-lg p-3 border border-border/60 hover:border-border transition-colors group">
                                             <div className="flex items-center gap-2 mb-1.5">
                                                 <Avatar user={msg.user} size="sm" />
-                                                <span className="text-xs font-semibold text-indigo-300 flex-1 truncate">{msg.user?.name}</span>
-                                                <span className="text-xs text-gray-500">
+                                                <span className="text-xs font-semibold text-accent flex-1 truncate">{msg.user?.name}</span>
+                                                <span className="text-xs text-text-muted">
                                                     {new Date(msg.created_at).toLocaleDateString([], { day: '2-digit', month: '2-digit' })}
                                                 </span>
                                                 {canManageMessages && (
                                                     <button
                                                         onClick={() => togglePin(msg)}
-                                                        className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 text-xs shrink-0 transition-all"
+                                                        className="opacity-0 group-hover:opacity-100 text-text-muted hover:text-red-400 text-xs shrink-0 transition-all"
                                                         title="Desfijar"
                                                     >✕</button>
                                                 )}
                                             </div>
-                                            <p className="text-xs text-gray-300 break-words leading-relaxed">{msg.content}</p>
+                                            <p className="text-xs text-text-secondary break-words leading-relaxed">{msg.content}</p>
                                             {msg.pinned_by && (
-                                                <p className="text-xs text-gray-600 mt-1.5 flex items-center gap-1">
-                                                    <span>📌</span> Fijado por <span className="text-gray-500">{msg.pinned_by.name}</span>
+                                                <p className="text-xs text-text-muted mt-1.5 flex items-center gap-1">
+                                                    <span>📌</span> Fijado por <span className="text-text-muted">{msg.pinned_by.name}</span>
                                                 </p>
                                             )}
                                         </div>
@@ -2486,28 +2486,28 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
 
                     {/* Panel lista de hilos */}
                     {threadListOpen && (
-                        <div className="absolute top-0 right-0 h-full w-80 bg-gray-900 border-l border-gray-700 shadow-2xl z-20 flex flex-col">
-                            <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-700 shrink-0">
-                                <span className="text-indigo-400 text-base">💬</span>
-                                <p className="text-sm font-semibold text-gray-200 flex-1">Hilos</p>
+                        <div className="absolute top-0 right-0 h-full w-80 bg-bg border-l border-border z-20 flex flex-col">
+                            <div className="flex items-center gap-2 px-4 py-3 border-b border-border shrink-0">
+                                <span className="text-accent text-base">💬</span>
+                                <p className="text-sm font-semibold text-text-secondary flex-1">Hilos</p>
                                 {threadList && (
-                                    <span className="text-xs text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded-full">{threadList.length}</span>
+                                    <span className="text-xs text-text-muted bg-bg-elevated px-1.5 py-0.5 rounded-full">{threadList.length}</span>
                                 )}
-                                <button onClick={() => setThreadListOpen(false)} className="text-gray-500 hover:text-gray-300 text-lg leading-none ml-1">&times;</button>
+                                <button onClick={() => setThreadListOpen(false)} className="text-text-muted hover:text-text-secondary text-lg leading-none ml-1">&times;</button>
                             </div>
                             <div className="flex-1 overflow-y-auto p-3 space-y-2">
                                 {threadListLoading ? (
-                                    <p className="text-xs text-gray-500 px-1 py-2">Cargando...</p>
+                                    <p className="text-xs text-text-muted px-1 py-2">Cargando...</p>
                                 ) : !threadList || threadList.length === 0 ? (
-                                    <p className="text-xs text-gray-500 px-1 py-2">No hay hilos en este canal.</p>
+                                    <p className="text-xs text-text-muted px-1 py-2">No hay hilos en este canal.</p>
                                 ) : threadList.map((t) => (
                                     <button
                                         key={t.id}
                                         onClick={() => { setThreadListOpen(false); openThread(t.id); }}
-                                        className="w-full text-left bg-gray-800 rounded-lg p-3 border border-gray-700/60 hover:border-indigo-500/50 transition-colors group"
+                                        className="w-full text-left bg-bg-elevated rounded-lg p-3 border border-border/60 hover:border-accent/50 transition-colors group"
                                     >
                                         <div className="flex items-start justify-between gap-2 mb-1.5">
-                                            <p className="text-sm font-semibold text-gray-100 group-hover:text-white leading-snug truncate">
+                                            <p className="text-sm font-semibold text-text group-hover:text-text leading-snug truncate">
                                                 {t.name || (t.starter_message?.content
                                                     ? t.starter_message.content.slice(0, 60) + (t.starter_message.content.length > 60 ? '…' : '')
                                                     : 'Hilo'
@@ -2517,10 +2517,10 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                         {t.starter_message && (
                                             <div className="flex items-center gap-1.5 mb-1.5">
                                                 <Avatar user={t.starter_message.user} size="sm" />
-                                                <span className="text-xs text-gray-400 truncate">{t.starter_message.user?.name}</span>
+                                                <span className="text-xs text-text-muted truncate">{t.starter_message.user?.name}</span>
                                             </div>
                                         )}
-                                        <div className="flex items-center gap-2 text-[10px] text-gray-500">
+                                        <div className="flex items-center gap-2 text-[10px] text-text-muted">
                                             <span>💬 {t.reply_count} {t.reply_count === 1 ? 'respuesta' : 'respuestas'}</span>
                                             {t.last_reply_at && (
                                                 <>
@@ -2537,9 +2537,9 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
 
                     {/* Panel de hilo */}
                     {threadPanelId && (
-                        <div className="absolute top-0 right-0 h-full w-80 bg-gray-900 border-l border-gray-700 shadow-2xl z-30 flex flex-col">
-                            <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-700 shrink-0">
-                                <span className="text-indigo-400 text-base shrink-0">💬</span>
+                        <div className="absolute top-0 right-0 h-full w-80 bg-bg border-l border-border z-30 flex flex-col">
+                            <div className="flex items-center gap-2 px-4 py-3 border-b border-border shrink-0">
+                                <span className="text-accent text-base shrink-0">💬</span>
                                 <div className="flex-1 min-w-0">
                                     {threadNameEdit ? (
                                         <input
@@ -2551,12 +2551,12 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                             onBlur={saveThreadName}
                                             maxLength={100}
                                             placeholder="Título del hilo..."
-                                            className="w-full bg-gray-800 border border-indigo-500 rounded px-2 py-0.5 text-sm text-white outline-none placeholder-gray-500"
+                                            className="w-full bg-bg-elevated border border-accent rounded px-2 py-0.5 text-sm text-text outline-none placeholder:text-text-muted"
                                         />
                                     ) : (
                                         <button
                                             onClick={() => { setThreadNameInput(threadData?.thread?.name ?? ''); setThreadNameEdit(true); }}
-                                            className="text-sm font-semibold text-gray-200 hover:text-white truncate block w-full text-left transition-colors"
+                                            className="text-sm font-semibold text-text-secondary hover:text-text truncate block w-full text-left transition-colors"
                                             title="Click para editar título"
                                         >
                                             {threadData?.thread?.name || 'Hilo'}
@@ -2564,34 +2564,34 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                     )}
                                 </div>
                                 {threadData && (
-                                    <span className="text-xs text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded-full shrink-0">
+                                    <span className="text-xs text-text-muted bg-bg-elevated px-1.5 py-0.5 rounded-full shrink-0">
                                         {threadData.thread.reply_count} resp.
                                     </span>
                                 )}
                                 <button
                                     onClick={() => { setThreadPanelId(null); setThreadData(null); setThreadNameEdit(false); }}
-                                    className="text-gray-500 hover:text-gray-300 text-lg leading-none ml-1 shrink-0"
+                                    className="text-text-muted hover:text-text-secondary text-lg leading-none ml-1 shrink-0"
                                 >&times;</button>
                             </div>
 
                             {threadLoading ? (
                                 <div className="flex-1 flex items-center justify-center">
-                                    <p className="text-sm text-gray-400">Cargando...</p>
+                                    <p className="text-sm text-text-muted">Cargando...</p>
                                 </div>
                             ) : threadData ? (
                                 <>
                                     <div className="flex-1 overflow-y-auto p-3 space-y-3">
                                         {/* Mensaje original */}
                                         {threadData.starter_message && (
-                                            <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700/50">
+                                            <div className="bg-bg-muted/60 rounded-lg p-3 border border-border/50">
                                                 <div className="flex items-center gap-2 mb-1.5">
                                                     <Avatar user={threadData.starter_message.user} size="sm" />
-                                                    <span className="text-xs font-semibold text-white">{threadData.starter_message.user?.name}</span>
-                                                    <span className="text-[10px] text-gray-500 ml-auto">
+                                                    <span className="text-xs font-semibold text-text">{threadData.starter_message.user?.name}</span>
+                                                    <span className="text-[10px] text-text-muted ml-auto">
                                                         {new Date(threadData.starter_message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                     </span>
                                                 </div>
-                                                <div className="text-sm text-gray-300">
+                                                <div className="text-sm text-text-secondary">
                                                     {renderContent(threadData.starter_message.content || '', members, auth.user.name, members.find((m) => m.id === auth.user.id)?.nickname ?? '', [...serverEmojis, ...userEmojis], userEmojiMap)}
                                                 </div>
                                             </div>
@@ -2599,11 +2599,11 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
 
                                         {threadData.messages.length > 0 && (
                                             <div className="flex items-center gap-2 my-1">
-                                                <div className="flex-1 h-px bg-gray-700" />
-                                                <span className="text-[10px] text-gray-500 shrink-0">
+                                                <div className="flex-1 h-px bg-bg-muted" />
+                                                <span className="text-[10px] text-text-muted shrink-0">
                                                     {threadData.thread.reply_count} {threadData.thread.reply_count === 1 ? 'respuesta' : 'respuestas'}
                                                 </span>
-                                                <div className="flex-1 h-px bg-gray-700" />
+                                                <div className="flex-1 h-px bg-bg-muted" />
                                             </div>
                                         )}
 
@@ -2615,12 +2615,12 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                     <Avatar user={msg.user} size="sm" />
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex items-baseline gap-1.5 mb-0.5">
-                                                            <span className="text-xs font-semibold text-white">{msg.user?.name}</span>
-                                                            <span className="text-[10px] text-gray-500">
+                                                            <span className="text-xs font-semibold text-text">{msg.user?.name}</span>
+                                                            <span className="text-[10px] text-text-muted">
                                                                 {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                             </span>
                                                         </div>
-                                                        <div className="text-sm text-gray-300 break-words">
+                                                        <div className="text-sm text-text-secondary break-words">
                                                             {renderContent(msg.content || '', members, auth.user.name, members.find((m) => m.id === auth.user.id)?.nickname ?? '', [...serverEmojis, ...userEmojis], userEmojiMap)}
                                                         </div>
                                                     </div>
@@ -2631,8 +2631,8 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                     </div>
 
                                     {/* Input del hilo */}
-                                    <div className="p-3 border-t border-gray-700 shrink-0">
-                                        <div className="flex gap-2 bg-gray-700 rounded-lg px-3 py-2">
+                                    <div className="p-3 border-t border-border shrink-0">
+                                        <div className="chat-input-bar">
                                             <textarea
                                                 rows={1}
                                                 value={threadContent}
@@ -2644,14 +2644,14 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                     }
                                                 }}
                                                 placeholder="Responder en el hilo..."
-                                                className="flex-1 bg-transparent text-sm text-white placeholder-gray-400 outline-none resize-none leading-5 max-h-24"
+                                                className="flex-1 bg-transparent text-sm text-text placeholder:text-text-muted outline-none resize-none leading-5 max-h-24"
                                                 style={{ overflowY: 'hidden' }}
                                             />
                                             <button
                                                 type="button"
                                                 onClick={submitThreadReply}
                                                 disabled={threadSending || !threadContent.trim()}
-                                                className="text-indigo-400 hover:text-indigo-300 disabled:opacity-40 text-sm shrink-0"
+                                                className="btn-send disabled:opacity-40"
                                             >Enviar</button>
                                         </div>
                                     </div>
@@ -2662,25 +2662,25 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
 
                     {/* Panel de búsqueda */}
                     {searchOpen && (
-                        <div className="shrink-0 border-b border-gray-700 bg-gray-850 px-4 py-3">
+                        <div className="shrink-0 border-b border-border bg-bg-elevated px-4 py-3">
                             <input
                                 autoFocus
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => doSearch(e.target.value)}
                                 placeholder="Buscar mensajes..."
-                                className="w-full bg-gray-700 text-sm text-white rounded-lg px-3 py-2 outline-none placeholder-gray-400 border border-gray-600 focus:border-indigo-500"
+                                className="w-full bg-bg-muted text-sm text-text rounded-lg px-3 py-2 outline-none placeholder:text-text-muted border border-border focus:border-accent"
                             />
-                            {searching && <p className="text-xs text-gray-400 mt-2">Buscando...</p>}
+                            {searching && <p className="text-xs text-text-muted mt-2">Buscando...</p>}
                             {searchResults !== null && !searching && (
                                 <div className="mt-2 max-h-64 overflow-y-auto space-y-1">
                                     {searchResults.length === 0
-                                        ? <p className="text-xs text-gray-400">Sin resultados.</p>
+                                        ? <p className="text-xs text-text-muted">Sin resultados.</p>
                                         : searchResults.map((msg) => (
-                                            <div key={msg.id} className="text-sm bg-gray-700 rounded-lg px-3 py-2">
-                                                <span className="font-semibold text-indigo-300 mr-2">{msg.user?.name}</span>
-                                                <span className="text-gray-300">{msg.content}</span>
-                                                <span className="text-xs text-gray-500 ml-2">
+                                            <div key={msg.id} className="text-sm bg-bg-muted rounded-lg px-3 py-2">
+                                                <span className="font-semibold text-accent mr-2">{msg.user?.name}</span>
+                                                <span className="text-text-secondary">{msg.content}</span>
+                                                <span className="text-xs text-text-muted ml-2">
                                                     {new Date(msg.created_at).toLocaleDateString([], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                                                 </span>
                                             </div>
@@ -2693,12 +2693,12 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
 
                     {channel.type === 'voice' ? <VoiceChannel channel={channel} /> : null}
 
-                    <div ref={containerRef} className={`flex-1 overflow-y-auto p-4 space-y-3 ${channel.type === 'voice' ? 'hidden' : ''}`}>
+                    <div ref={containerRef} className={`flex-1 overflow-y-auto p-4 space-y-2 ${channel.type === 'voice' ? 'hidden' : ''}`}>
                         {hasMore && (
                             <button
                                 onClick={loadMore}
                                 disabled={loadingMore}
-                                className="w-full text-center text-xs text-gray-400 hover:text-gray-200 py-2 disabled:opacity-50 transition-colors"
+                                className="w-full text-center text-xs text-text-muted hover:text-text-secondary py-2 disabled:opacity-50 transition-colors"
                             >
                                 {loadingMore ? 'Cargando...' : '↑ Cargar mensajes anteriores'}
                             </button>
@@ -2726,14 +2726,14 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                             return (
                                 <div
                                     key={msg.id}
-                                    className={`group flex gap-3 px-2 rounded-lg hover:bg-gray-700/40 relative ${msg.pinned_at ? 'border-l-2 border-yellow-500/50' : ''} ${compact ? 'py-px' : isGrouped ? 'py-0' : 'py-0.5 mt-2'}`}
+                                    className={`group flex gap-2 px-2 rounded-lg hover:bg-bg-muted/60 relative ${msg.pinned_at ? 'border-l-2 border-yellow-600/50' : ''} ${compact ? 'py-px' : isGrouped ? 'py-0' : 'py-0.5 mt-1'}`}
                                     onContextMenu={(e) => !isTmp && openContextMenu('message', e, msg, memberWithRoles)}
                                 >
                                     {compact ? (
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-baseline gap-1.5 flex-wrap">
                                                 <span
-                                                    className="text-[10px] text-gray-600 group-hover:text-gray-500 shrink-0 select-none font-mono"
+                                                    className="text-[10px] text-text-muted group-hover:text-text-muted shrink-0 select-none font-mono"
                                                     title={new Date(msg.created_at).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' })}
                                                 >
                                                     {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -2742,26 +2742,26 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                     type="button"
                                                     onClick={openPopover}
                                                     onContextMenu={(e) => { e.stopPropagation(); member && openContextMenu('user', e, msg, memberWithRoles); }}
-                                                    className="text-xs font-semibold hover:underline shrink-0 leading-none"
-                                                    style={primaryColor ? { color: primaryColor } : { color: 'white' }}
+                                                    className={`text-xs font-semibold hover:underline shrink-0 leading-none${primaryColor ? '' : ' text-text'}`}
+                                                    style={primaryColor ? { color: primaryColor } : undefined}
                                                 >
                                                     {displayName}
                                                 </button>
                                                 {!isEditing && msg.content && (
-                                                    <span className={`text-sm ${isTmp ? 'text-gray-500' : 'text-gray-300'}`}>
+                                                    <span className={`text-sm ${isTmp ? 'text-text-muted' : 'text-text-secondary'}`}>
                                                         {renderContent(msg.content, members, auth.user.name, members.find(m => m.id === auth.user.id)?.nickname ?? '', [...serverEmojis, ...userEmojis], userEmojiMap)}
                                                         {!isTmp && msg.updated_at && msg.updated_at !== msg.created_at && (
                                                             <button
                                                                 onClick={() => openEditHistory(msg.id)}
-                                                                className="text-xs text-gray-500 hover:text-gray-300 ml-1.5 underline-offset-2 hover:underline"
+                                                                className="text-xs text-text-muted hover:text-text-secondary ml-1.5 underline-offset-2 hover:underline"
                                                             >(editado)</button>
                                                         )}
                                                     </span>
                                                 )}
                                             </div>
                                             {msg.reply_to && (
-                                                <div className="flex items-center gap-1.5 mb-0.5 text-xs text-gray-400 border-l-2 border-gray-500 pl-2 mt-0.5">
-                                                    <span className="font-semibold text-gray-300 shrink-0">{msg.reply_to.user?.name}</span>
+                                                <div className="flex items-center gap-1.5 mb-0.5 text-xs text-text-muted border-l-2 border-border-strong pl-2 mt-0.5">
+                                                    <span className="font-semibold text-text-secondary shrink-0">{msg.reply_to.user?.name}</span>
                                                     <span className="truncate max-w-[300px]">{msg.reply_to.content || '📎 adjunto'}</span>
                                                 </div>
                                             )}
@@ -2775,9 +2775,9 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                             if (e.key === 'Enter') submitEdit(msg);
                                                             if (e.key === 'Escape') cancelEdit();
                                                         }}
-                                                        className="w-full bg-gray-600 text-sm text-white rounded px-2 py-1 outline-none border border-indigo-500"
+                                                        className="w-full bg-border-strong text-sm text-text rounded px-2 py-1 outline-none border border-accent"
                                                     />
-                                                    <p className="text-xs text-gray-500 mt-0.5">Enter para guardar · Esc para cancelar</p>
+                                                    <p className="text-xs text-text-muted mt-0.5">Enter para guardar · Esc para cancelar</p>
                                                 </div>
                                             )}
                                             {!isEditing && msg.attachment_url && (() => {
@@ -2788,12 +2788,12 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                     <audio src={msg.attachment_url} controls preload="metadata" className="mt-1 w-64 h-10 rounded-lg" />
                                                 ) : isImage ? (
                                                     <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer" className="block mt-1">
-                                                        <img src={msg.attachment_url} alt="adjunto" className="max-w-xs max-h-64 rounded-lg object-cover border border-gray-700 hover:opacity-90 transition-opacity" />
+                                                        <img src={msg.attachment_url} alt="adjunto" className="max-w-xs max-h-64 rounded-lg object-cover border border-border hover:opacity-90 transition-opacity" />
                                                     </a>
                                                 ) : isVideo ? (
-                                                    <video src={msg.attachment_url} controls preload="metadata" className="mt-1 max-w-sm max-h-64 rounded-lg border border-gray-700 bg-black" />
+                                                    <video src={msg.attachment_url} controls preload="metadata" className="mt-1 max-w-sm max-h-64 rounded-lg border border-border bg-black" />
                                                 ) : (
-                                                    <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer" download={msg.attachment_name ?? true} className="mt-1 inline-flex items-center gap-2 bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-indigo-300 hover:text-indigo-200 hover:border-indigo-500 transition-colors">
+                                                    <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer" download={msg.attachment_name ?? true} className="mt-1 inline-flex items-center gap-2 bg-bg-elevated border border-border rounded-lg px-3 py-2 text-sm text-accent hover:opacity-80 hover:border-accent transition-colors">
                                                         <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                                                         <span className="truncate max-w-[240px]">{msg.attachment_name ?? 'Archivo adjunto'}</span>
                                                         <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
@@ -2811,7 +2811,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                             {isGrouped ? (
                                                 <div className="w-9 shrink-0 flex items-center justify-end">
                                                     <span
-                                                        className="text-[10px] text-gray-600 group-hover:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity leading-none select-none"
+                                                        className="text-[10px] text-text-muted group-hover:text-text-muted opacity-0 group-hover:opacity-100 transition-opacity leading-none select-none"
                                                         title={new Date(msg.created_at).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' })}
                                                     >
                                                         {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -2834,13 +2834,13 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                         type="button"
                                                         onClick={openPopover}
                                                         onContextMenu={(e) => { e.stopPropagation(); member && openContextMenu('user', e, msg, memberWithRoles); }}
-                                                        className="font-semibold hover:underline leading-none"
-                                                        style={primaryColor ? { color: primaryColor } : { color: 'white' }}
+                                                        className={`font-semibold hover:underline leading-none${primaryColor ? '' : ' text-text'}`}
+                                                        style={primaryColor ? { color: primaryColor } : undefined}
                                                     >
                                                         {displayName}
                                                     </button>
                                                     <span
-                                                        className="text-xs text-gray-500"
+                                                        className="text-xs text-text-muted"
                                                         title={new Date(msg.created_at).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' })}
                                                     >
                                                         {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -2848,8 +2848,8 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                 </div>
                                                 )}
                                                 {msg.reply_to && (
-                                                    <div className="flex items-center gap-1.5 mb-0.5 text-xs text-gray-400 border-l-2 border-gray-500 pl-2 mt-0.5">
-                                                        <span className="font-semibold text-gray-300 shrink-0">{msg.reply_to.user?.name}</span>
+                                                    <div className="flex items-center gap-1.5 mb-0.5 text-xs text-text-muted border-l-2 border-border-strong pl-2 mt-0.5">
+                                                        <span className="font-semibold text-text-secondary shrink-0">{msg.reply_to.user?.name}</span>
                                                         <span className="truncate max-w-[300px]">{msg.reply_to.content || '📎 adjunto'}</span>
                                                     </div>
                                                 )}
@@ -2863,19 +2863,19 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                                 if (e.key === 'Enter') submitEdit(msg);
                                                                 if (e.key === 'Escape') cancelEdit();
                                                             }}
-                                                            className="w-full bg-gray-600 text-sm text-white rounded px-2 py-1 outline-none border border-indigo-500"
+                                                            className="w-full bg-border-strong text-sm text-text rounded px-2 py-1 outline-none border border-accent"
                                                         />
-                                                        <p className="text-xs text-gray-500 mt-0.5">Enter para guardar · Esc para cancelar</p>
+                                                        <p className="text-xs text-text-muted mt-0.5">Enter para guardar · Esc para cancelar</p>
                                                     </div>
                                                 ) : (
                                                     <>
                                                         {msg.content && (
-                                                            <div className={`text-sm ${isTmp ? 'text-gray-500' : 'text-gray-300'}`}>
+                                                            <div className={`msg-bubble ${isOwn ? 'msg-bubble-me' : 'msg-bubble-them'} ${isTmp ? 'opacity-60' : ''}`}>
                                                                 {renderContent(msg.content, members, auth.user.name, members.find(m => m.id === auth.user.id)?.nickname ?? '', [...serverEmojis, ...userEmojis], userEmojiMap)}
                                                                 {!isTmp && msg.updated_at && msg.updated_at !== msg.created_at && (
                                                                     <button
                                                                         onClick={() => openEditHistory(msg.id)}
-                                                                        className="text-xs text-gray-500 hover:text-gray-300 ml-1.5 underline-offset-2 hover:underline"
+                                                                        className="text-xs text-text-muted hover:text-text-secondary ml-1.5 underline-offset-2 hover:underline"
                                                                     >(editado)</button>
                                                                 )}
                                                             </div>
@@ -2894,17 +2894,17 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                                 />
                                                             ) : isImage ? (
                                                                 <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer" className="block mt-1">
-                                                                    <img src={msg.attachment_url} alt="adjunto" className="max-w-xs max-h-64 rounded-lg object-cover border border-gray-700 hover:opacity-90 transition-opacity" />
+                                                                    <img src={msg.attachment_url} alt="adjunto" className="max-w-xs max-h-64 rounded-lg object-cover border border-border hover:opacity-90 transition-opacity" />
                                                                 </a>
                                                             ) : isVideo ? (
                                                                 <video
                                                                     src={msg.attachment_url}
                                                                     controls
                                                                     preload="metadata"
-                                                                    className="mt-1 max-w-sm max-h-64 rounded-lg border border-gray-700 bg-black"
+                                                                    className="mt-1 max-w-sm max-h-64 rounded-lg border border-border bg-black"
                                                                 />
                                                             ) : (
-                                                                <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer" download={msg.attachment_name ?? true} className="mt-1 inline-flex items-center gap-2 bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-indigo-300 hover:text-indigo-200 hover:border-indigo-500 transition-colors">
+                                                                <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer" download={msg.attachment_name ?? true} className="mt-1 inline-flex items-center gap-2 bg-bg-elevated border border-border rounded-lg px-3 py-2 text-sm text-accent hover:opacity-80 hover:border-accent transition-colors">
                                                                     <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                                                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                                                     </svg>
@@ -2925,11 +2925,11 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                         </>
                                     )}
                                     {!isTmp && !isEditing && (
-                                        <div className="absolute right-2 top-0 -translate-y-1/2 hidden group-hover:flex items-center gap-1 bg-gray-800 border border-gray-700 rounded-lg px-1 py-0.5 shadow-lg z-10">
+                                        <div className="absolute right-2 top-0 -translate-y-1/2 hidden group-hover:flex items-center gap-1 bg-bg-elevated border border-border rounded-lg px-1 py-0.5 z-10">
                                             <button
                                                 type="button"
                                                 onClick={() => msg.thread ? openThread(msg.thread.id) : createThread(msg)}
-                                                className="text-gray-400 hover:text-indigo-300 px-1.5 py-0.5 rounded text-xs transition-colors"
+                                                className="text-text-muted hover:opacity-80 px-1.5 py-0.5 rounded text-xs transition-colors"
                                                 title={msg.thread ? `Hilo (${msg.thread.reply_count} respuestas)` : 'Crear hilo'}
                                             >
                                                 💬{msg.thread?.reply_count > 0 ? ` ${msg.thread.reply_count}` : ''}
@@ -2937,18 +2937,18 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                             <button
                                                 type="button"
                                                 onClick={() => { setReplyingTo({ id: msg.id, content: msg.content, user: msg.user }); inputRef.current?.focus(); }}
-                                                className="text-gray-400 hover:text-indigo-300 px-1.5 py-0.5 rounded text-xs transition-colors"
+                                                className="text-text-muted hover:opacity-80 px-1.5 py-0.5 rounded text-xs transition-colors"
                                                 title="Responder"
                                             >↩</button>
                                             <div className="relative">
                                                 <button
                                                     type="button"
                                                     onClick={() => setEmojiPickerId((id) => id === msg.id ? null : msg.id)}
-                                                    className="text-gray-400 hover:text-yellow-300 px-1.5 py-0.5 rounded text-xs transition-colors"
+                                                    className="text-text-muted hover:text-yellow-300 px-1.5 py-0.5 rounded text-xs transition-colors"
                                                     title="Reaccionar"
                                                 >😊</button>
                                                 {emojiPickerId === msg.id && (
-                                                    <div className="absolute right-0 top-full mt-1 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5 shadow-xl z-20">
+                                                    <div className="absolute right-0 top-full mt-1 bg-bg-elevated border border-border rounded-lg px-2 py-1.5 z-20">
                                                         <div className="flex gap-1">
                                                             {['👍','👎','❤️','😂','😮','😢','🎉','🔥'].map((e) => (
                                                                 <button
@@ -2960,7 +2960,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                             ))}
                                                         </div>
                                                         {serverEmojis.length > 0 && (
-                                                            <div className="flex flex-wrap gap-1 mt-1.5 pt-1.5 border-t border-gray-700 max-w-[200px]">
+                                                            <div className="flex flex-wrap gap-1 mt-1.5 pt-1.5 border-t border-border max-w-[200px]">
                                                                 {serverEmojis.map((e) => (
                                                                     <button
                                                                         key={e.id}
@@ -2975,7 +2975,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                             </div>
                                                         )}
                                                         {userEmojis.length > 0 && (
-                                                            <div className="flex flex-wrap gap-1 mt-1.5 pt-1.5 border-t border-gray-700 max-w-[200px]">
+                                                            <div className="flex flex-wrap gap-1 mt-1.5 pt-1.5 border-t border-border max-w-[200px]">
                                                                 {userEmojis.map((e) => (
                                                                     <button
                                                                         key={e.id}
@@ -2996,7 +2996,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                 <button
                                                     type="button"
                                                     onClick={() => startEdit(msg)}
-                                                    className="text-gray-400 hover:text-white px-1.5 py-0.5 rounded text-xs transition-colors"
+                                                    className="text-text-muted hover:text-text px-1.5 py-0.5 rounded text-xs transition-colors"
                                                     title="Editar"
                                                 >✏️</button>
                                             )}
@@ -3006,19 +3006,19 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                         <button
                                                             type="button"
                                                             onClick={() => { deleteMessage(msg); setConfirmDeleteMsgId(null); }}
-                                                            className="text-xs bg-red-600 hover:bg-red-700 text-white px-2 py-0.5 rounded"
+                                                            className="text-xs bg-red-600 hover:bg-red-700 text-text px-2 py-0.5 rounded"
                                                         >Eliminar</button>
                                                         <button
                                                             type="button"
                                                             onClick={() => setConfirmDeleteMsgId(null)}
-                                                            className="text-xs text-gray-400 hover:text-gray-200 px-1"
+                                                            className="text-xs text-text-muted hover:text-text-secondary px-1"
                                                         >✕</button>
                                                     </div>
                                                 ) : (
                                                     <button
                                                         type="button"
                                                         onClick={() => setConfirmDeleteMsgId(msg.id)}
-                                                        className="text-gray-400 hover:text-red-400 px-1.5 py-0.5 rounded text-xs transition-colors"
+                                                        className="text-text-muted hover:text-red-400 px-1.5 py-0.5 rounded text-xs transition-colors"
                                                         title="Eliminar"
                                                     >🗑️</button>
                                                 )
@@ -3031,16 +3031,16 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                             onClick={() => openThread(msg.thread.id)}
                                             className={`flex items-center gap-1.5 text-xs mt-1 rounded px-2 py-1 transition-colors ${
                                                 threadPanelId === msg.thread.id
-                                                    ? 'text-indigo-300 bg-indigo-600/20'
-                                                    : 'text-indigo-400 hover:text-indigo-300 bg-gray-800/50 hover:bg-gray-700/50'
+                                                    ? 'text-accent bg-accent-soft'
+                                                    : 'text-accent hover:opacity-80 bg-bg-muted/60 hover:bg-bg-muted/50'
                                             }`}
                                         >
                                             <span>💬</span>
                                             <span className="font-medium">
                                                 {msg.thread.reply_count} {msg.thread.reply_count === 1 ? 'respuesta' : 'respuestas'}
                                             </span>
-                                            <span className="text-gray-500">·</span>
-                                            <span className="text-gray-400">Ver hilo →</span>
+                                            <span className="text-text-muted">·</span>
+                                            <span className="text-text-muted">Ver hilo →</span>
                                         </button>
                                     )}
                                     {/* Burbujas de reacciones */}
@@ -3062,8 +3062,8 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                         onClick={() => toggleReaction(msg, r.emoji)}
                                                         className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border transition-colors ${
                                                             reacted
-                                                                ? 'bg-indigo-600/40 border-indigo-500 text-white'
-                                                                : 'bg-gray-700 border-gray-600 text-gray-300 hover:border-indigo-500'
+                                                                ? 'bg-accent/40 border-accent text-text'
+                                                                : 'bg-bg-muted border-border text-text-secondary hover:border-accent'
                                                         }`}
                                                     >
                                                         {emojiUrl
@@ -3089,10 +3089,10 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                 bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
                                 setNewMsgCount(0);
                             }}
-                            className="absolute bottom-24 right-6 flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium px-3 py-1.5 rounded-full shadow-lg transition-colors z-10"
+                            className="absolute bottom-24 right-6 flex items-center gap-2 bg-accent hover:opacity-90 text-text text-xs font-medium px-3 py-1.5 rounded-full transition-colors z-10"
                         >
                             {newMsgCount > 0 && (
-                                <span className="bg-white text-indigo-600 font-bold rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
+                                <span className="bg-bg-elevated text-accent font-bold rounded-full w-4 h-4 flex items-center justify-center text-[10px] border border-border">
                                     {newMsgCount > 9 ? '9+' : newMsgCount}
                                 </span>
                             )}
@@ -3104,7 +3104,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                         {/* Indicador de escritura */}
                         <div className="h-5 px-5 flex items-center">
                             {Object.keys(typingUsers).length > 0 && (
-                                <p className="text-xs text-gray-400 italic">
+                                <p className="text-xs text-text-muted italic">
                                     <TypingDots />
                                     {formatTyping(Object.values(typingUsers), t)}
                                 </p>
@@ -3114,17 +3114,17 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                         <form onSubmit={submit} className="px-4 pb-4 relative">
                             {/* Barra de respuesta */}
                             {replyingTo && (
-                                <div className="flex items-center gap-2 mb-1.5 px-3 py-1.5 bg-gray-700/60 rounded-t-lg border border-gray-600 border-b-0 text-xs">
-                                    <span className="text-gray-400">Respondiendo a</span>
-                                    <span className="font-semibold text-indigo-300">{replyingTo.user?.name}</span>
-                                    <span className="text-gray-400 truncate flex-1 max-w-[300px]">{replyingTo.content || '📎 adjunto'}</span>
-                                    <button type="button" onClick={() => setReplyingTo(null)} className="text-gray-500 hover:text-gray-200 ml-auto shrink-0">✕</button>
+                                <div className="flex items-center gap-2 mb-1.5 px-3 py-1.5 bg-bg-muted/80 rounded-t-lg border border-border border-b-0 text-xs">
+                                    <span className="text-text-muted">Respondiendo a</span>
+                                    <span className="font-semibold text-accent">{replyingTo.user?.name}</span>
+                                    <span className="text-text-muted truncate flex-1 max-w-[300px]">{replyingTo.content || '📎 adjunto'}</span>
+                                    <button type="button" onClick={() => setReplyingTo(null)} className="text-text-muted hover:text-text-secondary ml-auto shrink-0">✕</button>
                                 </div>
                             )}
                             {/* Dropdown de menciones */}
                             {mentionSuggestions.length > 0 && (
-                                <div className="absolute bottom-full left-4 right-4 mb-1 bg-gray-800 border border-gray-700 rounded-lg overflow-hidden shadow-xl z-10">
-                                    <p className="px-3 pt-2 pb-1 text-xs text-gray-500">Miembros</p>
+                                <div className="absolute bottom-full left-4 right-4 mb-1 bg-bg-elevated border border-border rounded-lg overflow-hidden z-10">
+                                    <p className="px-3 pt-2 pb-1 text-xs text-text-muted">Miembros</p>
                                     {mentionSuggestions.slice(0, 8).map((member, i) => (
                                         <button
                                             key={member.id}
@@ -3132,13 +3132,13 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                             onMouseDown={(e) => { e.preventDefault(); selectMention(member); }}
                                             className={`flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors ${
                                                 i === mentionIndex
-                                                    ? 'bg-indigo-600 text-white'
-                                                    : 'text-gray-300 hover:bg-gray-700'
+                                                    ? 'bg-accent text-text'
+                                                    : 'text-text-secondary hover:bg-bg-muted'
                                             }`}
                                         >
                                             <Avatar user={member} size="sm" />
                                             <span>{member.nickname ?? member.name}</span>
-                                            {member.nickname && <span className="text-xs text-gray-500">{member.name}</span>}
+                                            {member.nickname && <span className="text-xs text-text-muted">{member.name}</span>}
                                         </button>
                                     ))}
                                 </div>
@@ -3148,15 +3148,15 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                             {attachmentPreview && (
                                 <div className="mb-2 relative inline-block">
                                     {attachmentPreview.type === 'image' ? (
-                                        <img src={attachmentPreview.url} alt="preview" className="max-h-32 rounded-lg border border-gray-600" />
+                                        <img src={attachmentPreview.url} alt="preview" className="max-h-32 rounded-lg border border-border" />
                                     ) : attachmentPreview.type === 'audio' ? (
-                                        <div className="flex items-center gap-2 bg-gray-800 border border-gray-600 rounded-lg px-3 py-2">
+                                        <div className="flex items-center gap-2 bg-bg-elevated border border-border rounded-lg px-3 py-2">
                                             <span className="text-red-400 text-sm">🎤</span>
                                             <audio src={attachmentPreview.url} controls className="h-8 w-48" />
                                         </div>
                                     ) : (
-                                        <div className="flex items-center gap-2 bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-300">
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-indigo-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <div className="flex items-center gap-2 bg-bg-elevated border border-border rounded-lg px-3 py-2 text-sm text-text-secondary">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-accent shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                             </svg>
                                             <span className="truncate max-w-[200px]">{attachmentPreview.name}</span>
@@ -3165,13 +3165,13 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                     <button
                                         type="button"
                                         onClick={clearAttachment}
-                                        className="absolute -top-1.5 -right-1.5 bg-gray-900 text-gray-400 hover:text-white rounded-full w-5 h-5 flex items-center justify-center text-xs border border-gray-600"
+                                        className="absolute -top-1.5 -right-1.5 bg-bg text-text-muted hover:text-text rounded-full w-5 h-5 flex items-center justify-center text-xs border border-border"
                                     >✕</button>
                                 </div>
                             )}
 
                         {channel.type !== 'voice' && canSendMessages && (channel.type !== 'announcement' || canManageMessages || isOwner) ? (
-                        <div className="relative flex gap-2 bg-gray-700 rounded-lg px-4 py-2">
+                        <div className="relative chat-input-bar">
                             <input ref={fileInputRef} type="file" className="hidden" onChange={pickFile} />
                             {recording ? (
                                 <div className="flex items-center gap-2 flex-1">
@@ -3179,15 +3179,15 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                     <span className="text-red-400 text-sm font-mono">
                                         {String(Math.floor(recordingTime / 60)).padStart(2,'0')}:{String(recordingTime % 60).padStart(2,'0')}
                                     </span>
-                                    <span className="text-gray-400 text-xs flex-1">Grabando...</span>
-                                    <button type="button" onClick={cancelRecording} className="text-gray-400 hover:text-red-400 text-sm px-2">✕ Cancelar</button>
-                                    <button type="button" onClick={stopRecording} className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-1 rounded-lg">Enviar</button>
+                                    <span className="text-text-muted text-xs flex-1">Grabando...</span>
+                                    <button type="button" onClick={cancelRecording} className="text-text-muted hover:text-red-400 text-sm px-2">✕ Cancelar</button>
+                                    <button type="button" onClick={stopRecording} className="btn-send text-xs">Enviar</button>
                                 </div>
                             ) : (<>
                             <button
                                 type="button"
                                 onClick={() => fileInputRef.current?.click()}
-                                className="text-gray-400 hover:text-gray-200 transition-colors shrink-0"
+                                className="text-text-muted hover:text-text-secondary transition-colors shrink-0"
                                 title="Adjuntar archivo"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -3197,7 +3197,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                             <button
                                 type="button"
                                 onClick={() => { setPollModalOpen(true); setPollQuestion(''); setPollOptions(['', '']); }}
-                                className="text-gray-400 hover:text-gray-200 transition-colors shrink-0"
+                                className="text-text-muted hover:text-text-secondary transition-colors shrink-0"
                                 title="Crear encuesta"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -3211,7 +3211,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                 onChange={onType}
                                 onKeyDown={onKeyDown}
                                 placeholder={`Mensaje en #${channel.name}`}
-                                className="flex-1 bg-transparent text-sm text-white placeholder-gray-400 outline-none resize-none leading-5 max-h-40 self-center"
+                                className="flex-1 bg-transparent text-sm text-text placeholder:text-text-muted outline-none resize-none leading-5 max-h-40 self-center"
                                 style={{ overflowY: 'hidden' }}
                             />
                             {(serverEmojis.length > 0 || userEmojis.length > 0) && (
@@ -3219,13 +3219,13 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                     <button
                                         type="button"
                                         onClick={() => setEmojiInsertOpen(o => !o)}
-                                        className="text-gray-500 hover:text-yellow-300 transition-colors shrink-0 text-base leading-none"
+                                        className="text-text-muted hover:text-yellow-300 transition-colors shrink-0 text-base leading-none"
                                         title="Emojis"
                                     >😀</button>
                                     {emojiInsertOpen && (
-                                        <div className="absolute bottom-full right-0 mb-2 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-30 w-64">
+                                        <div className="absolute bottom-full right-0 mb-2 bg-bg-elevated border border-border rounded-lg z-30 w-64">
                                             {/* Tabs */}
-                                            <div className="flex border-b border-gray-700 px-2 pt-1">
+                                            <div className="flex border-b border-border px-2 pt-1">
                                                 {[['server', 'Servidor'], ['personal', 'Personal']].map(([key, label]) => (
                                                     <button
                                                         key={key}
@@ -3233,8 +3233,8 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                         onMouseDown={(ev) => { ev.preventDefault(); setEmojiInsertTab(key); }}
                                                         className={`px-3 py-1.5 text-xs font-medium border-b-2 transition-colors mr-1 ${
                                                             emojiInsertTab === key
-                                                                ? 'border-indigo-500 text-white'
-                                                                : 'border-transparent text-gray-400 hover:text-gray-200'
+                                                                ? 'border-accent text-text'
+                                                                : 'border-transparent text-text-muted hover:text-text-secondary'
                                                         }`}
                                                     >{label}</button>
                                                 ))}
@@ -3246,11 +3246,11 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                         key={e.id}
                                                         type="button"
                                                         onMouseDown={(ev) => { ev.preventDefault(); insertEmoji(e.name); }}
-                                                        className="flex flex-col items-center gap-1 p-1.5 rounded hover:bg-gray-700 transition-colors"
+                                                        className="flex flex-col items-center gap-1 p-1.5 rounded hover:bg-bg-muted transition-colors"
                                                         title={`:${e.name}:`}
                                                     >
                                                         <img src={e.url} alt={e.name} className="w-10 h-10 object-contain" />
-                                                        <span className="text-[10px] text-gray-400 truncate w-full text-center">{e.name}</span>
+                                                        <span className="text-[10px] text-text-muted truncate w-full text-center">{e.name}</span>
                                                     </button>
                                                 ))}
                                                 {emojiInsertTab === 'personal' && userEmojis.map(e => (
@@ -3258,18 +3258,18 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                         key={e.id}
                                                         type="button"
                                                         onMouseDown={(ev) => { ev.preventDefault(); insertUserEmoji(e.id); }}
-                                                        className="flex flex-col items-center gap-1 p-1.5 rounded hover:bg-gray-700 transition-colors"
+                                                        className="flex flex-col items-center gap-1 p-1.5 rounded hover:bg-bg-muted transition-colors"
                                                         title={`:${e.name}:`}
                                                     >
                                                         <img src={e.url} alt={e.name} className="w-10 h-10 object-contain" />
-                                                        <span className="text-[10px] text-gray-400 truncate w-full text-center">{e.name}</span>
+                                                        <span className="text-[10px] text-text-muted truncate w-full text-center">{e.name}</span>
                                                     </button>
                                                 ))}
                                                 {emojiInsertTab === 'server' && serverEmojis.length === 0 && (
-                                                    <p className="col-span-4 text-center text-xs text-gray-500 py-4">Sin emojis de servidor</p>
+                                                    <p className="col-span-4 text-center text-xs text-text-muted py-4">Sin emojis de servidor</p>
                                                 )}
                                                 {emojiInsertTab === 'personal' && userEmojis.length === 0 && (
-                                                    <p className="col-span-4 text-center text-xs text-gray-500 py-4">Sin emojis personales</p>
+                                                    <p className="col-span-4 text-center text-xs text-text-muted py-4">Sin emojis personales</p>
                                                 )}
                                             </div>
                                         </div>
@@ -3279,14 +3279,14 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                             <button
                                 type="button"
                                 onClick={() => setSyntaxHelpOpen(o => !o)}
-                                className="text-gray-500 hover:text-gray-300 transition-colors shrink-0 w-5 h-5 rounded-full border border-gray-500 hover:border-gray-300 flex items-center justify-center text-xs font-bold"
+                                className="text-text-muted hover:text-text-secondary transition-colors shrink-0 w-5 h-5 rounded-full border border-border-strong hover:border-border-strong flex items-center justify-center text-xs font-bold"
                                 title="Guía de formato"
                             >?</button>
                             {!attachmentFile && (
                                 <button
                                     type="button"
                                     onClick={startRecording}
-                                    className="text-gray-400 hover:text-red-400 transition-colors shrink-0"
+                                    className="text-text-muted hover:text-red-400 transition-colors shrink-0"
                                     title="Mensaje de voz"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -3297,7 +3297,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                             <button
                                 type="submit"
                                 disabled={sending || (!content.trim() && !attachmentFile)}
-                                className="text-indigo-400 hover:text-indigo-300 disabled:opacity-40"
+                                className="btn-send"
                             >
                                 Enviar
                             </button>
@@ -3305,7 +3305,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                         </>)}
                         </div>
                         ) : channel.type !== 'voice' ? (
-                        <div className="flex items-center justify-center bg-gray-700/50 rounded-lg px-4 py-3 text-sm text-gray-500 select-none">
+                        <div className="flex items-center justify-center bg-bg-muted/50 rounded-lg px-4 py-3 text-sm text-text-muted select-none">
                             {channel.type === 'announcement'
                                 ? '📢 Este canal es de solo lectura'
                                 : '🔒 No tienes permiso para enviar mensajes en este canal'
@@ -3352,10 +3352,10 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                 {/* Modal cambiar apodo */}
                 {nicknameOpen && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                        <div className="absolute inset-0 bg-black/60" onClick={() => setNicknameOpen(false)} />
-                        <div className="relative bg-gray-900 rounded-xl border border-gray-700 w-full max-w-sm p-5 shadow-2xl">
-                            <h3 className="text-gray-100 font-semibold mb-1">Cambiar apodo</h3>
-                            <p className="text-xs text-gray-400 mb-3">Solo visible en <span className="text-gray-200">{serverName}</span>. Déjalo vacío para usar tu nombre real.</p>
+                        <div className="absolute inset-0 overlay-backdrop" onClick={() => setNicknameOpen(false)} />
+                        <div className="relative bg-bg rounded-xl border border-border w-full max-w-sm p-5">
+                            <h3 className="text-text font-semibold mb-1">Cambiar apodo</h3>
+                            <p className="text-xs text-text-muted mb-3">Solo visible en <span className="text-text-secondary">{serverName}</span>. Déjalo vacío para usar tu nombre real.</p>
                             <input
                                 autoFocus
                                 type="text"
@@ -3364,11 +3364,11 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                 onKeyDown={e => { if (e.key === 'Enter') saveNickname(); if (e.key === 'Escape') setNicknameOpen(false); }}
                                 placeholder={auth.user.name}
                                 maxLength={32}
-                                className="w-full bg-gray-800 border border-gray-600 text-gray-100 placeholder-gray-500 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-4"
+                                className="w-full bg-bg-elevated border border-border text-text placeholder:text-text-muted rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent mb-4"
                             />
                             <div className="flex gap-2 justify-end">
-                                <button onClick={() => setNicknameOpen(false)} className="px-4 py-2 text-sm text-gray-400 hover:text-gray-200 rounded-lg hover:bg-gray-800">Cancelar</button>
-                                <button onClick={saveNickname} className="px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium">Guardar</button>
+                                <button onClick={() => setNicknameOpen(false)} className="px-4 py-2 text-sm text-text-muted hover:text-text-secondary rounded-lg hover:bg-bg-elevated">Cancelar</button>
+                                <button onClick={saveNickname} className="px-4 py-2 text-sm bg-accent hover:opacity-90 text-text rounded-lg font-medium">Guardar</button>
                             </div>
                         </div>
                     </div>
@@ -3377,27 +3377,27 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                 {/* Modal historial de ediciones */}
                 {editHistoryMsgId && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                        <div className="absolute inset-0 bg-black/60" onClick={() => setEditHistoryMsgId(null)} />
-                        <div className="relative bg-gray-900 rounded-xl border border-gray-700 w-full max-w-md p-5 shadow-2xl">
-                            <h3 className="text-gray-100 font-semibold mb-3">Historial de ediciones</h3>
+                        <div className="absolute inset-0 overlay-backdrop" onClick={() => setEditHistoryMsgId(null)} />
+                        <div className="relative bg-bg rounded-xl border border-border w-full max-w-md p-5">
+                            <h3 className="text-text font-semibold mb-3">Historial de ediciones</h3>
                             {editHistoryLoading ? (
-                                <p className="text-sm text-gray-400">Cargando...</p>
+                                <p className="text-sm text-text-muted">Cargando...</p>
                             ) : editHistory.length === 0 ? (
-                                <p className="text-sm text-gray-400">Sin historial previo.</p>
+                                <p className="text-sm text-text-muted">Sin historial previo.</p>
                             ) : (
                                 <div className="space-y-3 max-h-72 overflow-y-auto">
                                     {editHistory.map((entry, i) => (
-                                        <div key={i} className="bg-gray-800 rounded-lg px-3 py-2">
-                                            <p className="text-xs text-gray-500 mb-1">
+                                        <div key={i} className="bg-bg-elevated rounded-lg px-3 py-2">
+                                            <p className="text-xs text-text-muted mb-1">
                                                 {new Date(entry.edited_at).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })}
                                             </p>
-                                            <p className="text-sm text-gray-300">{entry.content}</p>
+                                            <p className="text-sm text-text-secondary">{entry.content}</p>
                                         </div>
                                     ))}
                                 </div>
                             )}
                             <div className="flex justify-end mt-4">
-                                <button onClick={() => setEditHistoryMsgId(null)} className="px-4 py-2 text-sm text-gray-400 hover:text-gray-200 rounded-lg hover:bg-gray-800">Cerrar</button>
+                                <button onClick={() => setEditHistoryMsgId(null)} className="px-4 py-2 text-sm text-text-muted hover:text-text-secondary rounded-lg hover:bg-bg-elevated">Cerrar</button>
                             </div>
                         </div>
                     </div>
@@ -3459,7 +3459,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                         return (
                             <div
                                 key={member.id}
-                                className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-gray-800 cursor-pointer"
+                                className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-bg-elevated cursor-pointer"
                                 onClick={(e) => setProfilePopover({ member: memberWithRoles, anchorX: e.clientX, anchorY: e.clientY })}
                                 onContextMenu={(e) => openContextMenu('user', e, null, memberWithRoles)}
                             >
@@ -3470,12 +3470,12 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                     </span>
                                 </div>
                                 <div className="min-w-0">
-                                    <p className={`text-sm truncate leading-tight ${!status ? 'text-gray-500' : ''}`}
+                                    <p className={`text-sm truncate leading-tight ${!status ? 'text-text-muted' : ''}`}
                                         style={status && memberWithRoles.server_roles[0] ? { color: memberWithRoles.server_roles[0].color } : undefined}>
                                         {member.nickname ?? member.name}
                                     </p>
                                     {customStatus && (
-                                        <p className="text-xs text-gray-400 truncate leading-tight">{customStatus}</p>
+                                        <p className="text-xs text-text-muted truncate leading-tight">{customStatus}</p>
                                     )}
                                 </div>
                             </div>
@@ -3492,8 +3492,8 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                     const noRoleSlice = noRoleMembers.slice(0, rem);
 
                     return (
-                        <aside className="hidden md:flex w-48 bg-gray-900 flex-col shrink-0 border-l border-gray-700">
-                            <div className="px-3 py-3 border-b border-gray-700 text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                        <aside className="hidden md:flex w-48 bg-bg flex-col shrink-0 border-l border-border shrink-0">
+                            <div className="px-3 py-3 border-b border-border text-xs font-semibold section-label uppercase">
                                 Miembros &mdash; {allMembers.length}
                             </div>
                             <div className="flex-1 overflow-y-auto p-2">
@@ -3509,7 +3509,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                 {noRoleSlice.length > 0 && (
                                     <div className={buckets.length > 0 ? 'mt-1' : ''}>
                                         {buckets.length > 0 && (
-                                            <p className="px-2 mb-1 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                                            <p className="px-2 mb-1 text-xs font-semibold section-label uppercase">
                                                 Miembros &mdash; {noRoleMembers.length}
                                             </p>
                                         )}
@@ -3519,7 +3519,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                 {hiddenCount > 0 && (
                                     <button
                                         onClick={() => setMembersVisible(v => v + MEMBERS_PAGE)}
-                                        className="w-full mt-2 text-xs text-gray-500 hover:text-gray-300 py-1.5 rounded hover:bg-gray-800 transition-colors"
+                                        className="w-full mt-2 text-xs text-text-muted hover:text-text-secondary py-1.5 rounded hover:bg-bg-elevated transition-colors"
                                     >
                                         Ver {Math.min(hiddenCount, MEMBERS_PAGE)} más ({hiddenCount} ocultos)
                                     </button>
@@ -3536,8 +3536,8 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                     {toasts.map((toast) => (
                         <div
                             key={toast.id}
-                            className={`bg-gray-800 rounded-xl shadow-2xl p-4 flex gap-3 items-start animate-fade-in border ${
-                                toast.type === 'dm' ? 'border-green-500/50' : 'border-indigo-500/50'
+                            className={`bg-bg-elevated rounded-xl  p-4 flex gap-3 items-start animate-fade-in border ${
+                                toast.type === 'dm' ? 'border-green-500/50' : 'border-accent/50'
                             }`}
                         >
                             <div className={`text-lg shrink-0 ${toast.type === 'dm' ? 'text-green-400' : 'text-yellow-400'}`}>
@@ -3546,8 +3546,8 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                             <div className="flex-1 min-w-0">
                                 {toast.type === 'dm' ? (
                                     <>
-                                        <p className="text-sm font-semibold text-white">Mensaje de {toast.sender}</p>
-                                        <p className="text-sm text-gray-300 mt-1 line-clamp-2">{toast.content}</p>
+                                        <p className="text-sm font-semibold text-text">Mensaje de {toast.sender}</p>
+                                        <p className="text-sm text-text-secondary mt-1 line-clamp-2">{toast.content}</p>
                                         <Link
                                             href={route('conversations.show', toast.conversation_id)}
                                             className="text-xs text-green-400 hover:underline mt-1 inline-block"
@@ -3557,17 +3557,17 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                     </>
                                 ) : (
                                     <>
-                                        <p className="text-sm font-semibold text-white">
+                                        <p className="text-sm font-semibold text-text">
                                             {toast.sender} te mencionó en #{toast.channel}
                                         </p>
-                                        <p className="text-xs text-gray-400 mt-0.5 truncate">{toast.server}</p>
-                                        <p className="text-sm text-gray-300 mt-1 line-clamp-2">{toast.content}</p>
+                                        <p className="text-xs text-text-muted mt-0.5 truncate">{toast.server}</p>
+                                        <p className="text-sm text-text-secondary mt-1 line-clamp-2">{toast.content}</p>
                                     </>
                                 )}
                             </div>
                             <button
                                 onClick={() => setToasts((prev) => prev.filter((t) => t.id !== toast.id))}
-                                className="text-gray-500 hover:text-gray-300 shrink-0 text-xs"
+                                className="text-text-muted hover:text-text-secondary shrink-0 text-xs"
                             >
                                 ✕
                             </button>
@@ -3576,7 +3576,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                 </div>
             )}
             {/* Barra de navegación inferior — solo móvil */}
-            <nav className="sm:hidden fixed bottom-0 inset-x-0 bg-gray-950 border-t border-gray-800 flex items-center z-30" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+            <nav className="sm:hidden fixed bottom-0 inset-x-0 bg-bg-muted border-t border-border flex items-center z-30" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
                 {/* Servidores: scroll horizontal */}
                 <div className="flex-1 flex items-center gap-2 overflow-x-auto px-2 py-2 no-scrollbar">
                     {userServers.map((srv) => {
@@ -3588,7 +3588,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                     href={srv.first_channel_id ? route('channels.show', srv.first_channel_id) : route('servers.show', srv.id)}
                                     prefetch
                                     className={`w-10 h-10 flex items-center justify-center font-bold text-sm rounded-xl transition-all overflow-hidden ${
-                                        isCurrent ? 'bg-indigo-500 text-white' : 'bg-gray-700 text-gray-300'
+                                        isCurrent ? 'bg-accent text-text' : 'bg-bg-muted text-text-secondary'
                                     }`}
                                 >
                                     {srv.icon_url
@@ -3597,7 +3597,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                     }
                                 </Link>
                                 {badge > 0 && (
-                                    <span className="absolute -top-1 -right-1 min-w-[1rem] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 pointer-events-none">
+                                    <span className="absolute -top-1 -right-1 min-w-[1rem] h-4 bg-red-500 text-text text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 pointer-events-none">
                                         {badge > 99 ? '99+' : badge}
                                     </span>
                                 )}
@@ -3606,7 +3606,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                     })}
                 </div>
                 {/* Separador */}
-                <div className="w-px h-8 bg-gray-800 shrink-0" />
+                <div className="w-px h-8 bg-bg-elevated shrink-0" />
                 {/* DMs con unread primero, máx 2 en móvil */}
                 <div className="flex items-center gap-2 px-2 py-2 shrink-0">
                     {[...dmConversations].sort((a, b) => (b.unread ?? 0) - (a.unread ?? 0)).slice(0, 2).map((conv) => (
@@ -3615,21 +3615,21 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                 href={route('conversations.show', conv.id)}
                                 title={conv.type === 'group' ? (conv.name ?? 'Grupo') : conv.user?.name}
                                 prefetch
-                                className="w-10 h-10 rounded-xl overflow-hidden bg-gray-700 flex items-center justify-center"
+                                className="w-10 h-10 rounded-xl overflow-hidden bg-bg-muted flex items-center justify-center"
                             >
                                 {conv.type === 'group' ? (
-                                    <span className="w-full h-full flex items-center justify-center text-sm font-bold text-white" style={{ backgroundColor: conv.icon_color ?? '#6366f1' }}>
+                                    <span className="w-full h-full flex items-center justify-center text-sm font-bold text-text" style={{ backgroundColor: conv.icon_color ?? '#3F6F5B' }}>
                                         {(conv.name ?? '#')[0].toUpperCase()}
                                     </span>
                                 ) : conv.user?.avatar_url
                                     ? <img src={conv.user.avatar_url} alt={conv.user.name} className="w-full h-full object-cover" />
-                                    : <span className="w-full h-full flex items-center justify-center text-sm font-bold text-white" style={{ backgroundColor: conv.user?.banner_color ?? '#6366f1' }}>
+                                    : <span className="w-full h-full flex items-center justify-center text-sm font-bold text-text" style={{ backgroundColor: conv.user?.banner_color ?? '#3F6F5B' }}>
                                         {conv.user?.name?.[0]?.toUpperCase()}
                                     </span>
                                 }
                             </Link>
                             {conv.unread > 0 && (
-                                <span className="absolute -top-1 -right-1 min-w-[1rem] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 pointer-events-none">
+                                <span className="absolute -top-1 -right-1 min-w-[1rem] h-4 bg-red-500 text-text text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 pointer-events-none">
                                     {conv.unread > 99 ? '99+' : conv.unread}
                                 </span>
                             )}
@@ -3639,11 +3639,11 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                         <Link
                             href={route('friends.index')}
                             prefetch
-                            className="w-10 h-10 flex items-center justify-center text-indigo-300 bg-gray-700 rounded-xl text-lg"
+                            className="w-10 h-10 flex items-center justify-center text-accent bg-bg-muted rounded-xl text-lg"
                             title="Amigos"
                         >👥</Link>
                         {pendingFriendRequests > 0 && (
-                            <span className="absolute -top-1 -right-1 min-w-[1rem] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 pointer-events-none">
+                            <span className="absolute -top-1 -right-1 min-w-[1rem] h-4 bg-red-500 text-text text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 pointer-events-none">
                                 {pendingFriendRequests > 9 ? '9+' : pendingFriendRequests}
                             </span>
                         )}
@@ -3659,17 +3659,17 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                     style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
                     onMouseDown={(e) => { if (e.target === e.currentTarget) setPollModalOpen(false); }}
                 >
-                    <div className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-md">
-                        <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-700">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-indigo-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <div className="bg-bg border border-border rounded-xl w-full max-w-md">
+                        <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-accent shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                             </svg>
-                            <p className="font-semibold text-gray-200 flex-1">Nueva encuesta</p>
-                            <button onClick={() => setPollModalOpen(false)} className="text-gray-500 hover:text-gray-300 text-lg leading-none">&times;</button>
+                            <p className="font-semibold text-text-secondary flex-1">Nueva encuesta</p>
+                            <button onClick={() => setPollModalOpen(false)} className="text-text-muted hover:text-text-secondary text-lg leading-none">&times;</button>
                         </div>
                         <div className="p-4 space-y-3">
                             <div>
-                                <label className="block text-xs text-gray-400 mb-1">Pregunta</label>
+                                <label className="block text-xs text-text-muted mb-1">Pregunta</label>
                                 <input
                                     autoFocus
                                     type="text"
@@ -3677,11 +3677,11 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                     value={pollQuestion}
                                     onChange={(e) => setPollQuestion(e.target.value)}
                                     placeholder="¿Qué quieres preguntar?"
-                                    className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-indigo-500"
+                                    className="w-full bg-bg-elevated border border-border rounded-lg px-3 py-2 text-sm text-text placeholder:text-text-muted outline-none focus:border-accent"
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs text-gray-400 mb-1">Opciones</label>
+                                <label className="block text-xs text-text-muted mb-1">Opciones</label>
                                 <div className="space-y-2">
                                     {pollOptions.map((opt, i) => (
                                         <div key={i} className="flex gap-2 items-center">
@@ -3691,22 +3691,22 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                                 value={opt}
                                                 onChange={(e) => setPollOptions(prev => prev.map((o, j) => j === i ? e.target.value : o))}
                                                 placeholder={`Opción ${i + 1}`}
-                                                className="flex-1 bg-gray-800 border border-gray-600 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-500 outline-none focus:border-indigo-500"
+                                                className="flex-1 bg-bg-elevated border border-border rounded-lg px-3 py-1.5 text-sm text-text placeholder:text-text-muted outline-none focus:border-accent"
                                             />
                                             {pollOptions.length > 2 && (
-                                                <button type="button" onClick={() => setPollOptions(prev => prev.filter((_, j) => j !== i))} className="text-gray-500 hover:text-red-400 text-sm">✕</button>
+                                                <button type="button" onClick={() => setPollOptions(prev => prev.filter((_, j) => j !== i))} className="text-text-muted hover:text-red-400 text-sm">✕</button>
                                             )}
                                         </div>
                                     ))}
                                     {pollOptions.length < 6 && (
-                                        <button type="button" onClick={() => setPollOptions(prev => [...prev, ''])} className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
+                                        <button type="button" onClick={() => setPollOptions(prev => [...prev, ''])} className="text-xs text-accent hover:opacity-80 transition-colors">
                                             + Añadir opción
                                         </button>
                                     )}
                                 </div>
                             </div>
                             <div className="flex justify-end gap-2 pt-1">
-                                <button type="button" onClick={() => setPollModalOpen(false)} className="px-3 py-1.5 text-sm text-gray-400 hover:text-white transition-colors">
+                                <button type="button" onClick={() => setPollModalOpen(false)} className="px-3 py-1.5 text-sm text-text-muted hover:text-text transition-colors">
                                     Cancelar
                                 </button>
                                 <button
@@ -3728,7 +3728,7 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                         }
                                     }}
                                     disabled={!pollQuestion.trim() || pollOptions.filter(o => o.trim()).length < 2}
-                                    className="px-4 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg disabled:opacity-50 transition-colors"
+                                    className="px-4 py-1.5 text-sm bg-accent hover:opacity-90 text-text rounded-lg disabled:opacity-50 transition-colors"
                                 >
                                     Publicar encuesta
                                 </button>
@@ -3743,9 +3743,9 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                     className="fixed inset-0 z-[300] flex items-start justify-center pt-24 px-4"
                     onMouseDown={(e) => { if (e.target === e.currentTarget) { setGlobalSearchOpen(false); } }}
                 >
-                    <div className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-xl overflow-hidden">
-                        <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-700">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <div className="bg-bg border border-border rounded-xl w-full max-w-xl overflow-hidden">
+                        <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-text-muted shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
                             </svg>
                             <input
@@ -3754,22 +3754,22 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                 value={globalQuery}
                                 onChange={(e) => doGlobalSearch(e.target.value)}
                                 placeholder="Buscar en todos los servidores..."
-                                className="flex-1 bg-transparent text-white text-sm outline-none placeholder-gray-500"
+                                className="flex-1 bg-transparent text-text text-sm outline-none placeholder:text-text-muted"
                                 onKeyDown={(e) => { if (e.key === 'Escape') setGlobalSearchOpen(false); }}
                             />
-                            <kbd className="text-xs text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded">Esc</kbd>
+                            <kbd className="text-xs text-text-muted bg-bg-elevated px-1.5 py-0.5 rounded">Esc</kbd>
                         </div>
                         <div className="max-h-96 overflow-y-auto">
                             {globalSearching && (
-                                <p className="text-xs text-gray-400 px-4 py-3">Buscando...</p>
+                                <p className="text-xs text-text-muted px-4 py-3">Buscando...</p>
                             )}
                             {!globalSearching && globalResults !== null && globalResults.length === 0 && (
-                                <p className="text-xs text-gray-400 px-4 py-3">Sin resultados para "{globalQuery}".</p>
+                                <p className="text-xs text-text-muted px-4 py-3">Sin resultados para "{globalQuery}".</p>
                             )}
                             {!globalSearching && globalResults !== null && globalResults.map((result) => (
                                 <button
                                     key={result.id}
-                                    className="w-full flex gap-3 items-start px-4 py-3 hover:bg-gray-800 transition-colors text-left border-b border-gray-800 last:border-0"
+                                    className="w-full flex gap-3 items-start px-4 py-3 hover:bg-bg-elevated transition-colors text-left border-b border-border last:border-0"
                                     onClick={() => {
                                         setGlobalSearchOpen(false);
                                         router.visit(route('channels.show', result.channel_id));
@@ -3778,19 +3778,19 @@ export default function Show({ channel, messages: initialMessages, pinnedMessage
                                     <Avatar user={result.user} size="sm" />
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-baseline gap-1.5 flex-wrap">
-                                            <span className="text-xs font-semibold text-indigo-300">{result.user?.name}</span>
-                                            <span className="text-xs text-gray-500">en #{result.channel_name}</span>
-                                            <span className="text-xs text-gray-600">· {result.server_name}</span>
+                                            <span className="text-xs font-semibold text-accent">{result.user?.name}</span>
+                                            <span className="text-xs text-text-muted">en #{result.channel_name}</span>
+                                            <span className="text-xs text-text-muted">· {result.server_name}</span>
                                         </div>
-                                        <p className="text-sm text-gray-300 truncate mt-0.5">{result.content}</p>
-                                        <p className="text-xs text-gray-500 mt-0.5">
+                                        <p className="text-sm text-text-secondary truncate mt-0.5">{result.content}</p>
+                                        <p className="text-xs text-text-muted mt-0.5">
                                             {new Date(result.created_at).toLocaleDateString([], { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
                                         </p>
                                     </div>
                                 </button>
                             ))}
                             {globalResults === null && !globalSearching && (
-                                <p className="text-xs text-gray-500 px-4 py-3">Escribe al menos 2 caracteres para buscar.</p>
+                                <p className="text-xs text-text-muted px-4 py-3">Escribe al menos 2 caracteres para buscar.</p>
                             )}
                         </div>
                     </div>

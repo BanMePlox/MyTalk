@@ -2,27 +2,279 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Light mode overrides for the chat UI ── */
-html:not(.dark) .bg-gray-900 { background-color: #e5e7eb; }
-html:not(.dark) .bg-gray-800 { background-color: #f3f4f6; }
-html:not(.dark) .bg-gray-700 { background-color: #e5e7eb; }
-html:not(.dark) .bg-gray-600 { background-color: #d1d5db; }
+/* ── Papel design tokens — light (day) ── */
+:root {
+  --bg: #F4EFE6;
+  --bg-elevated: #FAF7F2;
+  --bg-muted: #EBE4D8;
+  --text: #1C1915;
+  --text-secondary: #5C554C;
+  --text-muted: #8A8278;
+  --border: #DDD5C8;
+  --border-strong: #C4BAA8;
+  --accent: #3F6F5B;
+  --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--bg-elevated));
+  --accent-chip: color-mix(in srgb, var(--accent) 12%, var(--bg));
+  --danger: #A63D3D;
+  --success: #3F6F5B;
+  --bubble-me: var(--accent-soft);
+  --bubble-them: #FFFCF7;
+  --text-on-accent: #FFFCF7;
+  --overlay: color-mix(in srgb, #1C1915 38%, transparent);
+  --radius: 10px;
+  --radius-sm: 6px;
+  --font-sans: "IBM Plex Sans", "Source Sans 3", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
 
-html:not(.dark) .text-gray-100 { color: #111827; }
-html:not(.dark) .text-gray-200 { color: #1f2937; }
-html:not(.dark) .text-gray-300 { color: #374151; }
-html:not(.dark) .text-gray-400 { color: #4b5563; }
-html:not(.dark) .text-white    { color: #111827; }
+/* ── Papel design tokens — dark (night / Papel de noche) ── */
+html.dark {
+  /* Panel hierarchy: rail darkest → sidebar mid → main thread lighter */
+  --bg-muted: #120F0C;
+  --bg: #1A1611;
+  --bg-elevated: #242017;
+  --text: #F2EADF;
+  --text-secondary: #C8BFB2;
+  --text-muted: #6E665C;
+  --border: #3A332A;
+  --border-strong: #50463C;
+  --accent: #7BA894;
+  --accent-soft: color-mix(in srgb, var(--accent) 34%, var(--bg-elevated));
+  --accent-chip: color-mix(in srgb, var(--accent) 24%, var(--bg));
+  --danger: #C45C5C;
+  --success: #7BA894;
+  --bubble-me: var(--accent-soft);
+  --bubble-them: #2C2720;
+  --text-on-accent: #F2EADF;
+  --overlay: color-mix(in srgb, #120F0C 86%, transparent);
+}
 
-html:not(.dark) .border-gray-700 { border-color: #d1d5db; }
-html:not(.dark) .border-gray-600 { border-color: #d1d5db; }
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    font-size: 15px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+  }
+
+  /* Focus ring — single accent olive, never browser/forms default blue */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  input:focus:not(:focus-visible),
+  textarea:focus:not(:focus-visible),
+  button:focus:not(:focus-visible),
+  select:focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    --tw-ring-color: var(--accent);
+    --tw-ring-shadow: 0 0 #0000;
+    box-shadow: none;
+  }
+
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    border-color: var(--accent);
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    box-shadow: none;
+  }
+}
+
+@layer components {
+  /* Primary action button */
+  .btn-primary {
+    @apply inline-flex items-center justify-center font-medium transition-opacity;
+    background-color: var(--accent);
+    color: var(--text-on-accent);
+    border-radius: var(--radius-sm);
+    padding: 0.625rem 1rem;
+  }
+  .btn-primary:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+  .btn-primary:disabled {
+    opacity: 0.5;
+  }
+
+  /* Secondary / ghost button */
+  .btn-secondary {
+    @apply inline-flex items-center justify-center font-medium transition-colors;
+    background-color: var(--bg-elevated);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.625rem 1rem;
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background-color: var(--bg-muted);
+    color: var(--text);
+  }
+
+  /* Form input field */
+  .input-field {
+    @apply w-full transition-colors;
+    background-color: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.625rem 1rem;
+    color: var(--text);
+    font-size: 0.9375rem;
+  }
+  .input-field::placeholder {
+    color: var(--text-muted);
+  }
+  .input-field:focus,
+  .input-field:focus-visible {
+    border-color: var(--accent);
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    box-shadow: none;
+  }
+
+  .chat-input-bar textarea:focus,
+  .chat-input-bar textarea:focus-visible,
+  .chat-input-bar input:focus,
+  .chat-input-bar input:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    box-shadow: none;
+  }
+
+  /* Chat message input bar */
+  .chat-input-bar {
+    @apply flex gap-2;
+    background-color: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.5rem 1rem;
+  }
+  .chat-input-bar textarea,
+  .chat-input-bar input[type="text"] {
+    @apply flex-1 bg-transparent resize-none outline-none;
+    color: var(--text);
+    font-size: 0.9375rem;
+    line-height: 1.4;
+  }
+  .chat-input-bar textarea::placeholder {
+    color: var(--text-muted);
+  }
+
+  /* Message bubbles */
+  .msg-bubble {
+    display: inline-block;
+    max-width: min(85%, 42rem);
+    padding: 0.375rem 0.75rem;
+    font-size: 0.9375rem;
+    line-height: 1.45;
+    border-radius: var(--radius);
+    word-break: break-word;
+  }
+  .msg-bubble-me {
+    background-color: var(--bubble-me);
+  }
+  .msg-bubble-them {
+    background-color: var(--bubble-them);
+    border: 1px solid var(--border);
+  }
+
+  /* Auth card on landing/login */
+  .auth-card {
+    background-color: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem;
+  }
+
+  /* Feature card on welcome page */
+  .feature-card {
+    background-color: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+  }
+
+  /* Warm overlay for modals/drawers — never pure black */
+  .overlay-backdrop {
+    background-color: var(--overlay);
+  }
+
+  /* Active channel / selection chip — olive readable at a glance */
+  .channel-active {
+    background-color: var(--accent-chip);
+    color: var(--text);
+    border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  }
+  html:not(.dark) .channel-active {
+    background-color: var(--accent-soft);
+    border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+  }
+
+  /* Send / primary inline action in chat input */
+  .btn-send {
+    @apply shrink-0 font-medium transition-opacity;
+    background-color: var(--accent);
+    color: var(--text-on-accent);
+    border-radius: var(--radius-sm);
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+  }
+  .btn-send:hover:not(:disabled) {
+    opacity: 0.92;
+  }
+  .btn-send:disabled {
+    opacity: 0.4;
+  }
+
+  /* Section labels (MIEMBROS, etc.) — extra muted in dark */
+  html.dark .section-label {
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
+  }
+
+  /* Modal / drawer panel */
+  .modal-panel {
+    background-color: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 8px 32px color-mix(in srgb, var(--text) 12%, transparent);
+  }
+
+  /* Sidebar in chat/DM layout */
+  .sidebar-panel {
+    background-color: var(--bg);
+    border-color: var(--border);
+  }
+
+  /* Tab active indicator */
+  .tab-active {
+    border-bottom: 2px solid var(--accent);
+    color: var(--text);
+  }
+
+  /* Range sliders — olive accent */
+  .accent-range {
+    accent-color: var(--accent);
+  }
+}
 
 /* Tauri desktop app — compensate for custom title bar (2rem = 32px) */
 html.in-tauri body {
-    padding-top: 2rem;
-    box-sizing: border-box;
-    height: 100vh;
-    overflow: hidden;
+  padding-top: 2rem;
+  box-sizing: border-box;
+  height: 100vh;
+  overflow: hidden;
 }
 html.in-tauri .h-screen { height: calc(100vh - 2rem) !important; }
 html.in-tauri .min-h-screen { min-height: calc(100vh - 2rem) !important; }
@@ -31,25 +283,13 @@ html.in-tauri .min-h-screen { min-height: calc(100vh - 2rem) !important; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Keep code blocks always dark */
-html:not(.dark) .hljs,
-html:not(.dark) pre,
-html:not(.dark) pre .bg-gray-800 { background-color: #1e1e2e !important; }
-html:not(.dark) pre .text-gray-300,
-html:not(.dark) pre .text-gray-400,
-html:not(.dark) pre .text-gray-500 { color: #cdd6f4 !important; }
-
-/* Keep colored buttons and badges as-is */
-html:not(.dark) .bg-indigo-500,
-html:not(.dark) .bg-indigo-600,
-html:not(.dark) .bg-green-500,
-html:not(.dark) .bg-green-600,
-html:not(.dark) .bg-red-500,
-html:not(.dark) .bg-red-600 { background-color: revert; }
-
-html:not(.dark) .bg-indigo-500 { background-color: #6366f1; }
-html:not(.dark) .bg-indigo-600 { background-color: #4f46e5; }
-html:not(.dark) .bg-green-500  { background-color: #22c55e; }
-html:not(.dark) .bg-green-600  { background-color: #16a34a; }
-html:not(.dark) .bg-red-500    { background-color: #ef4444; }
-html:not(.dark) .bg-red-600    { background-color: #dc2626; }
+/* Keep code blocks always dark (syntax highlighting) */
+.hljs,
+pre.hljs,
+pre .hljs {
+  background-color: #1e1e2e !important;
+}
+pre .hljs,
+.hljs {
+  color: #cdd6f4 !important;
+}

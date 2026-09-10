@@ -27,14 +27,14 @@ function ScreenVideo({ stream, userName }) {
     };
 
     return (
-        <div ref={containerRef} className="relative rounded-xl overflow-hidden bg-black border border-gray-700 group">
+        <div ref={containerRef} className="relative rounded-xl overflow-hidden bg-black border border-border group">
             <video ref={videoRef} autoPlay playsInline className="w-full block" />
             <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between">
-                <span className="text-xs text-white bg-black/60 px-2 py-0.5 rounded-md">{userName}</span>
+                <span className="text-xs text-text-on-accent bg-black/60 px-2 py-0.5 rounded-md">{userName}</span>
                 <button
                     onClick={toggleFullscreen}
                     title={isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 hover:bg-black/80 text-white p-1.5 rounded-lg"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 hover:bg-black/80 text-text-on-accent p-1.5 rounded-lg"
                 >
                     {isFullscreen ? (
                         <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -142,17 +142,17 @@ export default function VoiceChannel({ channel }) {
     const participantList = Object.values(participants);
 
     return (
-        <div className="flex-1 flex flex-col items-center justify-center bg-gray-900 p-8">
+        <div className="flex-1 flex flex-col items-center justify-center bg-bg p-8">
             <div className={`w-full ${Object.keys(remoteScreens).length > 0 ? 'max-w-2xl' : 'max-w-sm'}`}>
                 {/* Icon + title */}
                 <div className="text-center mb-8">
-                    <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-3 border border-gray-700">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <div className="w-16 h-16 bg-bg-elevated rounded-full flex items-center justify-center mx-auto mb-3 border border-border">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                         </svg>
                     </div>
-                    <h2 className="text-white font-bold text-xl">{channel.name}</h2>
-                    <p className="text-gray-500 text-sm mt-1">
+                    <h2 className="text-text font-bold text-xl">{channel.name}</h2>
+                    <p className="text-text-muted text-sm mt-1">
                         {!inThisChannel
                             ? t('voice.join_cta')
                             : participantList.length === 1
@@ -183,19 +183,19 @@ export default function VoiceChannel({ channel }) {
 
                 {/* Local sharing indicator */}
                 {inThisChannel && sharingScreen && (
-                    <div className="flex items-center gap-2 bg-indigo-600/20 border border-indigo-500/30 rounded-xl px-3 py-2 mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-indigo-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <div className="flex items-center gap-2 bg-accent/20 border border-accent/30 rounded-xl px-3 py-2 mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-accent shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                         </svg>
-                        <span className="text-sm text-indigo-300 flex-1">{t('voice.sharing_screen')}</span>
+                        <span className="text-sm text-accent flex-1">{t('voice.sharing_screen')}</span>
                         {hasSystemAudio && (
                             <button
                                 onClick={toggleSystemAudio}
                                 title={systemAudioEnabled ? t('voice.mute_system_audio') : t('voice.unmute_system_audio')}
                                 className={`flex items-center gap-1 text-xs px-2 py-1 rounded-lg transition-colors ${
                                     systemAudioEnabled
-                                        ? 'bg-indigo-500/30 text-indigo-300 hover:bg-indigo-500/40'
-                                        : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
+                                        ? 'bg-accent/30 text-accent hover:bg-accent/40'
+                                        : 'bg-bg-muted text-text-secondary hover:bg-bg-muted'
                                 }`}
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -215,21 +215,21 @@ export default function VoiceChannel({ channel }) {
 
                 {/* Participants */}
                 {inThisChannel && participantList.length > 0 && (
-                    <div className="bg-gray-800 rounded-xl p-3 mb-6 space-y-2 border border-gray-700">
+                    <div className="bg-bg-elevated rounded-xl p-3 mb-6 space-y-2 border border-border">
                         {participantList.map(user => (
                             <div key={user.id} className="px-1 py-1">
                                 <div className="flex items-center gap-3">
-                                    <div className={`relative shrink-0 rounded-full transition-shadow duration-150 ${speakingUsers[user.id] ? 'ring-2 ring-green-400 ring-offset-2 ring-offset-gray-800' : ''}`}>
+                                    <div className={`relative shrink-0 rounded-full transition-shadow duration-150 ${speakingUsers[user.id] ? 'ring-2 ring-green-400 ring-offset-2 ring-offset-bg-elevated' : ''}`}>
                                         {user.avatar_url ? (
                                             <img src={user.avatar_url} alt={user.name} className="w-8 h-8 rounded-full object-cover" />
                                         ) : (
-                                            <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold">
+                                            <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center text-text-on-accent text-sm font-bold">
                                                 {user.name[0].toUpperCase()}
                                             </div>
                                         )}
-                                        <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-gray-800" />
+                                        <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-border" />
                                     </div>
-                                    <span className={`text-sm font-medium flex-1 truncate ${user.id === auth.user.id ? 'text-indigo-300' : 'text-gray-200'}`}>
+                                    <span className={`text-sm font-medium flex-1 truncate ${user.id === auth.user.id ? 'text-accent' : 'text-text'}`}>
                                         {user.name}{user.id === auth.user.id ? ` ${t('voice.you')}` : ''}
                                     </span>
                                     {user.id === auth.user.id && (muted || deafened) && (
@@ -251,7 +251,7 @@ export default function VoiceChannel({ channel }) {
                                 {/* Per-user volume slider */}
                                 {user.id !== auth.user.id && (
                                     <div className="flex items-center gap-2 mt-1.5 pl-11">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-gray-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-text-muted shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M15.536 8.464a5 5 0 010 7.072M12 6a7 7 0 000 12M9 9a3 3 0 000 6" />
                                         </svg>
                                         <input
@@ -259,9 +259,9 @@ export default function VoiceChannel({ channel }) {
                                             min="0" max="100" step="1"
                                             value={userVolumes[user.id] ?? 100}
                                             onChange={e => changeUserVolume(user.id, e.target.value)}
-                                            className="flex-1 accent-indigo-500 h-1 rounded-full cursor-pointer"
+                                            className="flex-1 accent-accent h-1 rounded-full cursor-pointer"
                                         />
-                                        <span className="text-xs text-gray-600 font-mono w-7 text-right">
+                                        <span className="text-xs text-text-muted font-mono w-7 text-right">
                                             {userVolumes[user.id] ?? 100}%
                                         </span>
                                     </div>
@@ -273,10 +273,10 @@ export default function VoiceChannel({ channel }) {
 
                 {/* Mic test — only shown when not in any call */}
                 {!inThisChannel && !inOtherChannel && (
-                    <div className="bg-gray-800 rounded-xl p-4 mb-5 border border-gray-700">
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">{t('voice.mic_test_title')}</p>
+                    <div className="bg-bg-elevated rounded-xl p-4 mb-5 border border-border">
+                        <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">{t('voice.mic_test_title')}</p>
 
-                        <div className="w-full bg-gray-700 rounded-full h-2 mb-3 overflow-hidden">
+                        <div className="w-full bg-bg-muted rounded-full h-2 mb-3 overflow-hidden">
                             <div
                                 className="h-2 rounded-full transition-all duration-75"
                                 style={{
@@ -287,7 +287,7 @@ export default function VoiceChannel({ channel }) {
                         </div>
 
                         <div className="flex items-center justify-between gap-3">
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-text-muted">
                                 {testActive ? t('voice.mic_test_active') : t('voice.mic_test_inactive')}
                             </p>
                             <button
@@ -295,7 +295,7 @@ export default function VoiceChannel({ channel }) {
                                 className={`shrink-0 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${
                                     testActive
                                         ? 'bg-red-600/20 border border-red-500/40 text-red-400 hover:bg-red-600/30'
-                                        : 'bg-gray-700 hover:bg-gray-600 text-gray-200 border border-gray-600'
+                                        : 'bg-bg-muted hover:bg-bg-muted text-text border border-border'
                                 }`}
                             >
                                 {testActive ? t('voice.stop_test') : t('voice.start_test')}
@@ -309,17 +309,17 @@ export default function VoiceChannel({ channel }) {
                     {inThisChannel ? (
                         <>
                             {/* Mic volume slider */}
-                            <div className="bg-gray-800 rounded-xl px-4 py-3 border border-gray-700">
+                            <div className="bg-bg-elevated rounded-xl px-4 py-3 border border-border">
                                 <div className="flex items-center justify-between mb-2">
-                                    <span className="text-xs text-gray-400 font-medium">{t('voice.mic_volume')}</span>
-                                    <span className="text-xs text-gray-500 font-mono">{micVolume}%</span>
+                                    <span className="text-xs text-text-secondary font-medium">{t('voice.mic_volume')}</span>
+                                    <span className="text-xs text-text-muted font-mono">{micVolume}%</span>
                                 </div>
                                 <input
                                     type="range"
                                     min="0" max="200" step="1"
                                     value={micVolume}
                                     onChange={e => changeMicVolume(e.target.value)}
-                                    className="w-full accent-indigo-500 h-1.5 rounded-full cursor-pointer"
+                                    className="w-full accent-accent h-1.5 rounded-full cursor-pointer"
                                 />
                             </div>
 
@@ -331,7 +331,7 @@ export default function VoiceChannel({ channel }) {
                                     className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                                         muted
                                             ? 'bg-red-600/20 border border-red-500/40 text-red-400 hover:bg-red-600/30'
-                                            : 'bg-gray-700 hover:bg-gray-600 text-gray-200 border border-gray-600'
+                                            : 'bg-bg-muted hover:bg-bg-muted text-text border border-border'
                                     }`}
                                 >
                                     {muted ? (
@@ -352,7 +352,7 @@ export default function VoiceChannel({ channel }) {
                                     className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                                         deafened
                                             ? 'bg-red-600/20 border border-red-500/40 text-red-400 hover:bg-red-600/30'
-                                            : 'bg-gray-700 hover:bg-gray-600 text-gray-200 border border-gray-600'
+                                            : 'bg-bg-muted hover:bg-bg-muted text-text border border-border'
                                     }`}
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -369,8 +369,8 @@ export default function VoiceChannel({ channel }) {
                                     title={sharingScreen ? t('voice.stop_share_title') : t('voice.screen_share_title')}
                                     className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                                         sharingScreen
-                                            ? 'bg-indigo-600/30 border border-indigo-500/40 text-indigo-300 hover:bg-indigo-600/40'
-                                            : 'bg-gray-700 hover:bg-gray-600 text-gray-200 border border-gray-600'
+                                            ? 'bg-accent-soft border border-accent/40 text-accent hover:bg-accent-soft'
+                                            : 'bg-bg-muted hover:bg-bg-muted text-text border border-border'
                                     }`}
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -381,7 +381,7 @@ export default function VoiceChannel({ channel }) {
 
                                 <button
                                     onClick={leave}
-                                    className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-medium transition-colors"
+                                    className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-text-on-accent text-sm font-medium transition-colors"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M16 8l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M5 3a2 2 0 00-2 2v1c0 8.284 6.716 15 15 15h1a2 2 0 002-2v-3.28a1 1 0 00-.684-.948l-4.493-1.498a1 1 0 00-1.21.502l-1.13 2.257a11.042 11.042 0 01-5.516-5.517l2.257-1.128a1 1 0 00.502-1.21L9.228 3.683A1 1 0 008.279 3H5z" />
@@ -392,7 +392,7 @@ export default function VoiceChannel({ channel }) {
                         </>
                     ) : inOtherChannel ? (
                         <div className="text-center">
-                            <p className="text-sm text-gray-400 mb-3">
+                            <p className="text-sm text-text-secondary mb-3">
                                 {t('voice.in_other_channel', { name: activeChannel.name })}
                             </p>
                             <button
@@ -406,7 +406,7 @@ export default function VoiceChannel({ channel }) {
                         <div className="flex justify-center">
                             <button
                                 onClick={() => join(channel, auth.user)}
-                                className="flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition-colors"
+                                className="flex items-center gap-2 px-6 py-3 rounded-xl bg-accent hover:bg-accent text-text-on-accent font-semibold transition-colors"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
