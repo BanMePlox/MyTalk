@@ -2,3 +2,8 @@
 # will have compiled files and executables
 /target/
 /gen/schemas
+
+# Updater signing keys — keep private keys outside the repo (~/.tauri/ or local only)
+mytalk.key
+*.key
+!*.key.pub
