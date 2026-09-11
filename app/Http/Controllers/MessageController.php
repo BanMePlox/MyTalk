@@ -18,11 +18,12 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use Illuminate\Http\RedirectResponse;
 use Inertia\Response;
 
 class MessageController extends Controller
 {
-    public function index(Channel $channel): Response
+    public function index(Channel $channel): Response|RedirectResponse
     {
         abort_if(!$channel->server, 404);
         if (!$channel->server->members()->where('user_id', Auth::id())->exists()) {
