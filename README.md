@@ -1,10 +1,79 @@
 # MyTalk
 
-Aplicación de chat en tiempo real inspirada en Discord. Construida con **Laravel 12**, **React 18** e **Inertia.js**, con WebSockets propios via Laravel Reverb.
+**Self-hosted realtime chat** — servidores, canales, hilos, DMs y voz. Inspirado en Discord, **no es un “Discord killer”**: es un proyecto de portfolio y aprendizaje con stack propio (Laravel + Reverb + Inertia + Tauri).
+
+**Demo en vivo:** [https://mytalk.pjimenezpf.com](https://mytalk.pjimenezpf.com)
+
+![Chat principal](storage/readme.img/Chat.png)
 
 ---
 
-![Chat principal](storage/readme.img/Chat.png)
+## Portfolio (ES)
+
+### Qué es
+
+MyTalk es un chat en tiempo real **autohospedado**: tú controlas el servidor, la base de datos y Reverb. Pensado para equipos pequeños o demos, con mensajes en vivo, hilos, menciones, push opcional y app de escritorio Windows.
+
+### Stack
+
+| Capa | Tecnologías |
+|------|-------------|
+| Backend | PHP 8.2, Laravel 12, Laravel Reverb, Inertia.js |
+| Frontend | React 18, Tailwind CSS, Laravel Echo |
+| Escritorio | Tauri 2 (Windows), actualizaciones firmadas |
+| Base de datos | SQLite (dev) / MySQL (prod) |
+
+### Capturas de diseño
+
+Galería del rediseño **Papel UI**: [`docs/design-preview/`](docs/design-preview/) (light/dark). Regenerar con `node scripts/capture-design-preview.mjs` tras levantar la app.
+
+### Demo en ~2 minutos (local)
+
+1. **Instalar y migrar** — ver [Instalación](#instalación) abajo.
+2. **Datos de demo:** `php artisan db:seed --class=DemoSeeder`
+3. **Arrancar:** `composer run dev` + `php artisan reverb:start`
+4. **Login:** `test@example.com` / `password`
+5. **Recorrido:** landing `/` → canal **#general** (servidor *Estudio Papel*) → abrir un **hilo** → canal **#sala-voz** → mencionar la **app Tauri** (notificaciones nativas)
+
+### Voz — límites honestos
+
+WebRTC **full mesh**, solo **STUN**, sin SFU. Recomendado **2–4 personas**; NAT estricto puede impedir audio entre pares. Detalle: [`docs/VOZ.md`](docs/VOZ.md).
+
+### Seguridad Tauri
+
+La clave **privada** del updater (`mytalk.key`) **no debe estar en el repo**. Si alguna vez se commitió, **rótala** y guarda la nueva solo en `~/.tauri/` (o fuera del árbol git). En el repo solo corresponde la pública (`src-tauri/mytalk.key.pub`).
+
+---
+
+## Portfolio (EN)
+
+### What it is
+
+MyTalk is a **self-hosted realtime chat**: servers, text/voice channels, threads, DMs, and optional push. It is **not trying to replace Discord** — it is a portfolio/learning project with an owned stack (Laravel + Reverb + Inertia + Tauri).
+
+### Live demo
+
+[https://mytalk.pjimenezpf.com](https://mytalk.pjimenezpf.com)
+
+### Design previews
+
+See [`docs/design-preview/`](docs/design-preview/) for Papel UI screenshots (light/dark).
+
+### ~2-minute local demo path
+
+1. Install & migrate (see [Installation](#installation) below).
+2. Seed showcase data: `php artisan db:seed --class=DemoSeeder`
+3. Run `composer run dev` and `php artisan reverb:start`
+4. Log in as `test@example.com` / `password`
+5. Walk through: landing → **#general** chat → **thread** → **#sala-voz** voice → mention **Tauri desktop** app
+
+### Voice caveats
+
+STUN-only, full-mesh WebRTC, **2–4 participants** recommended; strict NAT may break peer audio. Details: [`docs/VOZ.md`](docs/VOZ.md).
+
+### Tauri signing keys
+
+Never commit the updater **private** key. If it was ever in git history, **rotate** it and keep the new key outside the repository (e.g. `~/.tauri/`).
 
 ---
 
@@ -63,45 +132,20 @@ Aplicación de chat en tiempo real inspirada en Discord. Construida con **Larave
 ### Canales de voz
 - Llamadas de audio P2P en tiempo real via **WebRTC** (malla full mesh)
 - Silenciar micrófono, ensordecerse y control de volumen por usuario
-- **Llamadas persistentes**: navega entre canales de texto sin colgar — la barra de llamada activa en el sidebar mantiene los controles accesibles
-- Sidebar muestra los participantes activos en cada canal de voz en tiempo real
-- **Indicador de quién habla** en tiempo real — anillo verde en avatar + barras animadas en sidebar y barra de llamada
-- **Compartir pantalla** con `getDisplayMedia`; soporte de audio del sistema con toggle; pantalla completa en el receptor; stop/reinicio sin renegociación WebRTC
-- Prueba de micrófono antes de unirse
-- Emojis personalizados del servidor con sintaxis `:nombre:`
+- **Llamadas persistentes**: navega entre canales de texto sin colgar
+- **Compartir pantalla** con `getDisplayMedia`
+- Ver [`docs/VOZ.md`](docs/VOZ.md) para límites de NAT y tamaño de grupo
 
 ### App de escritorio (Windows)
 - Aplicación nativa para Windows construida con **Tauri 2**
 - Barra de título personalizada integrada con controles de ventana
-- **Actualizaciones automáticas**: detecta nuevas versiones y las instala sin salir de la app
+- **Actualizaciones automáticas** firmadas
 - Notificaciones nativas del sistema operativo
 
 ### Administración
 - Panel `/admin` accesible solo para superadmins
-- Envío de mensajes **broadcast** a todos los usuarios (aparece como DM de la cuenta sistema *MyTalk*)
+- Envío de mensajes **broadcast** a todos los usuarios
 - Estadísticas básicas de la plataforma
-
-### Roles y moderación
-- Roles personalizados por servidor con color
-- Permisos granulares: gestionar canales, mensajes, roles, expulsar, banear
-- **Expulsión** y **baneo** de miembros (con razón opcional)
-- Lista de baneados con opción de desbanear
-
-![Ajustes del servidor](storage/readme.img/Server%20settings.png)
-
-### Perfil y presencia
-- Avatar, banner de color y bio
-- **Estado**: en línea, ausente, no molestar
-- **Estado personalizado** (texto libre)
-- **Apodo** por servidor
-- Indicador de presencia en tiempo real para todos los miembros del servidor
-
-### UX
-- Indicador **"X está escribiendo..."**
-- Búsqueda de mensajes en el canal activo
-- **Búsqueda global** (`Ctrl+K`) en todos los servidores
-- Scroll-to-bottom con contador de mensajes nuevos
-- Diseño responsive con sidebar móvil
 
 ---
 
@@ -128,14 +172,10 @@ Aplicación de chat en tiempo real inspirada en Discord. Construida con **Larave
 ### Pasos
 
 ```bash
-# 1. Clonar el repositorio
-git clone https://github.com/tu-usuario/mytalk.git
-cd mytalk
+git clone https://github.com/BanMePlox/MyTalk.git
+cd MyTalk
 
-# 2. Instalar dependencias, configurar .env y migrar la base de datos
 composer run setup
-
-# 3. Instalar dependencias frontend y compilar assets
 npm install && npm run build
 ```
 
@@ -147,6 +187,34 @@ cp .env.example .env
 php artisan key:generate
 php artisan migrate
 ```
+
+### Datos de demostración
+
+Tras migrar, carga el servidor *Estudio Papel* con mensajes, hilo, encuesta y canal de voz:
+
+```bash
+php artisan db:seed --class=DemoSeeder
+```
+
+Credenciales: `test@example.com` / `password`
+
+Para empezar de cero:
+
+```bash
+php artisan migrate:fresh --seed --seeder=DemoSeeder
+```
+
+---
+
+## Installation
+
+Same steps as above. After migrate:
+
+```bash
+php artisan db:seed --class=DemoSeeder
+```
+
+Login: `test@example.com` / `password`
 
 ---
 
@@ -166,27 +234,9 @@ La aplicación estará disponible en **http://localhost:8000**.
 
 ## Configuración
 
-Edita el archivo `.env` generado. Las variables más relevantes:
+Copia `.env.example` a `.env`. Variables clave: `APP_NAME=MyTalk`, `BROADCAST_CONNECTION=reverb`, bloque `REVERB_*`, `VITE_REVERB_*` y VAPID/OAuth opcionales — ver comentarios en [`.env.example`](.env.example).
 
-```dotenv
-# Nombre de la app
-APP_NAME="MyTalk"
-
-# Reverb (tiempo real)
-BROADCAST_CONNECTION=reverb
-REVERB_APP_KEY=clave-secreta
-REVERB_APP_SECRET=secreto-muy-seguro
-
-# Colas (necesarias para broadcasting)
-QUEUE_CONNECTION=database
-
-# Web Push (notificaciones push — opcional)
-VAPID_SUBJECT=mailto:admin@tudominio.com
-VAPID_PUBLIC_KEY=...
-VAPID_PRIVATE_KEY=...
-```
-
-Consulta [`docs/ADMIN.md`](docs/ADMIN.md) para instrucciones detalladas de despliegue en producción y generación de claves VAPID.
+Consulta [`docs/ADMIN.md`](docs/ADMIN.md) para despliegue en producción y generación de claves VAPID.
 
 ---
 
@@ -197,6 +247,8 @@ Consulta [`docs/ADMIN.md`](docs/ADMIN.md) para instrucciones detalladas de despl
 | [`docs/USUARIO.md`](docs/USUARIO.md) | Guía de uso para usuarios finales |
 | [`docs/ADMIN.md`](docs/ADMIN.md) | Instalación, despliegue y administración |
 | [`docs/TECNOLOGIAS.md`](docs/TECNOLOGIAS.md) | Stack técnico y arquitectura |
+| [`docs/VOZ.md`](docs/VOZ.md) | Límites de voz WebRTC (STUN, mesh, NAT) |
+| [`docs/design-preview/`](docs/design-preview/) | Capturas Papel UI (portfolio) |
 
 ---
 
@@ -206,4 +258,4 @@ Desarrollado por **Pedro Jiménez Luján**.
 
 ## Licencia
 
-Este proyecto es de código abierto y está disponible bajo la licencia **MIT**. Puedes usarlo, modificarlo y distribuirlo libremente, incluso con fines comerciales, siempre que se mantenga el aviso de copyright original.
+MIT — ver aviso de copyright en el repositorio.
